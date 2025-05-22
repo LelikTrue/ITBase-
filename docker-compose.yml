@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13-alpine # Используем PostgreSQL 13
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Данные будут сохраняться
+      - ./schema.sql:/docker-entrypoint-initdb.d/init.sql # Автоматически выполнит скрипт при первом запуске
+    ports:
+      - "5432:5432" # Проброс порта для доступа с хоста
+
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    ports:
+      - "8080:80" # PgAdmin будет доступен по адресу http://localhost:8080
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
