@@ -20,10 +20,15 @@ The **IT Asset Management System (ITBase)** is a robust solution designed for tr
 The project leverages a modern and efficient technology stack to ensure high performance, scalability, and ease of development:
 
 * **FastAPI:** A high-performance, asynchronous web framework for Python, used for building robust APIs. It offers rapid development and automatic interactive API documentation (Swagger UI, ReDoc).
+
 * **PostgreSQL:** A powerful, open-source object-relational database system, chosen for its reliability, data integrity, and advanced features, serving as the core data store for all IT assets.
+
 * **Nginx:** A high-performance HTTP and reverse proxy server, used to efficiently serve the web application, manage static files, handle SSL termination, and act as a load balancer in production environments.
+
 * **Docker:** A platform for containerization that simplifies the deployment and management of the application and its dependencies, ensuring consistent environments across development, testing, and production.
+
 * **Alembic:** A lightweight database migration tool for SQLAlchemy, enabling seamless evolution of the database schema as the application develops.
+
 * **Jinja2:** A powerful and flexible templating engine for Python, used for rendering dynamic HTML pages for the web interface.
 
 ## 🏁 Getting Started
