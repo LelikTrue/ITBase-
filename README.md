@@ -118,7 +118,8 @@ ITBase/
 └── schema.sql                  \# Initial SQL database schema (for reference/initial setup)
 
 ```
-*(Self-correction: Based on our recent discussion, `app/` should contain `api/`, `db/`, `models/`, etc., and `schema.sql` is more of a reference for initial setup than a primary component if Alembic is used.)*
+*(Self-correction: Based on our recent discussion, `app/` should contain `api/`, `db/`, `models/`, etc., and `schema.sql`
+is more of a reference for initial setup than a primary component if Alembic is used.)*
 
 ## 🔄 Database Migrations (Alembic)
 
