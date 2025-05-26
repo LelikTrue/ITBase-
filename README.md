@@ -19,19 +19,14 @@ information and streamlined control over your IT infrastructure.
 
 ## ⚙️ Technology Stack
 
-The project leverages a modern and efficient technology stack to ensure high performance, scalability, and ease of development:
+The project is built upon a robust and modern technology stack:
 
-* **FastAPI:** A high-performance, asynchronous web framework for Python, used for building robust APIs. It offers rapid development and automatic interactive API documentation (Swagger UI, ReDoc).
-
-* **PostgreSQL:** A powerful, open-source object-relational database system, chosen for its reliability, data integrity, and advanced features, serving as the core data store for all IT assets.
-
-* **Nginx:** A high-performance HTTP and reverse proxy server, used to efficiently serve the web application, manage static files, handle SSL termination, and act as a load balancer in production environments.
-
-* **Docker:** A platform for containerization that simplifies the deployment and management of the application and its dependencies, ensuring consistent environments across development, testing, and production.
-
-* **Alembic:** A lightweight database migration tool for SQLAlchemy, enabling seamless evolution of the database schema as the application develops.
-
-* **Jinja2:** A powerful and flexible templating engine for Python, used for rendering dynamic HTML pages for the web interface.
+* **FastAPI:** High-performance Python web framework for APIs and automatic documentation.
+* **PostgreSQL:** Powerful and reliable relational database for IT asset data.
+* **Nginx:** Efficient reverse proxy and web server for serving the application and managing traffic.
+* **Docker:** Containerization platform for simplified deployment and consistent environments.
+* **Alembic:** Database migration tool for seamless schema evolution.
+* **Jinja2:** Flexible templating engine for dynamic web pages.
 
 ## 🏁 Getting Started
 
@@ -82,11 +77,13 @@ Before you begin, ensure you have the following installed:
     * **Alternative API Documentation (ReDoc):** `http://localhost/redoc` (or `http://your_server_ip/redoc`)
     * **Adminer (Database Management Tool):** `http://localhost:8080` (or `http://your_server_ip:8080`)
 
-    **Note:** The FastAPI application itself runs internally on port `8000`. Access is via Nginx, which listens on port `80` (standard HTTP). Adminer continues to use its default port `8080`.
+    **Note:** The FastAPI application itself runs internally on port `8000`. Access is via Nginx, which listens on port `80` (standard HTTP).
+Adminer continues to use its default port `8080`.
 
 ## 📂 Project Structure
 
-The project follows a modular structure to facilitate easy navigation and future development. Key components and their purposes are outlined below:
+The project follows a modular structure to facilitate easy navigation and future development.
+Key components and their purposes are outlined below:
 
 ```
 
