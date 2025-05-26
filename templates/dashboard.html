@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">{{ title }}</h1>
+    <p class="lead">Добро пожаловать в веб-интерфейс управления IT-активами!</p>
+
+    <div class="card mt-5">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">Список активов</h2> 
+            <a href="{{ url_for('add_asset') }}" class="btn btn-primary btn-sm">Добавить актив</a>
+        </div>
+        <div class="card-body">
+            {# Проверяем, есть ли устройства в списке "devices" #}
+            {% if devices %} 
+            <div class="table-responsive">
+                <table class="table table-dark table-striped table-hover"> 
+                    <thead>
+                        <tr>
+                            <th scope="col">ID</th>
+                            <th scope="col">Инвентарный №</th> {# Изменено на инвентарный номер #}
+                            <th scope="col">Модель</th> {# Добавлено поле Модель #}
+                            <th scope="col">Тип</th>
+                            <th scope="col">Статус</th>
+                            <th scope="col">Местоположение</th>
+                            <th scope="col">Ответственный</th> {# Добавлено поле Ответственный #}
+                            <th scope="col">Действия</th> 
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {# Итерируемся по "devices" #}
+                        {% for device in devices %} 
+                        <tr>
+                            <th scope="row">{{ device.id }}</th>
+                            <td>{{ device.inventory_number }}</td> {# Соответствует полю модели #}
+                            <td>{{ device.device_model.name if device.device_model }}</td> {# Доступ к имени модели через отношение #}
+                            <td>{{ device.asset_type.name if device.asset_type }}</td> {# Доступ к имени типа через отношение #}
+                            <td>{{ device.status.name if device.status }}</td> {# Доступ к имени статуса через отношение #}
+                            <td>{{ device.location.name if device.location }}</td> {# Доступ к имени локации через отношение #}
+                            <td>{{ device.employee.first_name if device.employee }} {{ device.employee.last_name if device.employee }}</td> {# Доступ к имени сотрудника #}
+                            <td>
+                                <a href="{{ url_for('edit_asset', asset_id=device.id) }}" class="btn btn-sm btn-info me-2">Редактировать</a>
+                                <form action="{{ url_for('delete_asset', asset_id=device.id) }}" method="POST" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Вы уверены, что хотите удалить этот актив?')">Удалить</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p>Активы не найдены.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Добавьте секции для сводной статистики #}
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    Количество устройств по типам
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for type_name, count in device_types_count %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ type_name }}
+                        <span class="badge bg-primary rounded-pill">{{ count }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    Количество устройств по статусам
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for status_name, count in device_statuses_count %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ status_name }}
+                        <span class="badge bg-primary rounded-pill">{{ count }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+{% endblock %}

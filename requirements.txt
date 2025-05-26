@@ -1,6 +1,10 @@
-fastapi==0.111.0 # Актуальная версия FastAPI
-uvicorn==0.30.1 # ASGI-сервер для FastAPI
-SQLAlchemy==2.0.30 # ORM для работы с БД
-psycopg2-binary==2.9.9 # Адаптер PostgreSQL для Python
-alembic==1.13.1 # Инструмент для миграций БД
-python-dotenv==1.0.1 # Для чтения .env файла
+# requirements.txt
+fastapi==0.111.0 # Пример актуальной версии
+uvicorn[standard]==0.29.0 # Включает все необходимые зависимости для Uvicorn
+sqlalchemy==2.0.30 # Пример актуальной версии
+psycopg2-binary==2.9.9 # Драйвер PostgreSQL
+python-dotenv==1.0.1 # Для чтения .env файлов
+alembic==1.13.1 # Для миграций базы данных
+Jinja2==3.1.4 # Если используете шаблоны
+# pydantic==2.7.1 # Если используете Pydantic (обычно идет с FastAPI)
+# pydantic-settings==2.2.1 # Если используете для настроек

@@ -1,0 +1,408 @@
+/* app/static/dark_theme.css */
+
+/* --- General Body and Background --- */
+body {
+    background-color: #1a1a2e !important; /* Deep dark blue/purple */
+    color: #e0e0e0 !important;             /* Light gray for text */
+    font-family: 'Open Sans', sans-serif !important; /* A clean font */
+}
+
+/* --- Swagger UI Container and Wrapper --- */
+.swagger-ui .wrapper {
+    background-color: #1a1a2e !important; /* Match body background */
+}
+
+/* --- Top Bar --- */
+.swagger-ui .topbar {
+    background-color: #2a2a4a !important; /* Slightly lighter than body for contrast */
+    border-bottom: 1px solid #4a4a7a !important;
+    padding: 10px 0 !important;
+}
+
+.swagger-ui .topbar .topbar-wrapper a {
+    color: #e0e0e0 !important;
+    font-weight: bold !important;
+}
+
+.swagger-ui .topbar .topbar-wrapper a span {
+    color: #88aaff !important; /* Highlight API name */
+}
+
+/* --- Scheme Container (Host/Base URL section) --- */
+.swagger-ui .scheme-container {
+    background-color: #2a2a4a !important; /* Match top bar */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3) !important;
+    border-radius: 5px !important;
+    padding: 15px !important;
+    margin-bottom: 20px !important;
+}
+
+.swagger-ui .scheme-container h4 {
+    color: #e0e0e0 !important;
+}
+
+/* --- General Text and Headings --- */
+.swagger-ui .info .title,
+.swagger-ui .info .version,
+.swagger-ui .renderedMarkdown h1,
+.swagger-ui .renderedMarkdown h2,
+.swagger-ui .renderedMarkdown h3,
+.swagger-ui .renderedMarkdown h4,
+.swagger-ui .renderedMarkdown h5,
+.swagger-ui .renderedMarkdown h6 {
+    color: #f0f0f0 !important; /* Slightly brighter for headings */
+}
+
+.swagger-ui .opblock .opblock-summary-description {
+    color: #c0c0c0 !important; /* Slightly darker for descriptions */
+}
+
+/* --- Operation Blocks (GET, POST, etc.) --- */
+.swagger-ui .opblock {
+    margin-bottom: 15px !important;
+    border-radius: 5px !important;
+    overflow: hidden !important; /* Ensures inner shadows/borders respect border-radius */
+}
+
+.swagger-ui .opblock .opblock-summary {
+    background-color: #3a3a5e !important; /* Default summary background */
+    border-radius: 5px !important;
+    padding: 10px 20px !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s ease !important;
+}
+
+.swagger-ui .opblock .opblock-summary:hover {
+    background-color: #4a4a6e !important;
+}
+
+.swagger-ui .opblock .opblock-summary-method {
+    font-weight: bold !important;
+    color: #f0f0f0 !important;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.4) !important;
+}
+
+.swagger-ui .opblock .opblock-summary-path {
+    color: #88aaff !important; /* Path highlighting */
+    font-family: 'Fira Code', monospace !important; /* Monospace for paths */
+}
+
+/* Specific method colors */
+.swagger-ui .opblock.opblock-get .opblock-summary { background-color: #3c7d3c !important; } /* Darker green */
+.swagger-ui .opblock.opblock-post .opblock-summary { background-color: #8a632d !important; } /* Darker orange/brown */
+.swagger-ui .opblock.opblock-put .opblock-summary { background-color: #4f7aa7 !important; } /* Darker blue */
+.swagger-ui .opblock.opblock-delete .opblock-summary { background-color: #8c3b3b !important; } /* Darker red */
+.swagger-ui .opblock.opblock-patch .opblock-summary { background-color: #8a4a75 !important; } /* Darker purple */
+.swagger-ui .opblock.opblock-head .opblock-summary { background-color: #5b5b5b !important; } /* Gray */
+.swagger-ui .opblock.opblock-options .opblock-summary { background-color: #4a4a4a !important; } /* Darker gray */
+
+/* Operation content area */
+.swagger-ui .opblock-body {
+    background-color: #2b2b4e !important; /* Deeper background for content */
+    border: 1px solid #4a4a7a !important;
+    border-top: none !important;
+    border-radius: 0 0 5px 5px !important;
+    padding: 20px !important;
+}
+
+/* Try it out button */
+.swagger-ui .btn.try-out__btn {
+    background-color: #5555aa !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 3px !important;
+    padding: 8px 15px !important;
+    font-weight: bold !important;
+    transition: background-color 0.2s ease !important;
+}
+.swagger-ui .btn.try-out__btn:hover {
+    background-color: #6666bb !important;
+}
+
+/* Execute button */
+.swagger-ui .btn.execute {
+    background-color: #28a745 !important; /* Green for success */
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 3px !important;
+    padding: 8px 15px !important;
+    font-weight: bold !important;
+    transition: background-color 0.2s ease !important;
+}
+.swagger-ui .btn.execute:hover {
+    background-color: #218838 !important;
+}
+
+/* Clear button */
+.swagger-ui .btn.cancel {
+    background-color: #dc3545 !important; /* Red for danger/clear */
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 3px !important;
+    padding: 8px 15px !important;
+    font-weight: bold !important;
+    transition: background-color 0.2s ease !important;
+}
+.swagger-ui .btn.cancel:hover {
+    background-color: #c82333 !important;
+}
+
+
+/* --- Tags (Group names) --- */
+.swagger-ui .opblock-tag {
+    background-color: #3a3a5e !important; /* Match summary background */
+    border: 1px solid #4a4a7a !important;
+    border-radius: 5px !important;
+    margin-bottom: 10px !important;
+}
+
+.swagger-ui .opblock-tag a {
+    color: #f0f0f0 !important;
+    font-weight: bold !important;
+}
+
+/* --- Models (Schemas) --- */
+.swagger-ui .model-box {
+    background-color: #2a2a4a !important; /* Match other containers */
+    border: 1px solid #4a4a7a !important;
+    border-radius: 5px !important;
+    padding: 15px !important;
+    margin-top: 10px !important;
+}
+
+.swagger-ui .model-toggle {
+    color: #88aaff !important; /* Highlight model names */
+    font-weight: bold !important;
+}
+
+.swagger-ui .model-title {
+    color: #e0e0e0 !important;
+}
+
+/* Schema property names */
+.swagger-ui .property.col.col_1 {
+    color: #c0c0c0 !important;
+    font-weight: normal !important;
+}
+/* Schema property types */
+.swagger-ui .property.col.col_2 span {
+    color: #999999 !important;
+}
+
+/* --- JSON/Code Blocks --- */
+.swagger-ui .microlight,
+.swagger-ui .body-param-editor {
+    background-color: #1f1f3a !important; /* Even darker for code blocks */
+    border: 1px solid #4a4a7a !important;
+    border-radius: 5px !important;
+    padding: 10px !important;
+    color: #aaddff !important; /* Light blue/cyan for code */
+    font-family: 'Fira Code', monospace !important;
+    font-size: 0.9em !important;
+    line-height: 1.5 !important;
+}
+
+/* JSON Viewer colors */
+.swagger-ui .json-schema-viewer .string { color: #a3b8b0 !important; } /* green-ish */
+.swagger-ui .json-schema-viewer .number { color: #82aaff !important; } /* light-blue */
+.swagger-ui .json-schema-viewer .boolean { color: #ff9e64 !important; } /* orange */
+.swagger-ui .json-schema-viewer .null { color: #ff6464 !important; } /* red */
+.swagger-ui .json-schema-viewer .key { color: #c0c0c0 !important; } /* gray for keys */
+
+/* --- Input Fields and Selects --- */
+.swagger-ui input[type=text],
+.swagger-ui textarea,
+.swagger-ui select {
+    background-color: #2a2a4a !important;
+    color: #e0e0e0 !important;
+    border: 1px solid #5a5a8a !important;
+    border-radius: 3px !important;
+    padding: 5px 8px !important;
+}
+.swagger-ui input[type=text]::placeholder,
+.swagger-ui textarea::placeholder {
+    color: #888 !important;
+}
+
+/* --- Links --- */
+.swagger-ui a {
+    color: #88aaff !important; /* Consistent link color */
+    text-decoration: none !important;
+    transition: color 0.2s ease !important;
+}
+
+.swagger-ui a:hover {
+    color: #aaccff !important;
+    text-decoration: underline !important;
+}
+
+/* --- Tables --- */
+.swagger-ui table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin-top: 15px !important;
+    background-color: #2a2a4a !important;
+    border-radius: 5px !important;
+    overflow: hidden !important;
+}
+
+.swagger-ui table th,
+.swagger-ui table td {
+    border: 1px solid #4a4a7a !important;
+    padding: 10px !important;
+    text-align: left !important;
+    color: #e0e0e0 !important;
+}
+
+.swagger-ui table thead {
+    background-color: #3a3a5e !important;
+}
+
+/* --- Errors and Warnings --- */
+.swagger-ui .response-col_status {
+    font-weight: bold !important;
+}
+
+.swagger-ui .response-col_status.response-col_status_2xx { color: #28a745 !important; } /* Green for 2xx */
+.swagger-ui .response-col_status.response-col_status_3xx { color: #ffc107 !important; } /* Yellow for 3xx */
+.swagger-ui .response-col_status.response-col_status_4xx { color: #dc3545 !important; } /* Red for 4xx */
+.swagger-ui .response-col_status.response-col_status_5xx { color: #6f42c1 !important; } /* Purple for 5xx */
+
+
+/* --- Scrollbars (Webkit) --- */
+::-webkit-scrollbar {
+    width: 8px !important;
+    height: 8px !important;
+}
+::-webkit-scrollbar-track {
+    background: #2a2a4a !important;
+}
+::-webkit-scrollbar-thumb {
+    background: #5a5a8a !important;
+    border-radius: 10px !important;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #6a6ab0 !important;
+}
+
+/* --- FIX: Buttons like 'Example Value', 'Schema' --- */
+.swagger-ui .btn {
+    background-color: #3a3a5e !important;
+    color: #e0e0e0 !important;
+    border: 1px solid #5a5a8a !important;
+}
+.swagger-ui .btn:hover {
+    background-color: #4a4a7a !important;
+}
+
+/* --- FIX: Tabs like Example / Schema --- */
+.swagger-ui .opblock .tab {
+    background-color: #2a2a4a !important;
+    color: #e0e0e0 !important;
+    border-color: #4a4a7a !important;
+}
+
+.swagger-ui .opblock .tab.active {
+    background-color: #3a3a5e !important;
+    color: #ffffff !important;
+}
+
+/* --- FIX: 'Expand all' buttons (model expanders) --- */
+.swagger-ui .models-control,
+.swagger-ui .opblock-tag small {
+    background-color: #3a3a5e !important;
+    color: #e0e0e0 !important;
+    border: 1px solid #4a4a7a !important;
+}
+
+/* --- FIX: model expand arrow background --- */
+.swagger-ui .arrow {
+    filter: invert(80%) !important; /* Инвертирует цвет стрелки, чтобы она была светлой на темном фоне */
+}
+
+/* --- FIX: Response box preview (schema preview response) --- */
+.swagger-ui .responses-inner {
+    background-color: #1f1f3a !important;
+    color: #e0e0e0 !important;
+    border: 1px solid #4a4a7a !important;
+}
+
+/* --- FIX: deep nested model background --- */
+.swagger-ui .model-box .model {
+    background-color: #2b2b4e !important;
+    border: 1px solid #4a4a7a !important;
+}
+
+/* --- JSON Schema 2020-12 Accordion & Expand All Fix --- */
+/* Эти классы часто используются для группировки свойств в схемах */
+.json-schema-2020-12-accordion {
+    background-color: #3a3a5e !important;
+    color: #e0e0e0 !important;
+    border: 1px solid #4a4a7a !important;
+    border-radius: 5px !important;
+    padding: 8px 12px !important;
+    width: 100% !important;
+    text-align: left !important;
+}
+
+.json-schema-2020-12-accordion__icon svg path {
+    fill: #e0e0e0 !important;
+}
+
+.json-schema-2020-12__title {
+    color: #f0f0f0 !important;
+    font-weight: bold !important;
+}
+
+/* Expand all / Collapse all buttons (внутри схем) */
+.json-schema-2020-12-expand-deep-button {
+    background-color: #5555aa !important;
+    color: #ffffff !important;
+    border: 1px solid #4a4a7a !important;
+    border-radius: 3px !important;
+    padding: 6px 12px !important;
+    font-weight: bold !important;
+    transition: background-color 0.2s ease !important;
+}
+.json-schema-2020-12-expand-deep-button:hover {
+    background-color: #6666bb !important;
+}
+
+/* Model attribute labels (названия свойств в схемах) */
+.json-schema-2020-12__attribute {
+    color: #aaddff !important;
+}
+
+/* --- Global button fix for native buttons (e.g. schema expanders) --- */
+button {
+    background-color: #3a3a5e !important;
+    color: #e0e0e0 !important;
+    border: 1px solid #4a4a7a !important;
+    border-radius: 4px !important;
+    padding: 6px 12px !important;
+    font-weight: bold !important;
+    font-family: 'Open Sans', sans-serif !important;
+    transition: background-color 0.2s ease !important;
+}
+button:hover {
+    background-color: #4a4a7a !important;
+}
+
+/* Убиваем дефолтный стиль всех json-schema кнопок, потом накатываем свой */
+button[class^="json-schema-"] {
+    all: unset !important;
+    display: inline-block;
+    background-color: #3a3a5e !important;
+    color: #e0e0e0 !important;
+    border: 1px solid #4a4a7a !important;
+    border-radius: 4px !important;
+    padding: 6px 12px !important;
+    font-weight: bold !important;
+    font-family: 'Open Sans', sans-serif !important;
+    cursor: pointer;
+    transition: background-color 0.2s ease !important;
+}
+
+button[class^="json-schema-"]:hover {
+    background-color: #4a4a7a !important;
+}

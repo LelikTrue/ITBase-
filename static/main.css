@@ -1,0 +1,6 @@
+/* static/main.css */
+
+/* Переопределяем цвет текста для .text-muted внутри темного футера */
+body[data-bs-theme="dark"] .footer .text-muted {
+    color: rgba(255, 255, 255, 0.75) !important; /* Более светлый серый для темного фона */
+}
