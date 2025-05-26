@@ -5,7 +5,9 @@
 
 ## 📝 About the Project
 
-The **IT Asset Management System (ITBase)** is a robust solution designed for tracking and managing an organization's IT assets. It provides a centralized platform to monitor hardware, software, licenses, and other crucial IT resources, ensuring up-to-date information and streamlined control over your IT infrastructure.
+The **IT Asset Management System (ITBase)** is a robust solution designed for tracking and managing an organization's IT assets.
+It provides a centralized platform to monitor hardware, software, licenses, and other crucial IT resources, ensuring up-to-date
+information and streamlined control over your IT infrastructure.
 
 ## 🚀 Key Features
 
