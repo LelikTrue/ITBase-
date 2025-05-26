@@ -70,7 +70,7 @@ Before you begin, ensure you have the following installed:
 
 4.  **Access the application:**
     Once all services are up and running, you can access the application interfaces:
-    * **Web Interface (Dashboard):** `http://localhost/` (or `http://your_server_ip/` like `http://10.20.30.40/`)
+    * **Web Interface (Dashboard):** `http://localhost/` (or `http://your_server_ip/` like `http://192.168.0.10`)
     * **API Documentation (Swagger UI):** `http://localhost/docs` (or `http://your_server_ip/docs`)
     * **Alternative API Documentation (ReDoc):** `http://localhost/redoc` (or `http://your_server_ip/redoc`)
     * **Adminer (Database Management Tool):** `http://localhost:8080` (or `http://your_server_ip:8080`)
@@ -81,7 +81,7 @@ Before you begin, ensure you have the following installed:
 
 The project follows a modular structure to facilitate easy navigation and future development. Key components and their purposes are outlined below:
 
-````
+```
 
 ITBase/
 ├── app/                        \# Main application source code
@@ -113,7 +113,7 @@ ITBase/
 ├── requirements.txt            \# Python dependencies
 └── schema.sql                  \# Initial SQL database schema (for reference/initial setup)
 
-````
+```
 *(Self-correction: Based on our recent discussion, `app/` should contain `api/`, `db/`, `models/`, etc., and `schema.sql` is more of a reference for initial setup than a primary component if Alembic is used.)*
 
 ## 🔄 Database Migrations (Alembic)
