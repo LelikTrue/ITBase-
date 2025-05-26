@@ -1,4 +1,9 @@
-# Учет IT имущества
+# Project Status
+
+🚧 **This project is currently in the early stages of development.**  
+Contributions and feedback are welcome!
+
+# Учет IT имущества 
 
 Краткое описание проекта.
 
