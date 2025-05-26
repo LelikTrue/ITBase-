@@ -72,15 +72,8 @@ Before you begin, ensure you have the following installed:
     docker compose up --build -d
     ```
 
-4.  **Access the application:**
-    Once all services are up and running, you can access the application interfaces:
-    * **Web Interface (Dashboard):** `http://localhost/` (or `http://your_server_ip/` like `http://192.168.0.10`)
-    * **API Documentation (Swagger UI):** `http://localhost/docs` (or `http://your_server_ip/docs`)
-    * **Alternative API Documentation (ReDoc):** `http://localhost/redoc` (or `http://your_server_ip/redoc`)
-    * **Adminer (Database Management Tool):** `http://localhost:8080` (or `http://your_server_ip:8080`)
-
     **Note:** The FastAPI application itself runs internally on port `8000`. Access is via Nginx, which listens on port `80` (standard HTTP).
-Adminer continues to use its default port `8080`.
+    Adminer continues to use its default port `8080`.
 
 ## 📂 Project Structure
 
