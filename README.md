@@ -1,7 +1,8 @@
 ````markdown
 # IT Asset Management System (ITBase)
 
-🚧 **Project Status:** This project is currently in the early stages of development. Contributions and feedback are highly welcome!
+🚧 **Project Status:** This project is currently in the early stages of development.
+Contributions and feedback are highly welcome!
 
 ## 📝 About the Project
 
@@ -12,7 +13,8 @@ information and streamlined control over your IT infrastructure.
 ## 🚀 Key Features
 
 * **Centralized Asset Tracking:** Comprehensive overview of all IT assets.
-* **Detailed Asset Information:** Store and retrieve detailed data for each asset (type, status, model, department, location, employee, manufacturer).
+* **Detailed Asset Information:** Store and retrieve detailed data for each asset (type, status, model,
+* **department, location, employee, manufacturer).
 * **Dashboard Overview:** Intuitive dashboard for quick insights into asset distribution by type and status.
 * **Fast API Endpoints:** High-performance API for seamless data interaction.
 * **Containerized Deployment:** Easy and consistent deployment using Docker.
