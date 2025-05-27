@@ -1,5 +1,5 @@
 # requirements.txt
-fastapi==0.111.0 # Пример актуальной версии
+fastapi==0.115.12 # Пример актуальной версии
 uvicorn[standard]==0.29.0 # Включает все необходимые зависимости для Uvicorn
 sqlalchemy==2.0.30 # Пример актуальной версии
 psycopg2-binary==2.9.9 # Драйвер PostgreSQL
