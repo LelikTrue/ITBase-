@@ -12,3 +12,5 @@ dist/
 .idea/
 .vscode/
 alembic/env.py
+.gihabCom.txt
+.zzz
