@@ -95,8 +95,6 @@ ITBase/
 │   ├── services/               \# Business logic and service functions (e.g., CRUD operations)
 │   ├── schemas/                \# Pydantic schemas for data validation and serialization
 │   └── main.py                 \# Application entry point, FastAPI instance, main routes
-├── nginx/                      \# Nginx proxy server configuration
-│   └── nginx.conf              \# Nginx server block configuration
 ├── static/                     \# Static files (CSS, JavaScript, images)
 │   ├── css/
 │   └── js/
