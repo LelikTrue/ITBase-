@@ -1,0 +1,23 @@
+
+git status # Проверка статуса
+
+git add . # Добавление изменений
+
+git diff # Проверка изменений
+
+git log # Проверка истории
+
+git commit -m "редактирование README.md"
+
+git diff # Отправка изменений на удаленный репозиторий
+
+git stash # Сохранение изменений
+
+git pull origin main # Получение изменений с удаленного репозиторияs
+
+******************************
+git rm --cached .gihabCom.txt # Удаление файла из 
+
+git commit -m "Stop tracking .gihabCom.txt"
+
+git reset HEAD gihabCom.txt # После этого: Файлы останутся в рабочей директории  Git перестанет их отслеживать  Изменения будут отменены

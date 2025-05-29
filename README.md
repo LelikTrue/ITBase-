@@ -1,157 +1,175 @@
 ````markdown
-# IT Asset Management System (ITBase)
+# Система управления ИТ-активами (ITBase)
 
-🚧 **Project Status:** This project is currently in the early stages of development.
-Contributions and feedback are highly welcome!
+🚧 **Статус проекта:** Проект находится на ранней стадии разработки.
+Добро пожаловать к сотрудничеству и обратной связи!
 
-## 📝 About the Project
+## 📝 О проекте
 
-The **IT Asset Management System (ITBase)** is a robust solution designed for tracking and managing an organization's IT assets.
-It provides a centralized platform to monitor hardware, software, licenses, and other crucial IT resources, ensuring up-to-date
-information and streamlined control over your IT infrastructure.
+**Система управления ИТ-активами (ITBase)** - это надежное решение для отслеживания и управления ИТ-активами организации.
+Она предоставляет централизованную платформу для мониторинга оборудования, программного обеспечения, лицензий и других важных ИТ-ресурсов, обеспечивая актуальную информацию и эффективное управление ИТ-инфраструктурой.
 
-## 🚀 Key Features
+## 🚀 Основные функции
 
-* **Centralized Asset Tracking:** Comprehensive overview of all IT assets.
-* **Detailed Asset Information:** Store and retrieve detailed data for each asset (type, status, model,
-* **department, location, employee, manufacturer).
-* **Dashboard Overview:** Intuitive dashboard for quick insights into asset distribution by type and status.
-* **Fast API Endpoints:** High-performance API for seamless data interaction.
-* **Containerized Deployment:** Easy and consistent deployment using Docker.
+* **Централизованное отслеживание активов:** Полный обзор всех ИТ-активов.
+* **Подробная информация об активах:** Хранение и получение детальной информации об каждом активе (тип, статус, модель,
+* **отдел, местоположение, сотрудник, производитель).
+* **Обзор панели управления:** Интуитивно понятная панель управления для быстрого анализа распределения активов по типам и статусам.
+* **API-интерфейсы:** Высокопроизводительные API для взаимодействия с данными.
+* **Контейнеризация:** Легкое и консистентное развертывание с помощью Docker.
 
-## ⚙️ Technology Stack
+## ⚙️ Технологический стек
 
-The project is built upon a robust and modern technology stack:
+Проект построен на основе надежного и современного технологического стека:
 
-* **FastAPI:** High-performance Python web framework for APIs and automatic documentation.
-* **PostgreSQL:** Powerful and reliable relational database for IT asset data.
-* **Nginx:** Efficient reverse proxy and web server for serving the application and managing traffic.
-* **Docker:** Containerization platform for simplified deployment and consistent environments.
-* **Alembic:** Database migration tool for seamless schema evolution.
-* **Jinja2:** Flexible templating engine for dynamic web pages.
+* **FastAPI:** Высокопроизводительный фреймворк Python для API с автоматической документацией.
+* **PostgreSQL:** Мощная и надежная реляционная база данных для данных об ИТ-активах.
+* **Nginx:** Эффективный прокси-сервер и веб-сервер для обслуживания приложения и управления трафиком.
+* **Docker:** Платформа для контейнеризации для упрощенного развертывания и консистентных сред.
+* **Alembic:** Инструмент для миграции базы данных для плавной эволюции схемы.
+* **Jinja2:** Гибкий шаблонизатор для динамических веб-страниц.
 
-## 🏁 Getting Started
+## 🏁 Начало работы
 
-### Prerequisites
+### Предварительные требования
 
-Before you begin, ensure you have the following installed:
+Прежде чем начать, убедитесь, что у вас установлены следующие компоненты:
 
-* [Docker](https://docs.docker.com/get-docker/) (version 20.10+ recommended)
-* [Docker Compose](https://docs.docker.com/compose/install/) (version 2.0+ recommended)
-* [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) (for cloning the repository)
+* Docker (рекомендуется версия 20.10+)
+* Docker Compose (рекомендуется версия 2.0+)
+* Git (для клонирования репозитория)
 
-### Installation and Launch
+### Установка и запуск
 
-1.  **Clone the repository:**
+1.  **Клонирование репозитория:**
     ```bash
-    git clone [https://github.com/LelikTrue/ITBase-.git](https://github.com/LelikTrue/ITBase-.git)
-    cd ITBase # Ensure you navigate into the correct project directory, usually the repository name
+    git clone https://github.com/LelikTrue/ITBase-.git
+    cd ITBase # Перейдите в директорию проекта
     ```
 
-2.  **Configure environment variables:**
-    Create a `.env` file by copying the example and then edit it with your specific settings:
+2.  **Настройка переменных окружения:**
+    Создайте файл `.env`, скопировав пример и отредактируйте его с учетом ваших настроек:
     ```bash
     cp .env.example .env
     ```
-    Open the `.env` file and set the necessary configurations:
+    Откройте файл `.env` и настройте необходимые параметры:
     ```env
-    # Database Settings
+    # Настройки базы данных
     DB_NAME=it_asset_db
     DB_USER=it_user_db
     DB_PASSWORD=secure_password
-    DB_HOST=db # 'db' is the service name in docker-compose for the PostgreSQL container
+    DB_HOST=db # 'db' - это имя сервиса в docker-compose для контейнера PostgreSQL
 
-    # Application Settings
-    DEBUG=True # Set to False for production environments
-    SECRET_KEY=your-strong-random-secret-key-here # IMPORTANT: Change this to a strong, unique value!
+    # Настройки приложения
+    DEBUG=True # Установите False для продакшн-среды
+    SECRET_KEY=your-strong-random-secret-key-here # ВАЖНО: измените на сильное уникальное значение!
     ```
 
-3.  **Launch the application using Docker Compose:**
-    This command builds the necessary Docker images, creates the containers, and starts all services in detached mode (`-d`).
+3.  **Запуск приложения с помощью Docker Compose:**
+    Эта команда создает необходимые Docker-образы, создает контейнеры и запускает все сервисы в фоновом режиме (`-d`).
     ```bash
-    docker compose up --build -d
+    docker compose build
+
+    # Запустите приложение
+    docker compose up -d
     ```
 
     **Note:** The FastAPI application itself runs internally on port `8000`. Access is via Nginx, which listens on port `80` (standard HTTP).
     Adminer continues to use its default port `8080`.
 
-## 📂 Project Structure
+## 📂 Структура проекта
 
-The project follows a modular structure to facilitate easy navigation and future development.
-Key components and their purposes are outlined below:
+Проект следует модульной структуре для удобства навигации и дальнейшей разработки.
+Основные компоненты и их назначение приведены ниже:
 
 ```
 
 ITBase/
-├── app/                        \# Main application source code
-│   ├── api/                    \# API endpoints (e.g., assets)
+├── app/                        \# Основной код приложения
+│   ├── api/                    \# API-конечные точки (например, активы)
 │   │   └── endpoints/
-│   │       └── assets.py       \# API routes for asset management
-│   ├── db/                     \# Database-related configurations
-│   │   ├── database.py         \# SQLAlchemy engine and session setup
-│   │   └── migrations/         \# Alembic migration scripts
-│   ├── models/                 \# SQLAlchemy ORM models (database table definitions)
-│   │   └── **init**.py         \# Imports all models for Alembic discovery
-│   ├── services/               \# Business logic and service functions (e.g., CRUD operations)
-│   ├── schemas/                \# Pydantic schemas for data validation and serialization
-│   └── main.py                 \# Application entry point, FastAPI instance, main routes
-├── static/                     \# Static files (CSS, JavaScript, images)
-│   ├── css/
-│   └── js/
-├── templates/                  \# Jinja2 HTML templates
-│   ├── base.html               \# Base layout template
-│   └── dashboard.html          \# Dashboard specific template
-├── alembic/                    \# Alembic environment and scripts
-│   └── versions/               \# Generated migration scripts
-├── .env.example                \# Example environment variables file
-├── .gitignore                  \# Git ignore rules
-├── docker-compose.yml          \# Docker Compose configuration for multi-container setup
-├── Dockerfile                  \# Dockerfile for the FastAPI application (backend service)
-├── requirements.txt            \# Python dependencies
-└── schema.sql                  \# Initial SQL database schema (for reference/initial setup)
+│   │       └── assets.py       \# Маршруты API для управления активами
+│   ├── db/                     \# Конфигурации базы данных
+│   │   └── database.py         \# Настройка SQLAlchemy и сессии
+│   ├── models/                 \# Модели SQLAlchemy ORM (определения таблиц базы данных)
+│   │   ├── action_log.py       \# Логирование действий
+│   │   ├── asset.py            \# Основная модель активов
+│   │   ├── asset_type.py       \# Типы активов
+│   │   ├── attachment.py       \# Вложения/файлы
+│   │   ├── base.py             \# Базовая модель
+│   │   ├── department.py       \# Отделы
+│   │   ├── device.py           \# Устройства
+│   │   ├── device_model.py     \# Модели устройств
+│   │   ├── device_status.py    \# Статусы устройств
+│   │   ├── employee.py         \# Сотрудники
+│   │   ├── location.py         \# Местоположения
+│   │   ├── manufacturer.py     \# Производители
+│   │   └── **init**.py         \# Импорт всех моделей для Alembic
+│   ├── services/               \# Бизнес-логика и сервисные функции
+│   ├── schemas/                \# Схемы Pydantic для валидации и сериализации данных
+│   └── main.py                 \# Точка входа приложения, экземпляр FastAPI, основные маршруты
+├── static/                     \# Статические файлы (CSS, JavaScript, изображения)
+│   ├── dark_theme.css          \# Темная тема
+│   └── main.css                \# Основные стили
+├── templates/                  \# Шаблоны Jinja2 HTML
+│   ├── add_asset.html          \# Форма добавления активов
+│   ├── base.html               \# Базовый шаблон
+│   └── dashboard.html          \# Шаблон панели управления
+├── alembic/                    \# Окружение и скрипты Alembic
+│   └── versions/               \# Сгенерированные скрипты миграции
+├── .env.example                \# Пример файла переменных окружения
+├── .gitignore                  \# Правила игнорирования Git
+├── .vscode/                    \# Конфигурация VS Code
+├── alembic.ini                 \# Конфигурация Alembic
+├── docker-compose.yml          \# Конфигурация Docker Compose
+├── Dockerfile                  \# Dockerfile для приложения FastAPI
+├── gihabCom.txt                \# Конфигурация GitHub
+├── requirements.txt            \# Зависимости Python
+├── schema.sql                  \# Начальная схема базы данных SQL
+└── zzz                         \# Дополнительная конфигурация
 
 ```
 *(Self-correction: Based on our recent discussion, `app/` should contain `api/`, `db/`, `models/`, etc., and `schema.sql`
 is more of a reference for initial setup than a primary component if Alembic is used.)*
 
-## 🔄 Database Migrations (Alembic)
+## 🔄 Миграции базы данных (Alembic)
 
-This project uses Alembic for database schema management. Here are the essential commands:
+Проект использует Alembic для управления схемой базы данных. Вот основные команды:
 
-1.  **Apply all pending migrations:**
+1.  **Применение всех ожидающих миграций:**
     ```bash
     docker compose exec backend alembic upgrade head
     ```
 
-2.  **Create a new migration** (after making changes to your SQLAlchemy models):
+2.  **Создание новой миграции** (после внесения изменений в модели SQLAlchemy):
     ```bash
-    docker compose exec backend alembic revision --autogenerate -m "Describe your changes here"
+    docker compose exec backend alembic revision --autogenerate -m "Описание ваших изменений"
     ```
 
-3.  **Revert the last migration:**
+3.  **Откат последней миграции:**
     ```bash
     docker compose exec backend alembic downgrade -1
     ```
 
-## 🛠 Available API Endpoints
+## 🛠 Доступные API-конечные точки
 
-* `GET /` - Redirects to the Dashboard.
-* `GET /dashboard` - Main web interface for IT asset overview.
-* `GET /api/v1/assets` - Retrieve a list of all assets (JSON API endpoint).
-* `POST /api/v1/assets` - Add a new asset.
-* `GET /assets/add` - Web form to add a new asset.
-* `GET /docs` - Interactive API documentation (Swagger UI).
-* `GET /redoc` - Alternative API documentation (ReDoc).
+* `GET /` - Перенаправляет на панель управления.
+* `GET /dashboard` - Основной веб-интерфейс для обзора ИТ-активов.
+* `GET /api/v1/assets` - Получение списка всех активов (конечная точка JSON API).
+* `POST /api/v1/assets` - Добавление нового актива.
+* `GET /assets/add` - Веб-форма для добавления нового актива.
+* `GET /docs` - Интерактивная документация API (Swagger UI).
+* `GET /redoc` - Альтернативная документация API (ReDoc).
 
 *(Self-correction: Added more endpoints based on our discussion, like POST /api/v1/assets and GET /assets/add, for clarity.)*
 
-## 🔒 Authentication (if applicable)
+## 🔒 Аутентификация (если применимо)
 
-*This section should be filled in once authentication is implemented. For now, it's a placeholder.*
+*Этот раздел будет заполнен после реализации аутентификации. Пока это заглушка.*
 
-Currently, the project focuses on core asset management functionality. Authentication mechanisms will be integrated in future development phases.
+В настоящее время проект сосредоточен на основной функциональности управления активами. Механизмы аутентификации будут интегрированы в будущих фазах разработки.
 
-If you are developing and need to test API endpoints that might eventually be protected, here's a placeholder for how it might look:
+Если вы разрабатываете и хотите протестировать конечные точки API, которые в будущем могут быть защищены, вот пример того, как это может выглядеть:
 
 ```bash
 curl -X 'GET' \
@@ -159,35 +177,35 @@ curl -X 'GET' \
   -H 'Authorization: Bearer your-jwt-token'
 ````
 
-## 🛑 Stopping the Application
+## 🛑 Остановка приложения
 
-To stop all running Docker containers for the project:
+Для остановки всех запущенных контейнеров Docker проекта:
 
 ```bash
 docker compose down
 ```
 
-To stop all containers and remove the volumes (e.g., to clear all database data):
+Для остановки всех контейнеров и удаления томов (например, для очистки данных базы данных):
 
 ```bash
 docker compose down -v
 ```
 
-## 🧪 Testing
+## 🧪 Тестирование
 
-To run the project's tests:
+Для запуска тестов проекта:
 
 ```bash
 docker compose exec backend pytest
 ```
 
-## 🤝 Contributing
+## 🤝 Вклад в проект
 
-We welcome contributions\! If you're interested in helping improve this project, please feel free to submit issues, feature requests, or pull requests.
+Мы приветствуем вклад\! Если вы хотите помочь в улучшении этого проекта, пожалуйста, не стесняйтесь отправлять проблемы, запросы на добавление функций или pull-запросы.
 
-## 📄 License
+## 📄 Лицензия
 
-This project is open-source and available under the [MIT License](https://www.google.com/search?q=LICENSE). *(Add a https://www.google.com/search?q=LICENSE file to your repository if you don't have one)*
+Этот проект является открытым исходным кодом и доступен под [лицензией MIT](https://www.google.com/search?q=LICENSE). *(Добавьте файл [LICENSE](https://www.google.com/search?q=LICENSE) в ваш репозиторий, если его нет)*
 
 
 
