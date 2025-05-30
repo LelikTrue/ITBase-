@@ -81,6 +81,48 @@
 Проект следует модульной структуре для удобства навигации и дальнейшей разработки. Основные компоненты и их назначение приведены ниже:
 
 **********************************
+```
+ITBase/
+├── app/
+│   ├── api/
+│   │   └── endpoints/
+│   │       └── assets.py
+│   ├── db/
+│   │   └── database.py
+│   ├── models/
+│   │   ├── action_log.py
+│   │   ├── asset.py
+│   │   ├── asset_type.py
+│   │   ├── attachment.py
+│   │   ├── base.py
+│   │   ├── department.py
+│   │   ├── device.py
+│   │   ├── device_model.py
+│   │   ├── device_status.py
+│   │   ├── employee.py
+│   │   ├── location.py
+│   │   ├── manufacturer.py
+│   │   └── __init__.py
+│   ├── services/
+│   ├── schemas/
+│   └── main.py
+├── static/
+│   ├── dark_theme.css
+│   └── main.css
+├── templates/
+│   ├── add_asset.html
+│   ├── base.html
+│   └── dashboard.html
+├── alembic/
+│   └── versions/
+├── .env.example
+├── .gitignore
+├── alembic.ini
+├── docker-compose.yml
+├── Dockerfile
+├── requirements.txt
+└── schema.sql
+```
 *********************************
 
 **Часть 4: Миграции базы данных, API-конечные точки, Аутентификация**
