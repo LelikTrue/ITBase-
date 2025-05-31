@@ -1,14 +1,26 @@
-# requirements.txt
-fastapi==0.115.12 # Пример актуальной версии
-uvicorn[standard]==0.29.0 # Включает все необходимые зависимости для Uvicorn
-sqlalchemy==2.0.30 # Пример актуальной версии
-psycopg2-binary==2.9.9 # Драйвер PostgreSQL
-python-dotenv==1.0.1 # Для чтения .env файлов
-alembic==1.13.1 # Для миграций базы данных
-Jinja2==3.1.4 # Если используете шаблоны
-itsdangerous==2.2.0  # Требуется для работы с сессиями в Starlette
-python-multipart==0.0.9  # Для работы с формами
-email-validator==2.1.0.post1  # Для валидации email
+# Основные зависимости
+fastapi==0.115.12
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+Jinja2==3.1.4
+itsdangerous==2.2.0
+python-dotenv==1.0.1
+email-validator==2.1.0.post1
 
-# pydantic==2.7.1  # Если используете Pydantic (обычно идет с FastAPI)
-# pydantic-settings==2.2.1  # Если используете для настроек
+# База данных
+sqlalchemy==2.0.30
+alembic==1.13.1
+psycopg2-binary==2.9.9
+
+# Pydantic
+pydantic==2.7.1
+pydantic-settings==2.2.1
+
+# Дополнительные зависимости
+passlib[bcrypt]==1.7.4  # Для хеширования паролей
+python-jose[cryptography]==3.3.0  # Для JWT токенов
+python-multipart==0.0.9  # Для загрузки файлов
+
+# Утилиты
+python-dateutil==2.9.0  # Для работы с датами
+pytz==2024.1  # Часовые пояса
