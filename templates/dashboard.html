@@ -4,45 +4,78 @@
 
 {% block content %}
     <h1 class="mb-4">{{ title }}</h1>
-    <p class="lead">Добро пожаловать в веб-интерфейс управления IT-активами!</p>
+    <p class="lead">Система управления ИТ-активами (ITBase)</p>
+    
+    {# Отображаем сообщения, если они есть #}
+    {% if message %}
+    <div class="alert alert-{{ message.type }} alert-dismissible fade show" role="alert">
+        {{ message.text }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
 
     <div class="card mt-5">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h2 class="mb-0">Список активов</h2>
-            <a href="{{ url_for('add_asset_form') }}" class="btn btn-primary btn-sm">Добавить актив</a>        </div>
+            <a href="{{ request.url_for('add_asset_form') }}" class="btn btn-primary btn-sm">Добавить актив</a>
+        </div>
         <div class="card-body">
-            {# Проверяем, есть ли активы в списке "assets" #}
-            {% if assets %}
+            {# Проверяем, есть ли активы в списке "devices" #}
+            {% if devices %}
             <div class="table-responsive">
-                <table class="table table-dark table-striped table-hover">
-                    <thead>
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
                         <tr>
                             <th scope="col">ID</th>
                             <th scope="col">Инвентарный №</th>
                             <th scope="col">Модель</th>
+                            <th scope="col">Производитель</th>
                             <th scope="col">Тип</th>
                             <th scope="col">Статус</th>
-                            <th scope="col">Местоположение</th>
+                            <th scope="col">Отдел</th>
                             <th scope="col">Ответственный</th>
-                            <th scope="col">Действия</th>
+                            <th scope="col" class="text-end">Действия</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {# Итерируемся по "assets" #}
-                        {% for asset in assets %}
+                        {# Итерируемся по устройствам #}
+                        {% for device in devices %}
                         <tr>
-                            <th scope="row">{{ asset.id }}</th>
-                            <td>{{ asset.inventory_number }}</td>
-                            <td>{{ asset.device_model.name if asset.device_model }}</td>
-                            <td>{{ asset.asset_type.name if asset.asset_type }}</td>
-                            <td>{{ asset.status.name if asset.status }}</td>
-                            <td>{{ asset.location.name if asset.location }}</td>
-                            <td>{{ asset.employee.first_name if asset.employee }} {{ asset.employee.last_name if asset.employee }}</td>
+                            <th scope="row">{{ device.id }}</th>
+                            <td>{{ device.inventory_number or '-' }}</td>
+                            <td>{{ device.device_model.name if device.device_model else '-' }}</td>
+                            <td>{{ device.device_model.manufacturer.name if device.device_model and device.device_model.manufacturer else '-' }}</td>
+                            <td>{{ device.asset_type.name if device.asset_type else '-' }}</td>
                             <td>
-                                <a href="{{ url_for('edit_asset', asset_id=asset.id) }}" class="btn btn-sm btn-info me-2">Редактировать</a>
-                                <form action="{{ url_for('delete_asset', asset_id=asset.id) }}" method="POST" style="display: inline;">
-                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Вы уверены, что хотите удалить этот актив?')">Удалить</button>
-                                </form>
+                                <span class="badge bg-{{ 'success' if device.status and device.status.name.lower() == 'в эксплуатации' else 'warning' }}">
+                                    {{ device.status.name if device.status else 'Не указан' }}
+                                </span>
+                            </td>
+                            <td>{{ device.department.name if device.department else '-' }}</td>
+                            <td>
+                                {% if device.employee %}
+                                    {{ device.employee.first_name }} {{ device.employee.last_name }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group" role="group">
+                                    <a href="{{ request.url_for('edit_asset', device_id=device.id) }}" 
+                                       class="btn btn-sm btn-outline-primary" 
+                                       title="Редактировать">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form action="{{ request.url_for('delete_asset', device_id=device.id) }}" 
+                                          method="POST" 
+                                          class="d-inline"
+                                          onsubmit="return confirm('Вы уверены, что хотите удалить этот актив?')">
+                                        <input type="hidden" name="_method" value="DELETE">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Удалить">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -55,37 +88,58 @@
         </div>
     </div>
 
-    {# Добавьте секции для сводной статистики #}
+    {# Секции для сводной статистики #}
     <div class="row mt-4">
         <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    Количество устройств по типам
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <i class="bi bi-tags me-2"></i>Количество устройств по типам
                 </div>
-                <ul class="list-group list-group-flush">
-                    {% for type_name, count in device_types_count %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        {{ type_name }}
-                        <span class="badge bg-primary rounded-pill">{{ count }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% if device_types_count %}
+                            {% for type_name, count in device_types_count %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ type_name }}
+                                <span class="badge bg-primary rounded-pill">{{ count }}</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="p-3 text-muted text-center">Нет данных о типах устройств</div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
         <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    Количество устройств по статусам
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <i class="bi bi-info-circle me-2"></i>Количество устройств по статусам
                 </div>
-                <ul class="list-group list-group-flush">
-                    {% for status_name, count in device_statuses_count %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        {{ status_name }}
-                        <span class="badge bg-primary rounded-pill">{{ count }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% if device_statuses_count %}
+                            {% for status_name, count in device_statuses_count %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ status_name }}
+                                <span class="badge bg-{{ 'success' if status_name.lower() == 'в эксплуатации' else 'primary' }} rounded-pill">
+                                    {{ count }}
+                                </span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="p-3 text-muted text-center">Нет данных о статусах устройств</div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
+    </div>
+    
+    {# Кнопка добавления нового актива #}
+    <div class="mt-4 text-end">
+        <a href="{{ request.url_for('add_asset_form') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Добавить актив
+        </a>
     </div>
 {% endblock %}

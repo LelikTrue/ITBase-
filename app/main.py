@@ -2,8 +2,12 @@
 from fastapi import FastAPI, Depends, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from contextlib import asynccontextmanager
+from starlette.middleware.sessions import SessionMiddleware
+import os
+import secrets
 
 from app.db.database import engine, Base, get_db
 import app.models # Важно: Импортируем модуль app.models, чтобы Base.metadata его увидел для Alembic
@@ -23,6 +27,23 @@ async def lifespan(app: FastAPI):
     print("Application shutdown complete.")
 
 app = FastAPI(lifespan=lifespan, title="IT Asset Management API")
+
+# Настройка CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Настройка сессий
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.getenv("SECRET_KEY", secrets.token_hex(32)),
+    session_cookie="session",
+    max_age=3600  # 1 час
+)
 
 # Включаем роутер для активов/устройств
 # Роуты из assets.py будут доступны по их прямому пути (например, /dashboard, /add)

@@ -6,5 +6,9 @@ psycopg2-binary==2.9.9 # Драйвер PostgreSQL
 python-dotenv==1.0.1 # Для чтения .env файлов
 alembic==1.13.1 # Для миграций базы данных
 Jinja2==3.1.4 # Если используете шаблоны
-# pydantic==2.7.1 # Если используете Pydantic (обычно идет с FastAPI)
-# pydantic-settings==2.2.1 # Если используете для настроек
+itsdangerous==2.2.0  # Требуется для работы с сессиями в Starlette
+python-multipart==0.0.9  # Для работы с формами
+email-validator==2.1.0.post1  # Для валидации email
+
+# pydantic==2.7.1  # Если используете Pydantic (обычно идет с FastAPI)
+# pydantic-settings==2.2.1  # Если используете для настроек
