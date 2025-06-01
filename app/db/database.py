@@ -8,24 +8,31 @@ from dotenv import load_dotenv # Убедитесь, что этот импор�
 # Загружаем переменные окружения, если скрипт запускается напрямую (вне Docker Compose)
 load_dotenv()
 
-# Получаем отдельные компоненты URL из переменных окружения
-# Если DB_HOST не установлен, используем 'db' по умолчанию (имя сервиса БД в Docker Compose)
+# Получаем настройки подключения из переменных окружения
 DB_HOST = os.getenv("DB_HOST", "db")
 DB_NAME = os.getenv("DB_NAME")
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 
-# Формируем DATABASE_URL из полученных переменных
-# Оборонительная проверка, чтобы приложение падало с понятной ошибкой, если переменные не установлены
+# Проверяем наличие всех необходимых переменных
 if not all([DB_HOST, DB_NAME, DB_USER, DB_PASSWORD]):
     raise ValueError(
         "One or more database environment variables (DB_HOST, DB_NAME, DB_USER, DB_PASSWORD) are not set!"
         " Please check your .env file and docker-compose.yml"
     )
 
+# Формируем строку подключения
 DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:5432/{DB_NAME}"
 
-engine = create_engine(DATABASE_URL)
+# Выводим строку подключения для отладки (не забудьте удалить в продакшене)
+print(f"DATABASE_URL: {DATABASE_URL}")
+
+# Создаем движок с настройкой кодировки
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"options": "-c client_encoding=utf8"}
+)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 

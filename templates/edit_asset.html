@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ "Редактировать" if is_edit|default(False) else "Добавить" }} актив{% endblock %}
+{% block title %}Редактировать актив{% endblock %}
 
 {% block head_extra %}
 {{ super() }}
@@ -38,14 +38,12 @@
     {% endif %}
     <div class="card">
         <div class="card-header">
-            <h2 class="mb-0">{{ "Редактировать" if is_edit|default(False) else "Добавить" }} Актив</h2>
+            <h2 class="mb-0">Редактировать актив #{{ device.id }}</h2>
         </div>
         <div class="card-body">
-            <form id="assetForm" method="post" action="{{ url_for('update_asset', device_id=device.id) if is_edit|default(False) else url_for('create_asset') }}">
-                {% if is_edit %}
+            <form id="assetForm" method="post" action="{{ url_for('update_asset', device_id=device.id) }}">
                 <input type="hidden" name="_method" value="PUT">
                 <input type="hidden" name="id" value="{{ device.id }}">
-                {% endif %}
 
                 <ul class="nav nav-tabs mb-4" id="assetTabs" role="tablist">
                     <li class="nav-item" role="presentation">
@@ -93,11 +91,11 @@
                             <div class="col-md-6">
                                 <!-- Основные обязательные поля (продолжение) -->
                                 <div class="mb-3">
-                                    <label for="department_id" class="form-label">Отдел <span class="text-danger">*</span></label>
-                                    <select class="form-select" id="department_id" name="department_id">
-                                        <option value="">Не указан</option>
-                                        {% for dept in departments %}
-                                        <option value="{{ dept.id }}" {% if device.department_id == dept.id|string %}selected{% endif %}>{{ dept.name }}</option>
+                                    <label for="asset_type_id" class="form-label">Тип актива <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="asset_type_id" name="asset_type_id" required>
+                                        <option value="">Выберите тип актива</option>
+                                        {% for type in asset_types %}
+                                        <option value="{{ type.id }}" {% if device.asset_type_id == type.id %}selected{% endif %}>{{ type.name }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -117,11 +115,12 @@
                                     <select class="form-select" id="status_id" name="status_id" required>
                                         <option value="">Выберите статус</option>
                                         {% for status in device_statuses %}
-                                        <option value="{{ status.id }}" {% if device.status_id == status.id|string %}selected{% endif %}>{{ status.name }}</option>
+                                        <option value="{{ status.id }}" {% if device.status_id == status.id %}selected{% endif %}>{{ status.name }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
 
+                                {% if manufacturers %}
                                 <div class="mb-3">
                                     <label for="manufacturer_id" class="form-label">Производитель</label>
                                     <select class="form-select" id="manufacturer_id" name="manufacturer_id">
@@ -131,6 +130,7 @@
                                         {% endfor %}
                                     </select>
                                 </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -140,10 +140,10 @@
                         <!-- Сетевая информация (опционально) -->
                         <div class="mb-4">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="toggleNetwork">
-                                <label class="form-check-label" for="toggleNetwork">Добавить сетевую информацию</label>
+                                <input class="form-check-input" type="checkbox" id="toggleNetwork" {% if device.mac_address or device.ip_address %}checked{% endif %}>
+                                <label class="form-check-label" for="toggleNetwork">Сетевая информация</label>
                             </div>
-                            <div id="networkSection" class="optional-section mt-2">
+                            <div id="networkSection" class="optional-section mt-2" {% if device.mac_address or device.ip_address %}style="display: block;"{% endif %}>
                                 <h5>Сетевая информация</h5>
                                 <div class="row">
                                     <div class="col-md-6">
@@ -167,10 +167,10 @@
                         <!-- Местоположение (опционально) -->
                         <div class="mb-4">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="toggleLocation">
-                                <label class="form-check-label" for="toggleLocation">Указать местоположение</label>
+                                <input class="form-check-input" type="checkbox" id="toggleLocation" {% if device.department_id or device.location_id or device.employee_id %}checked{% endif %}>
+                                <label class="form-check-label" for="toggleLocation">Местоположение</label>
                             </div>
-                            <div id="locationSection" class="optional-section mt-2">
+                            <div id="locationSection" class="optional-section mt-2" {% if device.department_id or device.location_id or device.employee_id %}style="display: block;"{% endif %}>
                                 <h5>Местоположение</h5>
                                 <div class="row">
                                     <div class="col-md-4">
@@ -203,13 +203,13 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="mb-3">
-                                            <label for="employee_id" class="form-label">Ответственный</label>
+                                            <label for="employee_id" class="form-label">Сотрудник</label>
                                             <select class="form-select" id="employee_id" name="employee_id">
                                                 <option value="">Выберите сотрудника</option>
                                                 {% for employee in employees %}
                                                 <option value="{{ employee.id }}" 
                                                     {{ 'selected' if device.employee_id == employee.id else '' }}>
-                                                    {{ employee.last_name }} {{ employee.first_name }} {{ employee.patronymic or '' }}
+                                                    {{ employee.last_name }} {{ employee.first_name }}
                                                 </option>
                                                 {% endfor %}
                                             </select>
@@ -219,23 +219,10 @@
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="supplier_id" class="form-label">Поставщик</label>
-                                    <select class="form-select mb-3" id="employee_id" name="employee_id">
-                                        <option value="">Не назначен</option>
-                                        {% for emp in employees %}
-                                        <option value="{{ emp.id }}" {% if device.employee_id == emp.id|string %}selected{% endif %}>{{ emp.last_name }} {{ emp.first_name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label for="notes" class="form-label">Примечания</label>
-                                    <textarea class="form-control" id="notes" name="notes" rows="3">{{ device.notes if device.notes is not none else '' }}</textarea>
-                                </div>
-                            </div>
+                        <!-- Примечания -->
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Примечания</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3">{{ device.notes if device.notes is not none else '' }}</textarea>
                         </div>
                     </div>
 
@@ -244,67 +231,71 @@
                         <!-- Финансовая информация (опционально) -->
                         <div class="mb-4">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="toggleFinancial">
-                                <label class="form-check-label" for="toggleFinancial">Добавить финансовую информацию</label>
+                                <input class="form-check-input" type="checkbox" id="toggleFinancial" 
+                                       {% if device.source or device.purchase_date or device.warranty_end_date or device.price or device.expected_lifespan_years or device.current_wear_percentage %}checked{% endif %}>
+                                <label class="form-check-label" for="toggleFinancial">Финансовая информация</label>
                             </div>
-                            <div id="financialSection" class="optional-section mt-2">
+                            <div id="financialSection" class="optional-section mt-2" 
+                                 {% if device.source or device.purchase_date or device.warranty_end_date or device.price or device.expected_lifespan_years or device.current_wear_percentage %}style="display: block;"{% endif %}>
                                 <h5>Финансовая информация</h5>
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="source" class="form-label">Источник</label>
-                                            <input type="text" class="form-control" id="source" name="source" 
-                                                   value="{{ device.source if device.source is not none else '' }}">
+                                            <label class="form-label">Источник</label>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="source" id="source_purchase" 
+                                                       value="purchase" {% if device.source == 'purchase' or not device.source %}checked{% endif %}>
+                                                <label class="form-check-label" for="source_purchase">
+                                                    Покупка
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="source" id="source_lease" 
+                                                       value="lease" {% if device.source == 'lease' %}checked{% endif %}>
+                                                <label class="form-check-label" for="source_lease">
+                                                    Аренда
+                                                </label>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="col-md-6">
+
                                         <div class="mb-3">
-                                            <label for="price" class="form-label">Стоимость</label>
-                                            <input type="number" step="0.01" class="form-control" id="price" name="price" 
-                                                   value="{{ '%.2f'|format(device.price) if device.price is not none else '' }}">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="purchase_date" class="form-label">Дата покупки</label>
+                                            <label for="purchase_date" class="form-label">Дата покупки/аренды</label>
                                             <input type="date" class="form-control" id="purchase_date" name="purchase_date" 
-                                                   value="{{ device.purchase_date if device.purchase_date else '' }}">
+                                                   value="{{ device.purchase_date.strftime('%Y-%m-%d') if device.purchase_date else '' }}">
                                         </div>
-                                    </div>
-                                    <div class="col-md-6">
+
                                         <div class="mb-3">
                                             <label for="warranty_end_date" class="form-label">Дата окончания гарантии</label>
-                                            <input type="date" class="form-control" id="warranty_end_date" name="warranty_end_date" 
-                                                   value="{{ device.warranty_end_date if device.warranty_end_date else '' }}">
+                                            <input type="date" class="form-control" id="warranty_end_date" name="warranty_end_date"
+                                                   value="{{ device.warranty_end_date.strftime('%Y-%m-%d') if device.warranty_end_date else '' }}">
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="expected_lifespan_years" class="form-label">Срок службы (лет)</label>
-                                            <input type="number" class="form-control" id="expected_lifespan_years" name="expected_lifespan_years" 
+                                            <label for="price" class="form-label">Цена</label>
+                                            <div class="input-group">
+                                                <input type="number" step="0.01" class="form-control" id="price" name="price"
+                                                       value="{{ '%.2f'|format(device.price) if device.price is not none else '' }}">
+                                                <span class="input-group-text">₽</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="expected_lifespan_years" class="form-label">Ожидаемый срок службы (лет)</label>
+                                            <input type="number" class="form-control" id="expected_lifespan_years" name="expected_lifespan_years"
                                                    value="{{ device.expected_lifespan_years if device.expected_lifespan_years is not none else '' }}">
                                         </div>
-                                    </div>
-                                    <div class="col-md-6">
+
                                         <div class="mb-3">
-                                            <label for="current_wear_percentage" class="form-label">Износ (%)</label>
-                                            <input type="number" min="0" max="100" class="form-control" id="current_wear_percentage" name="current_wear_percentage" 
-                                                   value="{{ device.current_wear_percentage if device.current_wear_percentage is not none else '' }}">
+                                            <label for="current_wear_percentage" class="form-label">Процент износа</label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" id="current_wear_percentage" name="current_wear_percentage"
+                                                       min="0" max="100" value="{{ device.current_wear_percentage if device.current_wear_percentage is not none else '0' }}">
+                                                <span class="input-group-text">%</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="mb-3">
-                                    <label for="notes" class="form-label">Примечания</label>
-                                    <textarea class="form-control" id="notes" name="notes" rows="3">{{ device.notes if device.notes is not none else '' }}</textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                             </div>
                         </div>
                     </div>
@@ -313,38 +304,34 @@
                 <hr class="my-4">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <button type="button" id="fillTestData" class="btn btn-outline-secondary me-2">
-                            <i class="bi bi-magic"></i> Заполнить тестовыми данными
-                        </button>
+                        <a href="{{ url_for('read_assets') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Назад к списку
+                        </a>
+                    </div>
+                    <div>
                         <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-save me-1"></i>{{ 'Сохранить' if device.id else 'Создать' }}
-                    </button>
-                    <a href="{{ request.url_for('read_assets') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-x-lg me-1"></i>Отмена
-                    </a>
+                            <i class="bi bi-save"></i> Сохранить изменения
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
     // Функция для переключения видимости опциональных полей
     function toggleOptionalFields(sectionId, checkbox) {
         const section = document.getElementById(sectionId);
-        const inputs = section.querySelectorAll('input, select, textarea');
+        const checkboxElement = document.getElementById(checkbox);
         
-        if (checkbox.checked) {
+        if (checkboxElement.checked) {
             section.style.display = 'block';
-            inputs.forEach(input => input.disabled = false);
         } else {
             section.style.display = 'none';
-            inputs.forEach(input => input.disabled = true);
         }
     }
 
@@ -355,58 +342,16 @@ document.addEventListener('DOMContentLoaded', function() {
         { id: 'locationSection', checkboxId: 'toggleLocation' }
     ];
 
-    optionalSections.forEach(section => {
-        const checkbox = document.getElementById(section.checkboxId);
-        if (checkbox) {
-            // Инициализация состояния при загрузке
-            toggleOptionalFields(section.id, checkbox);
-            
-            // Обработчик изменения состояния чекбокса
-            checkbox.addEventListener('change', function() {
-                toggleOptionalFields(section.id, this);
-            });
-        }
+    // Назначение обработчиков событий
+    document.addEventListener('DOMContentLoaded', function() {
+        optionalSections.forEach(section => {
+            const checkbox = document.getElementById(section.checkboxId);
+            if (checkbox) {
+                checkbox.addEventListener('change', () => {
+                    toggleOptionalFields(section.id, section.checkboxId);
+                });
+            }
+        });
     });
-
-    // Заполнение тестовыми данными
-    document.getElementById('fillTestData')?.addEventListener('click', async function() {
-        try {
-            const response = await fetch('{{ url_for("static", path="/test_data/device_fixture.json") }}');
-            if (!response.ok) throw new Error('Не удалось загрузить тестовые данные');
-            
-            const data = await response.json();
-            
-            // Заполняем поля формы
-            Object.entries(data).forEach(([key, value]) => {
-                const element = document.querySelector(`[name="${key}"]`);
-                if (element) {
-                    element.value = value || '';
-                    
-                    // Активируем соответствующие секции, если есть данные
-                    if (['mac_address', 'ip_address'].includes(key) && value) {
-                        document.getElementById('toggleNetwork').checked = true;
-                        toggleOptionalFields('networkSection', document.getElementById('toggleNetwork'));
-                    }
-                    
-                    if (['purchase_date', 'warranty_end_date', 'price'].includes(key) && value) {
-                        document.getElementById('toggleFinancial').checked = true;
-                        toggleOptionalFields('financialSection', document.getElementById('toggleFinancial'));
-                    }
-                    
-                    if (['department_id', 'location_id', 'employee_id'].includes(key) && value) {
-                        document.getElementById('toggleLocation').checked = true;
-                        toggleOptionalFields('locationSection', document.getElementById('toggleLocation'));
-                    }
-                }
-            });
-            
-            // Показываем уведомление об успешном заполнении
-            alert('Форма заполнена тестовыми данными');
-        } catch (error) {
-            console.error('Ошибка при загрузке тестовых данных:', error);
-            alert('Ошибка при загрузке тестовых данных: ' + error.message);
-        }
-    });
-});
 </script>
 {% endblock %}

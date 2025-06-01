@@ -1,7 +1,7 @@
-# app/main.py
-from fastapi import FastAPI, Depends, Request
+from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from contextlib import asynccontextmanager
@@ -10,14 +10,13 @@ import os
 import secrets
 
 from app.db.database import engine, Base, get_db
-import app.models # Важно: Импортируем модуль app.models, чтобы Base.metadata его увидел для Alembic
-
-# Импортируем эндпоинты
+import app.models  # Важно для Alembic
 from app.api.endpoints import assets
+from app.config import TEMPLATES_DIR
 
-# Настройки Jinja2 шаблонов
-# Используем абсолютный путь, чтобы избежать проблем с поиском
-templates = Jinja2Templates(directory="/app/templates")
+# Инициализируем Jinja2Templates
+print(f"Templates directory: {TEMPLATES_DIR}")
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 # Событие запуска приложения (lifespan для FastAPI 0.100.0+)
 @asynccontextmanager
@@ -27,6 +26,9 @@ async def lifespan(app: FastAPI):
     print("Application shutdown complete.")
 
 app = FastAPI(lifespan=lifespan, title="IT Asset Management API")
+
+# Подключение статических файлов (CSS, JS, изображения)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Настройка CORS
 app.add_middleware(
