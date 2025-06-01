@@ -3,21 +3,48 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-    <h1 class="mb-4">{{ title }}</h1>
-    <p class="lead">Система управления ИТ-активами (ITBase)</p>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>IT Asset Tracker</h1>
+        <a href="{{ request.url_for('add_asset_form') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Добавить актив
+        </a>
+    </div>
     
-    {# Отображаем сообщения, если они есть #}
     {% if message %}
     <div class="alert alert-{{ message.type }} alert-dismissible fade show" role="alert">
         {{ message.text }}
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
     {% endif %}
-
-    <div class="card mt-5">
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Статистика по типам устройств</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="deviceTypesChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Статусы устройств</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="deviceStatusesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h2 class="mb-0">Список активов</h2>
-            <a href="{{ request.url_for('add_asset_form') }}" class="btn btn-primary btn-sm">Добавить актив</a>
+            <h5 class="mb-0">Список активов</h5>
+            <div class="text-muted">Всего: {{ total_devices }} активов</div>
         </div>
         <div class="card-body">
             {# Проверяем, есть ли активы в списке "devices" #}
@@ -33,7 +60,6 @@
                             <th scope="col">Тип</th>
                             <th scope="col">Статус</th>
                             <th scope="col">Отдел</th>
-                            <th scope="col">Ответственный</th>
                             <th scope="col" class="text-end">Действия</th>
                         </tr>
                     </thead>
@@ -52,13 +78,7 @@
                                 </span>
                             </td>
                             <td>{{ device.department.name if device.department else '-' }}</td>
-                            <td>
-                                {% if device.employee %}
-                                    {{ device.employee.first_name }} {{ device.employee.last_name }}
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </td>
+
                             <td class="text-end">
                                 <div class="btn-group" role="group">
                                     <a href="{{ request.url_for('edit_asset', device_id=device.id) }}" 
@@ -90,45 +110,107 @@
 
     {# Секции для сводной статистики #}
     <div class="row mt-4">
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-dark text-white">
-                    <i class="bi bi-tags me-2"></i>Количество устройств по типам
+        <!-- Отладочная информация -->
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <i class="bi bi-bug me-2"></i>Отладочная информация
+                </div>
+                <div class="card-body">
+                    <h6>Типы устройств (сырые данные):</h6>
+                    <pre>{{ device_types_count }}</pre>
+                    <h6>Статусы устройств (сырые данные):</h6>
+                    <pre>{{ device_statuses_count }}</pre>
+                    <hr>
+                    <h6>Типы устройств (JSON):</h6>
+                    <pre>{{ device_types_count|to_pretty_json|safe }}</pre>
+                    <h6>Статусы устройств (JSON):</h6>
+                    <pre>{{ device_statuses_count|to_pretty_json|safe }}</pre>
+                </div>
+            </div>
+        </div>
+        <!-- Блок типов устройств -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-dark bg-gradient text-white rounded-top">
+                    <i class="bi bi-tags-fill me-2"></i>Типы устройств
+                    <span class="badge bg-light text-dark float-end">{{ device_types_count|sum(attribute='count') }} всего</span>
                 </div>
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
-                        {% if device_types_count %}
-                            {% for type_name, count in device_types_count %}
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                {{ type_name }}
-                                <span class="badge bg-primary rounded-pill">{{ count }}</span>
+                        {% if device_types_count and device_types_count|length > 0 %}
+                            {% for item in device_types_count %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center py-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi 
+                                        {% if item.name == 'Компьютер' %}bi-pc-display
+                                        {% elif item.name == 'Ноутбук' %}bi-laptop
+                                        {% elif item.name == 'Монитор' %}bi-display
+                                        {% elif item.name == 'Принтер' %}bi-printer
+                                        {% else %}bi-hdd{% endif %} 
+                                        me-3 text-primary" style="font-size: 1.2rem;"></i>
+                                    <span class="fw-medium">{{ item.name }}</span>
+                                </div>
+                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2">
+                                    {{ item.count }} шт.
+                                </span>
                             </div>
                             {% endfor %}
                         {% else %}
-                            <div class="p-3 text-muted text-center">Нет данных о типах устройств</div>
+                            <div class="p-4 text-muted text-center">
+                                <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
+                                <p class="mt-2 mb-0">Нет данных о типах устройств</p>
+                            </div>
                         {% endif %}
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-dark text-white">
-                    <i class="bi bi-info-circle me-2"></i>Количество устройств по статусам
+        
+        <!-- Блок статусов устройств -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-dark bg-gradient text-white rounded-top">
+                    <i class="bi bi-info-circle-fill me-2"></i>Статусы устройств
+                    <span class="badge bg-light text-dark float-end">{{ device_statuses_count|sum(attribute='count') }} всего</span>
                 </div>
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
-                        {% if device_statuses_count %}
-                            {% for status_name, count in device_statuses_count %}
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                {{ status_name }}
-                                <span class="badge bg-{{ 'success' if status_name.lower() == 'в эксплуатации' else 'primary' }} rounded-pill">
-                                    {{ count }}
+                        {% if device_statuses_count and device_statuses_count|length > 0 %}
+                            {% for item in device_statuses_count %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center py-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi 
+                                        {% if item.name == 'В эксплуатации' %}bi-check-circle
+                                        {% elif item.name == 'На складе' %}bi-box-seam
+                                        {% elif item.name == 'В ремонте' %}bi-tools
+                                        {% elif item.name == 'Списано' %}bi-trash
+                                        {% else %}bi-info-circle{% endif %} 
+                                        me-3
+                                        {% if item.name == 'В эксплуатации' %}text-success
+                                        {% elif item.name == 'На складе' %}text-info
+                                        {% elif item.name == 'В ремонте' %}text-warning
+                                        {% elif item.name == 'Списано' %}text-secondary
+                                        {% else %}text-primary{% endif %}" 
+                                        style="font-size: 1.2rem;"></i>
+                                    <span class="fw-medium">{{ item.name }}</span>
+                                </div>
+                                <span class="badge 
+                                    {% if item.name == 'В эксплуатации' %}bg-success bg-opacity-10 text-success
+                                    {% elif item.name == 'На складе' %}bg-info bg-opacity-10 text-info
+                                    {% elif item.name == 'В ремонте' %}bg-warning bg-opacity-10 text-warning
+                                    {% elif item.name == 'Списано' %}bg-secondary bg-opacity-10 text-secondary
+                                    {% else %}bg-primary bg-opacity-10 text-primary{% endif %} 
+                                    rounded-pill px-3 py-2">
+                                    {{ item.count }} шт.
                                 </span>
                             </div>
                             {% endfor %}
                         {% else %}
-                            <div class="p-3 text-muted text-center">Нет данных о статусах устройств</div>
+                            <div class="p-4 text-muted text-center">
+                                <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
+                                <p class="mt-2 mb-0">Нет данных о статусах устройств</p>
+                            </div>
                         {% endif %}
                     </div>
                 </div>
