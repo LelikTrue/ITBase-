@@ -1,80 +1,63 @@
 # docker-compose.yml
-# Определение сервисов для вашего приложения ITBase
+# Базовый файл конфигурации Docker Compose для ITBase
+# Для разработки используйте docker-compose.override.yml
+# Для продакшена используйте docker-compose.prod.yml
+
+version: '3.8'
 
 services:
   # Сервис базы данных PostgreSQL
   db:
-    image: postgres:13-alpine # Используем стабильный образ PostgreSQL 13 на Alpine Linux для меньшего размера
-    container_name: itbase-db # Явное имя контейнера
-    restart: always # Автоматически перезапускать контейнер, если он падает
+    image: postgres:13-alpine
+    container_name: itbase-db
+    restart: always
+    env_file: .env
     environment:
-      # Переменные окружения для настройки базы данных PostgreSQL (читаются из .env)
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      # Постоянное хранилище для данных PostgreSQL, чтобы данные не терялись при перезапуске контейнера
       - postgres_data:/var/lib/postgresql/data
-      # Монтирование скрипта инициализации базы данных.
-      # Этот скрипт будет выполнен при первом запуске контейнера 'db',
-      # если том 'postgres_data' пуст.
       - ./schema.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      # Проброс порта 5432 из контейнера на хост-машину
-      # Позволяет подключаться к БД извне Docker-сети (например, с вашей локальной машины или через Adminer)
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     networks:
-      - itbase-network # Подключаем к нашей пользовательской сети
+      - itbase-network
 
   # Сервис Adminer для управления базой данных через веб-интерфейс
   adminer:
-    image: adminer:latest # Используем последний образ Adminer
-    container_name: itbase-adminer # Явное имя контейнера
-    restart: always # Автоматически перезапускать контейнер
+    image: adminer:latest
+    container_name: itbase-adminer
+    restart: always
     ports:
-      # Проброс порта 8080 из контейнера на хост-машину
-      - "8080:8080"
+      - "${ADMINER_PORT:-8080}:8080"
     environment:
-      # Указываем Adminer, к какому серверу базы данных подключаться по умолчанию
-      ADMINER_DEFAULT_SERVER: db # 'db' - это имя сервиса базы данных в этой же Docker-сети
+      ADMINER_DEFAULT_SERVER: db
     depends_on:
-      - db # Гарантируем, что сервис 'db' запустится перед 'adminer'
+      - db
     networks:
-      - itbase-network # Подключаем к нашей пользовательской сети
+      - itbase-network
 
   # Сервис бэкенд-приложения (FastAPI)
   backend:
     build:
-      context: . # Путь к директории Dockerfile (текущая директория проекта)
-      dockerfile: Dockerfile # Имя файла Dockerfile
-    container_name: itbase-backend # Явное имя контейнера
-    restart: always # Автоматически перезапускать контейнер
+      context: .
+      dockerfile: Dockerfile
+    container_name: itbase-backend
+    restart: always
     ports:
-      - "8000:8000" # Проброс порта 8000 из контейнера на хост-машину
-    volumes:
-      # Монтирование кода приложения из хоста в контейнер.
-      # Важно: это синхронизирует изменения кода на хосте с контейнером без пересборки образа.
-      # Убедитесь, что /home/dev/ITBase- это актуальный путь к вашему проекту на сервере.
-      # НЕ используйте это в продакшене без полного понимания рисков.
-      - /home/dev/ITBase-:/app
-    # --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-    env_file: # ИСПОЛЬЗУЕМ env_file ВМЕСТО environment ДЛЯ ЗАГРУЗКИ ПЕРЕМЕННЫХ ИЗ .env
-      - .env
-    # --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+      - "${APP_PORT:-8000}:8000"
+    env_file: .env
     depends_on:
-      - db # Гарантируем, что сервис 'db' запустится перед 'backend'
+      - db
     networks:
-      - itbase-network # Подключаем к нашей пользовательской сети
-    # Переопределяем команду запуска контейнера, указанную в Dockerfile.
-    # Это позволяет `uvicorn` запускать приложение `app.main:app` с автоматической перезагрузкой.
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      - itbase-network
 
 # Определение томов для постоянного хранения данных
 volumes:
-  postgres_data: # Том для данных PostgreSQL
+  postgres_data:
 
 # Определение пользовательской сети для сервисов
-# Это помогает изолировать сервисы и дает им имена в пределах сети
 networks:
   itbase-network:
     driver: bridge
