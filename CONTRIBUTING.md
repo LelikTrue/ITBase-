@@ -31,7 +31,7 @@
 ## Запуск в режиме разработки
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 Приложение будет доступно по адресу: http://localhost:8000
@@ -39,7 +39,7 @@ docker-compose up --build
 ## Запуск в продакшн режиме
 
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
 ## Доступные сервисы
@@ -60,30 +60,30 @@ docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 3. **Проблемы с БД**
    - Если база данных не запускается, попробуйте:
      ```bash
-     docker-compose down -v
-     docker-compose up -d db
+     docker compose down -v
+     docker compose up -d db
      ```
 
 ## Разработка
 
 - Для применения миграций:
   ```bash
-  docker-compose exec backend alembic upgrade head
+  docker compose exec backend alembic upgrade head
   ```
 
 - Для создания новой миграции:
   ```bash
-  docker-compose exec backend alembic revision --autogenerate -m "description"
+  docker compose exec backend alembic revision --autogenerate -m "description"
   ```
 
 ## Логи
 
 Просмотр логов бэкенда:
 ```bash
-docker-compose logs -f backend
+docker compose logs -f backend
 ```
 
 Просмотр логов базы данных:
 ```bash
-docker-compose logs -f db
+docker compose logs -f db
 ```

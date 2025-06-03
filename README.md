@@ -26,7 +26,7 @@
    ./setup.sh
    
    # Запустите приложение в режиме разработки
-   docker-compose up --build
+   docker compose up --build
    ```
 
 3. Откройте в браузере:

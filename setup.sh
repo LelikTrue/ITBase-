@@ -17,5 +17,5 @@ fi
 chmod 600 .env
 
 echo "Настройка окружения завершена успешно!"
-echo "Для запуска в режиме разработки выполните: docker-compose up --build"
-echo "Для запуска в продакшне выполните: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build"
+echo "Для запуска в режиме разработки выполните: docker compose up --build"
+echo "Для запуска в продакшне выполните: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build"
