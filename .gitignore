@@ -11,5 +11,8 @@ node_modules/
 dist/
 .idea/
 .vscode/
+.windsurf/
+PROMTS/
+scripts/
 alembic/env.py
 gihabCom.txt

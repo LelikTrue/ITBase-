@@ -1,19 +1,12 @@
 {
-    "inventory_number": "INV-001",
-    "serial_number": "SN12345678",
-    "mac_address": "00:1A:2B:3C:4D:5E",
+    "inventory_number": "INV-TEST-001",
+    "serial_number": "SN123456789",
+    "mac_address": "00:1B:44:11:3A:B7",
     "ip_address": "192.168.1.100",
-    "asset_type_id": "1",
-    "device_model_id": "1",
-    "status_id": "1",
-    "department_id": "1",
-    "location_id": "1",
-    "employee_id": "1",
-    "source": "Закупка",
+    "notes": "Тестовое устройство для проверки формы",
     "purchase_date": "2024-01-15",
-    "warranty_end_date": "2026-01-15",
-    "price": "125000.00",
-    "expected_lifespan_years": "3",
-    "current_wear_percentage": "10",
-    "notes": "Тестовое устройство для отдела разработки"
+    "warranty_end_date": "2027-01-15",
+    "price": "75000.50",
+    "expected_lifespan_years": "5",
+    "current_wear_percentage": "15"
 }

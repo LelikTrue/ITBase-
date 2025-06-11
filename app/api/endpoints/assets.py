@@ -199,25 +199,46 @@ async def create_asset(
     Обрабатывает отправку формы создания нового актива.
     """
     try:
+        # Функция для безопасного преобразования в int
+        def safe_int(value):
+            if value and str(value).strip():
+                return int(value)
+            return None
+        
+        # Функция для безопасного преобразования в float
+        def safe_float(value):
+            if value and str(value).strip():
+                return float(value)
+            return None
+        
+        # Функция для безопасного парсинга даты
+        def safe_date(value):
+            if value and str(value).strip():
+                try:
+                    return datetime.strptime(value, "%Y-%m-%d").date()
+                except ValueError:
+                    return None
+            return None
+        
         # Создаем новый объект Device
         device = Device(
-            inventory_number=inventory_number,
-            serial_number=serial_number,
-            mac_address=mac_address,
-            ip_address=ip_address,
+            inventory_number=inventory_number.strip(),
+            serial_number=serial_number.strip() if serial_number else None,
+            mac_address=mac_address.strip() if mac_address else None,
+            ip_address=ip_address.strip() if ip_address else None,
             asset_type_id=int(asset_type_id),
             device_model_id=int(device_model_id),
             status_id=int(status_id),
-            department_id=int(department_id) if department_id else None,
-            location_id=int(location_id) if location_id else None,
-            employee_id=int(employee_id) if employee_id else None,
-            notes=notes,
+            department_id=safe_int(department_id),
+            location_id=safe_int(location_id),
+            employee_id=safe_int(employee_id),
+            notes=notes.strip() if notes else None,
             source=source,
-            purchase_date=datetime.strptime(purchase_date, "%Y-%m-%d") if purchase_date else None,
-            warranty_end_date=datetime.strptime(warranty_end_date, "%Y-%m-%d") if warranty_end_date else None,
-            price=float(price) if price else None,
-            expected_lifespan_years=int(expected_lifespan_years) if expected_lifespan_years else None,
-            current_wear_percentage=int(current_wear_percentage) if current_wear_percentage else None,
+            purchase_date=safe_date(purchase_date),
+            warranty_end_date=safe_date(warranty_end_date),
+            price=safe_float(price),
+            expected_lifespan_years=safe_int(expected_lifespan_years),
+            current_wear_percentage=safe_int(current_wear_percentage),
             added_at=datetime.utcnow()
         )
         
@@ -331,30 +352,46 @@ async def update_asset(
         if not device:
             raise HTTPException(status_code=404, detail="Устройство не найдено")
         
-        # Обновляем данные устройства
-        device.inventory_number = inventory_number
-        device.serial_number = serial_number
-        device.mac_address = mac_address
-        device.ip_address = ip_address
+        # Функция для безопасного преобразования в int
+        def safe_int(value):
+            if value and str(value).strip():
+                return int(value)
+            return None
+        
+        # Функция для безопасного преобразования в float
+        def safe_float(value):
+            if value and str(value).strip():
+                return float(value)
+            return None
+        
+        # Функция для безопасного парсинга даты
+        def safe_date(value):
+            if value and str(value).strip():
+                try:
+                    return datetime.strptime(value, "%Y-%m-%d").date()
+                except ValueError:
+                    return None
+            return None
+        
+        # Обновляем данные устройства с безопасной обработкой значений
+        device.inventory_number = inventory_number.strip()
+        device.serial_number = serial_number.strip() if serial_number else None
+        device.mac_address = mac_address.strip() if mac_address else None
+        device.ip_address = ip_address.strip() if ip_address else None
         device.asset_type_id = int(asset_type_id)
         device.device_model_id = int(device_model_id)
         device.status_id = int(status_id)
-        device.department_id = int(department_id) if department_id else None
-        device.location_id = int(location_id) if location_id else None
-        device.employee_id = int(employee_id) if employee_id else None
-        device.notes = notes
+        device.department_id = safe_int(department_id)
+        device.location_id = safe_int(location_id)
+        device.employee_id = safe_int(employee_id)
+        device.notes = notes.strip() if notes else None
         device.source = source
-        
-        if purchase_date:
-            device.purchase_date = datetime.strptime(purchase_date, "%Y-%m-%d")
-        if warranty_end_date:
-            device.warranty_end_date = datetime.strptime(warranty_end_date, "%Y-%m-%d")
-        if price:
-            device.price = float(price)
-        if expected_lifespan_years:
-            device.expected_lifespan_years = int(expected_lifespan_years)
-        if current_wear_percentage:
-            device.current_wear_percentage = int(current_wear_percentage)
+        device.purchase_date = safe_date(purchase_date)
+        device.warranty_end_date = safe_date(warranty_end_date)
+        device.price = safe_float(price)
+        device.expected_lifespan_years = safe_int(expected_lifespan_years)
+        device.current_wear_percentage = safe_int(current_wear_percentage)
+        device.updated_at = datetime.utcnow()
         
         # Сохраняем изменения
         db.commit()

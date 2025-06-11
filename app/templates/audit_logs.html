@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">{{ title }}</h1>
+    
+    <!-- Фильтры -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Фильтры</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="action_type" class="form-label">Тип действия</label>
+                    <select class="form-select" id="action_type" name="action_type">
+                        <option value="">Все типы</option>
+                        {% for at in action_types %}
+                        <option value="{{ at }}" {% if filters.action_type == at %}selected{% endif %}>{{ at }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="entity_type" class="form-label">Тип сущности</label>
+                    <select class="form-select" id="entity_type" name="entity_type">
+                        <option value="">Все сущности</option>
+                        {% for et in entity_types %}
+                        <option value="{{ et }}" {% if filters.entity_type == et %}selected{% endif %}>{{ et }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="user_id" class="form-label">ID пользователя</label>
+                    <input type="number" class="form-control" id="user_id" name="user_id" 
+                           value="{{ filters.user_id if filters.user_id is not none else '' }}" 
+                           placeholder="ID пользователя">
+                </div>
+                <div class="col-md-4">
+                    <label for="entity_id" class="form-label">ID сущности</label>
+                    <input type="number" class="form-control" id="entity_id" name="entity_id" 
+                           value="{{ filters.entity_id if filters.entity_id is not none else '' }}" 
+                           placeholder="ID сущности">
+                </div>
+                <div class="col-md-4">
+                    <label for="start_date" class="form-label">Дата с</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" 
+                           value="{{ filters.start_date.strftime('%Y-%m-%d') if filters.start_date else '' }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="end_date" class="form-label">Дата по</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" 
+                           value="{{ filters.end_date.strftime('%Y-%m-%d') if filters.end_date else '' }}">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Применить фильтры</button>
+                    <a href="{{ url_for('view_logs') }}" class="btn btn-secondary">Сбросить</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Таблица логов -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Записи логов</h5>
+            <span class="badge bg-secondary">Всего: {{ logs|length }}</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Время</th>
+                        <th>Пользователь</th>
+                        <th>Действие</th>
+                        <th>Сущность</th>
+                        <th>ID сущности</th>
+                        <th>Детали</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log.id }}</td>
+                        <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>{% if log.user_id %}{{ log.user_id }}{% else %}-{% endif %}</td>
+                        <td>
+                            {% if log.action_type == 'create' %}
+                                <span class="badge bg-success">Создание</span>
+                            {% elif log.action_type == 'update' %}
+                                <span class="badge bg-primary">Обновление</span>
+                            {% elif log.action_type == 'delete' %}
+                                <span class="badge bg-danger">Удаление</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ log.action_type }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ log.entity_type or '-' }}</td>
+                        <td>{% if log.entity_id %}{{ log.entity_id }}{% else %}-{% endif %}</td>
+                        <td>
+                            {% if log.details %}
+                                <button class="btn btn-sm btn-outline-info" type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#details-{{ log.id }}" 
+                                        aria-expanded="false" 
+                                        aria-controls="details-{{ log.id }}">
+                                    Показать
+                                </button>
+                                <div class="collapse" id="details-{{ log.id }}">
+                                    <div class="card card-body mt-2">
+                                        <pre class="mb-0">{{ log.details|to_pretty_json }}</pre>
+                                    </div>
+                                </div>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center">Нет записей, соответствующих выбранным фильтрам</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

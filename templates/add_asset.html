@@ -93,11 +93,11 @@
                             <div class="col-md-6">
                                 <!-- Основные обязательные поля (продолжение) -->
                                 <div class="mb-3">
-                                    <label for="department_id" class="form-label">Отдел <span class="text-danger">*</span></label>
-                                    <select class="form-select" id="department_id" name="department_id">
-                                        <option value="">Не указан</option>
-                                        {% for dept in departments %}
-                                        <option value="{{ dept.id }}" {% if device.department_id == dept.id|string %}selected{% endif %}>{{ dept.name }}</option>
+                                    <label for="asset_type_id" class="form-label">Тип актива <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="asset_type_id" name="asset_type_id" required>
+                                        <option value="">Выберите тип актива</option>
+                                        {% for asset_type in asset_types %}
+                                        <option value="{{ asset_type.id }}" {% if device.asset_type_id == asset_type.id %}selected{% endif %}>{{ asset_type.name }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -107,7 +107,7 @@
                                     <select class="form-select" id="device_model_id" name="device_model_id" required>
                                         <option value="">Выберите модель устройства</option>
                                         {% for model in device_models %}
-                                        <option value="{{ model.id }}" {% if device.device_model_id == model.id %}selected{% endif %}>{{ model.name }}</option>
+                                        <option value="{{ model.id }}" {% if device.device_model_id == model.id %}selected{% endif %}>{{ model.name }} ({{ model.manufacturer.name if model.manufacturer else 'Неизвестный производитель' }})</option>
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -117,19 +117,14 @@
                                     <select class="form-select" id="status_id" name="status_id" required>
                                         <option value="">Выберите статус</option>
                                         {% for status in device_statuses %}
-                                        <option value="{{ status.id }}" {% if device.status_id == status.id|string %}selected{% endif %}>{{ status.name }}</option>
+                                        <option value="{{ status.id }}" {% if device.status_id == status.id %}selected{% endif %}>{{ status.name }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="manufacturer_id" class="form-label">Производитель</label>
-                                    <select class="form-select" id="manufacturer_id" name="manufacturer_id">
-                                        <option value="">Выберите производителя</option>
-                                        {% for manufacturer in manufacturers %}
-                                        <option value="{{ manufacturer.id }}" {% if device.manufacturer_id == manufacturer.id %}selected{% endif %}>{{ manufacturer.name }}</option>
-                                        {% endfor %}
-                                    </select>
+                                    <label for="notes" class="form-label">Примечания</label>
+                                    <textarea class="form-control" id="notes" name="notes" rows="2">{{ device.notes if device.notes is not none else '' }}</textarea>
                                 </div>
                             </div>
                         </div>
@@ -137,30 +132,17 @@
 
                     <!-- Вкладка с деталями -->
                     <div class="tab-pane fade" id="details" role="tabpanel" aria-labelledby="details-tab">
-                        <!-- Сетевая информация (опционально) -->
+                        <!-- Источник поступления -->
                         <div class="mb-4">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="toggleNetwork">
-                                <label class="form-check-label" for="toggleNetwork">Добавить сетевую информацию</label>
-                            </div>
-                            <div id="networkSection" class="optional-section mt-2">
-                                <h5>Сетевая информация</h5>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="mac_address" class="form-label">MAC-адрес</label>
-                                            <input type="text" class="form-control" id="mac_address" name="mac_address" 
-                                                   value="{{ device.mac_address if device.mac_address is not none else '' }}">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="ip_address" class="form-label">IP-адрес</label>
-                                            <input type="text" class="form-control" id="ip_address" name="ip_address" 
-                                                   value="{{ device.ip_address if device.ip_address is not none else '' }}">
-                                        </div>
-                                    </div>
-                                </div>
+                            <h5>Источник поступления</h5>
+                            <div class="mb-3">
+                                <label for="source" class="form-label">Источник</label>
+                                <select class="form-select" id="source" name="source">
+                                    <option value="purchase" {% if device.source == 'purchase' %}selected{% endif %}>Покупка</option>
+                                    <option value="lease" {% if device.source == 'lease' %}selected{% endif %}>Аренда</option>
+                                    <option value="gift" {% if device.source == 'gift' %}selected{% endif %}>Дар</option>
+                                    <option value="transfer" {% if device.source == 'transfer' %}selected{% endif %}>Перевод</option>
+                                </select>
                             </div>
                         </div>
 
@@ -219,24 +201,6 @@
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="supplier_id" class="form-label">Поставщик</label>
-                                    <select class="form-select mb-3" id="employee_id" name="employee_id">
-                                        <option value="">Не назначен</option>
-                                        {% for emp in employees %}
-                                        <option value="{{ emp.id }}" {% if device.employee_id == emp.id|string %}selected{% endif %}>{{ emp.last_name }} {{ emp.first_name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label for="notes" class="form-label">Примечания</label>
-                                    <textarea class="form-control" id="notes" name="notes" rows="3">{{ device.notes if device.notes is not none else '' }}</textarea>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- Финансовая вкладка -->
@@ -250,13 +214,6 @@
                             <div id="financialSection" class="optional-section mt-2">
                                 <h5>Финансовая информация</h5>
                                 <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="source" class="form-label">Источник</label>
-                                            <input type="text" class="form-control" id="source" name="source" 
-                                                   value="{{ device.source if device.source is not none else '' }}">
-                                        </div>
-                                    </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label for="price" class="form-label">Стоимость</label>
@@ -296,17 +253,6 @@
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="mb-3">
-                                    <label for="notes" class="form-label">Примечания</label>
-                                    <textarea class="form-control" id="notes" name="notes" rows="3">{{ device.notes if device.notes is not none else '' }}</textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -317,11 +263,14 @@
                             <i class="bi bi-magic"></i> Заполнить тестовыми данными
                         </button>
                         <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-save me-1"></i>{{ 'Сохранить' if device.id else 'Создать' }}
-                    </button>
-                    <a href="{{ request.url_for('read_assets') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-x-lg me-1"></i>Отмена
-                    </a>
+                            <i class="bi bi-save me-1"></i>{{ 'Сохранить' if device.id else 'Создать' }}
+                        </button>
+                    </div>
+                    <div>
+                        <a href="{{ request.url_for('read_assets') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg me-1"></i>Отмена
+                        </a>
+                    </div>
                 </div>
             </form>
         </div>
