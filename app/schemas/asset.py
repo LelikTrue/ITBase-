@@ -86,7 +86,7 @@ class DeviceUpdate(BaseModel):
 
 class DeviceResponse(DeviceBase):
     id: int
-    added_at: datetime # Используем added_at из модели Device
+
     updated_at: datetime # Используем updated_at из модели Device
 
     # Вложенные схемы для связанных объектов

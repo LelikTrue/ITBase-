@@ -1,5 +1,6 @@
 from datetime import datetime, date
 from sqlalchemy import Column, Integer, String, Text, Date, Numeric, ForeignKey, JSON, DateTime
+from sqlalchemy.sql import func # <--- Добавляем импорт
 from sqlalchemy.orm import relationship
 
 from .base import Base
@@ -19,8 +20,8 @@ class Device(Base):
     price = Column(Numeric(10,2))
     expected_lifespan_years = Column(Integer)
     current_wear_percentage = Column(Numeric(5,2))
-    added_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False) # Используем server_default и onupdate
     attributes = Column(JSON)
     
     # Foreign keys

@@ -239,39 +239,48 @@ async def create_asset(
             price=safe_float(price),
             expected_lifespan_years=safe_int(expected_lifespan_years),
             current_wear_percentage=safe_int(current_wear_percentage),
-            added_at=datetime.utcnow()
+
         )
         
         # Добавляем в сессию и сохраняем
+        # Явная проверка уникальности inventory_number
+        existing = db.query(Device).filter(Device.inventory_number == inventory_number.strip()).first()
+        if existing:
+            request.session["message"] = {"type": "danger", "text": "Актив с таким инвентарным номером уже существует!"}
+            return RedirectResponse(url=request.url_for("add_asset_form"), status_code=status.HTTP_303_SEE_OTHER)
+
         db.add(device)
         db.commit()
         db.refresh(device)
         
-        # Перенаправляем на страницу списка активов с сообщением об успехе
-        response = RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
-        return response
+        # Устанавливаем сообщение об успехе в сессию
+        request.session["message"] = {"type": "success", "text": "Актив успешно добавлен!"}
+        # Перенаправляем на страницу списка активов
+        return RedirectResponse(url=request.url_for("read_assets"), status_code=status.HTTP_303_SEE_OTHER)
         
     except IntegrityError as e:
         db.rollback()
         if isinstance(e.orig, psycopg2.errors.UniqueViolation):
             error_msg = "Актив с таким инвентарным номером уже существует!"
         else:
-            error_msg = f"Ошибка при создании актива: {str(e)}"
+            error_msg = f"Ошибка базы данных при создании актива: {e.orig}"
         print(f"Error creating asset: {error_msg}")
-        # В случае ошибки возвращаем ту же форму с сообщением об ошибке
-        return await add_asset_form(
-            request=request,
-            db=db,
-            error=error_msg
+        
+        # Устанавливаем сообщение об ошибке в сессию
+        request.session["message"] = {"type": "danger", "text": error_msg}
+        # Перенаправляем обратно на форму добавления
+        return RedirectResponse(
+            url=request.url_for("add_asset_form"), 
+            status_code=status.HTTP_303_SEE_OTHER
         )
     except Exception as e:
         db.rollback()
-        print(f"Unexpected error creating asset: {e}")
-        # В случае ошибки возвращаем ту же форму с сообщением об ошибке
-        return await add_asset_form(
-            request=request,
-            db=db,
-            error=f"Непредвиденная ошибка при создании актива: {str(e)}"
+        error_msg = f"Непредвиденная ошибка при создании актива: {str(e)}"
+        print(f"Unexpected error creating asset: {error_msg}")
+        request.session["message"] = {"type": "danger", "text": error_msg}
+        return RedirectResponse(
+            url=request.url_for("add_asset_form"),
+            status_code=status.HTTP_303_SEE_OTHER
         )
 
 @router.get("/edit/{device_id}", response_class=HTMLResponse, name="edit_asset")
@@ -391,7 +400,7 @@ async def update_asset(
         device.price = safe_float(price)
         device.expected_lifespan_years = safe_int(expected_lifespan_years)
         device.current_wear_percentage = safe_int(current_wear_percentage)
-        device.updated_at = datetime.utcnow()
+        # updated_at будет обновлено автоматически благодаря onupdate=func.now()
         
         # Сохраняем изменения
         db.commit()
@@ -428,8 +437,8 @@ async def update_asset(
             status_code=status.HTTP_303_SEE_OTHER
         )
 
-@router.post("/delete/{device_id}", name="delete_asset")
-async def delete_asset(device_id: int, db: Session = Depends(get_db)):
+@router.post("/delete/{device_id}", name="delete_asset") # Метод POST для форм
+async def delete_asset(request: Request, device_id: int, db: Session = Depends(get_db)): # Добавлен request
     """
     Обрабатывает удаление актива.
     """
@@ -437,15 +446,20 @@ async def delete_asset(device_id: int, db: Session = Depends(get_db)):
         # Получаем устройство по ID
         device = db.query(Device).filter(Device.id == device_id).first()
         if not device:
-            raise HTTPException(status_code=404, detail="Устройство не найдено")
-
+            request.session["message"] = {"type": "danger", "text": "Устройство не найдено."}
+            return RedirectResponse(url=request.url_for("read_assets"), status_code=status.HTTP_303_SEE_OTHER)
+    
         # Удаляем устройство
         db.delete(device)
         db.commit()
-
-        return {"message": "Актив успешно удален"}
-
+    
+        request.session["message"] = {"type": "success", "text": "Актив успешно удален."}
+        return RedirectResponse(url=request.url_for("read_assets"), status_code=status.HTTP_303_SEE_OTHER)
+    
     except Exception as e:
         db.rollback()
+        # import logging
+        # logging.error(f"Ошибка при удалении устройства ID {device_id}", exc_info=True)
         print(f"Ошибка при удалении устройства: {e}")
-        raise HTTPException(status_code=500, detail=f"Ошибка при удалении актива: {str(e)}")
+        request.session["message"] = {"type": "danger", "text": f"Ошибка при удалении актива: {str(e)}"}
+        return RedirectResponse(url=request.url_for("read_assets"), status_code=status.HTTP_303_SEE_OTHER)

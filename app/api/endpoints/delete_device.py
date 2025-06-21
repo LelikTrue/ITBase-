@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import Dict, Any
 
 from app.db.database import get_db
-from app.models.device import Device
+from app.models import Device # Используем Device из app.models (asset.py)
 from app.services.audit_log_service import log_action
 
 router = APIRouter()

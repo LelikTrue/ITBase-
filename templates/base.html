@@ -124,15 +124,6 @@
             var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl);
             });
-            
-            // Автоматическое скрытие алертов через 5 секунд
-            var alertList = document.querySelectorAll('.alert');
-            alertList.forEach(function (alert) {
-                setTimeout(function() {
-                    var bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
-                }, 5000);
-            });
         });
     </script>
     

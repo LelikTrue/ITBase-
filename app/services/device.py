@@ -118,7 +118,7 @@ class DeviceService:
         
         try:
             # Создаем экземпляр модели из данных
-            db_device = models.Device(**device_data.dict())
+            db_device = models.Device(**device_data.model_dump())
             
             # Добавляем в сессию и сохраняем
             db.add(db_device)
@@ -157,12 +157,9 @@ class DeviceService:
                 return None
             
             # Обновляем только переданные поля
-            update_data = device_data.dict(exclude_unset=True)
+            update_data = device_data.model_dump(exclude_unset=True)
             for field, value in update_data.items():
                 setattr(db_device, field, value)
-            
-            # Обновляем время изменения
-            db_device.updated_at = datetime.utcnow()
             
             db.commit()
             db.refresh(db_device)

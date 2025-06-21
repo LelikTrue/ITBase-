@@ -11,36 +11,6 @@
         </a>
     </div>
     
-    {% if message %}
-    <div class="alert alert-{{ message.type }} alert-dismissible fade show" role="alert">
-        {{ message.text }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    {% endif %}
-    
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Статистика по типам устройств</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="deviceTypesChart"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Статусы устройств</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="deviceStatusesChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-    
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Список активов</h5>
@@ -110,25 +80,6 @@
 
     {# Секции для сводной статистики #}
     <div class="row mt-4">
-        <!-- Отладочная информация -->
-        <div class="col-12 mb-4">
-            <div class="card">
-                <div class="card-header bg-warning text-dark">
-                    <i class="bi bi-bug me-2"></i>Отладочная информация
-                </div>
-                <div class="card-body">
-                    <h6>Типы устройств (сырые данные):</h6>
-                    <pre>{{ device_types_count }}</pre>
-                    <h6>Статусы устройств (сырые данные):</h6>
-                    <pre>{{ device_statuses_count }}</pre>
-                    <hr>
-                    <h6>Типы устройств (JSON):</h6>
-                    <pre>{{ device_types_count|to_pretty_json|safe }}</pre>
-                    <h6>Статусы устройств (JSON):</h6>
-                    <pre>{{ device_statuses_count|to_pretty_json|safe }}</pre>
-                </div>
-            </div>
-        </div>
         <!-- Блок типов устройств -->
         <div class="col-md-6 mb-4">
             <div class="card border-0 shadow-sm h-100">

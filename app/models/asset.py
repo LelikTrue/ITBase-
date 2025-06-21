@@ -1,22 +1,20 @@
 # app/models/asset.py
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Numeric, JSON, Date
 from sqlalchemy.orm import relationship
-from app.db.database import Base # Убедитесь, что это правильный импорт Base
+from .base import Base, BaseMixin # Импортируем BaseMixin
 import datetime
 
 # --- Вспомогательные модели (определены до Device) ---
 
-class Manufacturer(Base):
+class Manufacturer(Base, BaseMixin):
     __tablename__ = "Manufacturer"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), unique=True, index=True, nullable=False)
     description = Column(String(500))
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
     device_models = relationship("DeviceModel", back_populates="manufacturer")
 
-class DeviceModel(Base):
+class DeviceModel(Base, BaseMixin):
     __tablename__ = "DeviceModel"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), unique=True, index=True, nullable=False)
@@ -24,34 +22,27 @@ class DeviceModel(Base):
     asset_type_id = Column(Integer, ForeignKey("AssetType.id"), nullable=False)
     description = Column(String(500))
     specification = Column(JSON)
-
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
-
+    
     manufacturer = relationship("Manufacturer", back_populates="device_models")
     devices = relationship("Device", back_populates="device_model")
 
-class Department(Base):
+class Department(Base, BaseMixin):
     __tablename__ = "Department"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), unique=True, index=True, nullable=False)
     description = Column(String(500))
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
-    devices_in_department = relationship("Device", back_populates="department")
+    devices_in_department = relationship("Device", back_populates="department") # Связь остается
 
-class Location(Base):
+class Location(Base, BaseMixin):
     __tablename__ = "Location"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), unique=True, index=True, nullable=False)
     description = Column(String(500))
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
-    devices_at_location = relationship("Device", back_populates="location")
+    devices_at_location = relationship("Device", back_populates="location") # Связь остается
 
-class Employee(Base):
+class Employee(Base, BaseMixin):
     __tablename__ = "Employee"
     id = Column(Integer, primary_key=True, index=True)
     first_name = Column(String(255), nullable=False)
@@ -60,35 +51,29 @@ class Employee(Base):
     employee_id = Column(String(255), unique=True)
     email = Column(String(255), unique=True, index=True)
     phone_number = Column(String(255))
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
-    assigned_devices = relationship("Device", back_populates="employee")
+    assigned_devices = relationship("Device", back_populates="employee") # Связь остается
 
 # --- Основные модели ---
 
-class AssetType(Base):
+class AssetType(Base, BaseMixin):
     __tablename__ = "AssetType"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), unique=True, index=True, nullable=False)
     description = Column(String(500))
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
-    devices = relationship("Device", back_populates="asset_type")
+    devices = relationship("Device", back_populates="asset_type") # Связь остается
 
-class DeviceStatus(Base):
+class DeviceStatus(Base, BaseMixin):
     __tablename__ = "DeviceStatus"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), unique=True, index=True, nullable=False)
     description = Column(String(500))
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
-    devices = relationship("Device", back_populates="status")
+    devices = relationship("Device", back_populates="status") # Связь остается
 
 # ЕДИНСТВЕННОЕ И ПРАВИЛЬНОЕ ОПРЕДЕЛЕНИЕ КЛАССА DEVICE
-class Device(Base):
+class Device(Base, BaseMixin): # Наследуем BaseMixin
     __tablename__ = "Device"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -103,8 +88,8 @@ class Device(Base):
     price = Column(Numeric(10,2))
     expected_lifespan_years = Column(Integer)
     current_wear_percentage = Column(Numeric(5,2))
-    added_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    # added_at будет заменено на created_at из BaseMixin
+    # updated_at будет взято из BaseMixin
     attributes = Column(JSON)
 
     device_model_id = Column(Integer, ForeignKey("DeviceModel.id"), nullable=False)
@@ -125,27 +110,23 @@ class Device(Base):
 
 # --- НОВЫЕ МОДЕЛИ: Attachment и ActionLog ---
 
-class Attachment(Base):
+class Attachment(Base, BaseMixin):
     __tablename__ = "Attachment"
     id = Column(Integer, primary_key=True, index=True)
     device_id = Column(Integer, ForeignKey("Device.id"), nullable=False)
     filename = Column(String(255), nullable=False)
     file_path = Column(String(500), nullable=False)
     file_type = Column(String(100))
-    uploaded_at = Column(DateTime, default=datetime.datetime.utcnow)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    uploaded_at = Column(DateTime, default=datetime.datetime.utcnow) # Оставляем специфичное поле
 
     device = relationship("Device", back_populates="attachments")
 
-class ActionLog(Base):
+class ActionLog(Base, BaseMixin):
     __tablename__ = "ActionLog"
     id = Column(Integer, primary_key=True, index=True)
-    timestamp = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
+    timestamp = Column(DateTime, nullable=False, default=datetime.datetime.utcnow) # Оставляем специфичное поле
     user_id = Column(Integer)
     action_type = Column(String(50), nullable=False)
     entity_type = Column(String(50), nullable=False)
     entity_id = Column(Integer, nullable=False)
     details = Column(JSON)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
