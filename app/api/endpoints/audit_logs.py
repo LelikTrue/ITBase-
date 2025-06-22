@@ -42,7 +42,7 @@ async def view_logs_page(
         query = query.where(ActionLog.timestamp < end_date + timedelta(days=1))
 
     logs_result = await db.execute(query.order_by(ActionLog.timestamp.desc()))
-    logs = logs_result.scalars().all()
+    logs = (await logs_result).scalars().all()
 
     # Получаем уникальные значения для фильтров
     action_types_result = await db.execute(select(ActionLog.action_type).distinct())
