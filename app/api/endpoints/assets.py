@@ -8,7 +8,7 @@ from fastapi import APIRouter, Response, Request, HTTPException, Form, Depends, 
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from sqlalchemy.orm import Session, joinedload
 from datetime import timezone
-from sqlalchemy import select, func
+from sqlalchemy import func # Keep func
 from sqlalchemy.exc import IntegrityError
 import psycopg2.errors
 import json
@@ -19,8 +19,14 @@ from app.models import (
     Employee, Manufacturer, ActionLog
 )
 from app.services.audit_log_service import log_action # Импортируем сервис логирования
+from app.services.device import DeviceService # Импортируем DeviceService
 from app.flash import flash
 from app.templating import templates
+import logging # Импортируем модуль логирования
+from app.utils.helpers import safe_int, safe_float, safe_date # Импортируем утилиты
+
+# Настройка логирования
+logger = logging.getLogger(__name__)
 
 # Инициализация APIRouter
 router = APIRouter()
@@ -40,12 +46,6 @@ async def read_assets(
 ):
     """Отображает дашборд со списком активов и статистикой."""
     try:
-        def safe_int(value: Optional[str]) -> Optional[int]:
-            """Безопасно преобразует строку в int, игнорируя пустые строки и None."""
-            if value is None or value == "":
-                return None
-            return int(value)
-
         # Преобразуем строковые ID из фильтров в целые числа
         asset_type_id_int = safe_int(asset_type_id)
         status_id_int = safe_int(status_id)
@@ -68,16 +68,16 @@ async def read_assets(
         # Применяем фильтры
         if search:
             search_term = f"%{search.strip()}%"
-            query = query.filter(
+            query = query.filter( # Use .filter() for query
                 (Device.inventory_number.ilike(search_term)) |
                 (Device.serial_number.ilike(search_term)) |
                 (Device.mac_address.ilike(search_term))
             )
-        if asset_type_id_int: query = query.filter(Device.asset_type_id == asset_type_id_int)
-        if status_id_int: query = query.filter(Device.status_id == status_id_int)
-        if department_id_int: query = query.filter(Device.department_id == department_id_int)
-        if location_id_int: query = query.filter(Device.location_id == location_id_int)
-        if manufacturer_id_int: query = query.join(Device.device_model).filter(DeviceModel.manufacturer_id == manufacturer_id_int)
+        if asset_type_id_int: query = query.filter(Device.asset_type_id == asset_type_id_int) # Use .filter()
+        if status_id_int: query = query.filter(Device.status_id == status_id_int) # Use .filter()
+        if department_id_int: query = query.filter(Device.department_id == department_id_int) # Use .filter()
+        if location_id_int: query = query.filter(Device.location_id == location_id_int) # Use .filter()
+        if manufacturer_id_int: query = query.join(Device.device_model).filter(DeviceModel.manufacturer_id == manufacturer_id_int) # Use .filter()
         
         # Получаем статистику по типам устройств
         device_types_count = db.query(
@@ -88,7 +88,7 @@ async def read_assets(
         ).group_by(
             AssetType.name
         ).all()
-
+        
         # Получаем статистику по статусам устройств
         device_statuses_count = db.query(
             DeviceStatus.name,
@@ -129,8 +129,8 @@ async def read_assets(
         }
 
         # Логируем результаты для отладки
-        print(f"Device types count: {device_types_list}")
-        print(f"Device statuses count: {device_statuses_list}")
+        logger.debug(f"Device types count: {device_types_list}")
+        logger.debug(f"Device statuses count: {device_statuses_list}")
 
         # Собираем контекст для шаблона
         context = {
@@ -152,12 +152,12 @@ async def read_assets(
             "query_params": {k: v for k, v in filters.items() if v is not None},
         }
         
-        print(f"Template context: {context}")
+        logger.debug(f"Template context: {context}")
         
         return templates.TemplateResponse("dashboard.html", context)
         
     except Exception as e:
-        print(f"Error in read_assets: {str(e)}")
+        logger.error(f"Error in read_assets: {str(e)}", exc_info=True)
         # Возвращаем страницу с ошибкой.
         error_text = f"Ошибка при загрузке данных: {str(e)}"
         return templates.TemplateResponse(
@@ -180,21 +180,15 @@ async def read_assets(
 async def export_assets_csv(
     request: Request,
     db: Session = Depends(get_db),
-    search: Optional[str] = Query(None, description="Поиск по инвентарному/серийному номеру или MAC"),
-    asset_type_id: Optional[str] = Query(None, description="Фильтр по типу актива (ID)"),
-    status_id: Optional[str] = Query(None, description="Фильтр по статусу (ID)"),
-    department_id: Optional[str] = Query(None, description="Фильтр по отделу (ID)"),
-    location_id: Optional[str] = Query(None, description="Фильтр по локации (ID)"),
-    manufacturer_id: Optional[str] = Query(None, description="Фильтр по производителю (ID)"),
+    search: Optional[str] = Query(None, description="Поиск по инвентарному/серийному номеру или MAC"), # Keep these
+    asset_type_id: Optional[str] = Query(None, description="Фильтр по типу актива (ID)"), # Keep these
+    status_id: Optional[str] = Query(None, description="Фильтр по статусу (ID)"), # Keep these
+    department_id: Optional[str] = Query(None, description="Фильтр по отделу (ID)"), # Keep these
+    location_id: Optional[str] = Query(None, description="Фильтр по локации (ID)"), # Keep these
+    manufacturer_id: Optional[str] = Query(None, description="Фильтр по производителю (ID)"), # Keep these
 ):
     """Экспортирует отфильтрованный список активов в CSV файл."""
     try:
-        def safe_int(value: Optional[str]) -> Optional[int]:
-            """Безопасно преобразует строку в int, игнорируя пустые строки и None."""
-            if value is None or value == "":
-                return None
-            return int(value)
-
         asset_type_id_int = safe_int(asset_type_id)
         status_id_int = safe_int(status_id)
         department_id_int = safe_int(department_id)
@@ -212,16 +206,16 @@ async def export_assets_csv(
 
         if search:
             search_term = f"%{search.strip()}%"
-            query = query.filter(
+            query = query.filter( # Use .filter()
                 (Device.inventory_number.ilike(search_term)) |
                 (Device.serial_number.ilike(search_term)) |
                 (Device.mac_address.ilike(search_term))
             )
-        if asset_type_id_int: query = query.filter(Device.asset_type_id == asset_type_id_int)
-        if status_id_int: query = query.filter(Device.status_id == status_id_int)
-        if department_id_int: query = query.filter(Device.department_id == department_id_int)
-        if location_id_int: query = query.filter(Device.location_id == location_id_int)
-        if manufacturer_id_int: query = query.join(Device.device_model).filter(DeviceModel.manufacturer_id == manufacturer_id_int)
+        if asset_type_id_int: query = query.filter(Device.asset_type_id == asset_type_id_int) # Use .filter()
+        if status_id_int: query = query.filter(Device.status_id == status_id_int) # Use .filter()
+        if department_id_int: query = query.filter(Device.department_id == department_id_int) # Use .filter()
+        if location_id_int: query = query.filter(Device.location_id == location_id_int) # Use .filter()
+        if manufacturer_id_int: query = query.join(Device.device_model).filter(DeviceModel.manufacturer_id == manufacturer_id_int) # Use .filter()
 
         devices = query.order_by(Device.id).all()
 
@@ -259,7 +253,7 @@ async def export_assets_csv(
         return StreamingResponse(io.StringIO(output.getvalue()), media_type="text/csv", headers=response_headers)
 
     except Exception as e:
-        print(f"Error exporting to CSV: {str(e)}")
+        logger.error(f"Error exporting to CSV: {str(e)}", exc_info=True)
         request.session["message"] = {"type": "danger", "text": f"Ошибка при экспорте в CSV: {str(e)}"}
         return RedirectResponse(url=request.url_for("read_assets"), status_code=status.HTTP_303_SEE_OTHER)
 
@@ -307,7 +301,7 @@ async def add_asset_form(request: Request, db: Session = Depends(get_db), error:
             }
         )
     except Exception as e:
-        print(f"Error loading form data: {e}")
+        logger.error(f"Error loading form data: {e}", exc_info=True)
         return templates.TemplateResponse(
             "add_asset.html",
             {
@@ -343,27 +337,6 @@ async def create_asset(
     Обрабатывает отправку формы создания нового актива.
     """
     try:
-        # Функция для безопасного преобразования в int
-        def safe_int(value):
-            if value and str(value).strip():
-                return int(value)
-            return None
-        
-        # Функция для безопасного преобразования в float
-        def safe_float(value):
-            if value and str(value).strip():
-                return float(value)
-            return None
-        
-        # Функция для безопасного парсинга даты
-        def safe_date(value):
-            if value and str(value).strip():
-                try:
-                    return datetime.strptime(value, "%Y-%m-%d").date()
-                except ValueError:
-                    return None
-            return None
-        
         # Создаем новый объект Device
         device = Device(
             inventory_number=inventory_number.strip(),
@@ -382,7 +355,7 @@ async def create_asset(
             warranty_end_date=safe_date(warranty_end_date),
             price=safe_float(price),
             expected_lifespan_years=safe_int(expected_lifespan_years),
-            current_wear_percentage=safe_int(current_wear_percentage),
+            current_wear_percentage=safe_float(current_wear_percentage),
 
         )
         
@@ -396,7 +369,7 @@ async def create_asset(
             return RedirectResponse(url=request.url_for("add_asset_form"), status_code=status.HTTP_303_SEE_OTHER)
         
         # Логируем создание устройства
-        log_action(
+        log_action( # Removed await
             db=db,
             user_id=1, # TODO: Заменить на ID аутентифицированного пользователя
             action_type="create",
@@ -415,7 +388,7 @@ async def create_asset(
             error_msg = "Актив с таким инвентарным номером уже существует!"
         else:
             error_msg = f"Ошибка базы данных при создании актива: {e.orig}"
-        print(f"Error creating asset: {error_msg}")
+        logger.error(f"Error creating asset: {error_msg}", exc_info=True)
         
         # Устанавливаем сообщение об ошибке в сессию
         flash(request, error_msg, "danger")
@@ -427,7 +400,7 @@ async def create_asset(
     except Exception as e:
         db.rollback()
         error_msg = f"Непредвиденная ошибка при создании актива: {str(e)}"
-        print(f"Unexpected error creating asset: {error_msg}")
+        logger.error(f"Unexpected error creating asset: {error_msg}", exc_info=True)
         flash(request, error_msg, "danger")
         return RedirectResponse(
             url=request.url_for("add_asset_form"),
@@ -469,7 +442,7 @@ async def edit_asset(request: Request, device_id: int, db: Session = Depends(get
         )
         
     except Exception as e:
-        print(f"Error loading edit form: {e}")
+        logger.error(f"Error loading edit form: {e}", exc_info=True)
         return templates.TemplateResponse(
             "error.html",
             {
@@ -512,27 +485,6 @@ async def update_asset(
         if not device:
             raise HTTPException(status_code=404, detail="Устройство не найдено")
         
-        # Функция для безопасного преобразования в int
-        def safe_int(value):
-            if value and str(value).strip():
-                return int(value)
-            return None
-        
-        # Функция для безопасного преобразования в float
-        def safe_float(value):
-            if value and str(value).strip():
-                return float(value)
-            return None
-        
-        # Функция для безопасного парсинга даты
-        def safe_date(value):
-            if value and str(value).strip():
-                try:
-                    return datetime.strptime(value, "%Y-%m-%d").date()
-                except ValueError:
-                    return None
-            return None
-
         # Собираем данные из формы для логирования
         update_data = {
             "inventory_number": inventory_number,
@@ -571,7 +523,7 @@ async def update_asset(
         device.warranty_end_date = safe_date(warranty_end_date)
         device.price = safe_float(price)
         device.expected_lifespan_years = safe_int(expected_lifespan_years)
-        device.current_wear_percentage = safe_int(current_wear_percentage)
+        device.current_wear_percentage = safe_float(current_wear_percentage) # Changed to safe_float
         # updated_at будет обновлено автоматически благодаря onupdate=func.now()
         
         # Сохраняем изменения
@@ -579,7 +531,7 @@ async def update_asset(
         db.refresh(device)
         
         # Логируем обновление устройства
-        log_action(
+        log_action( # Removed await
             db=db,
             user_id=None, # TODO: Заменить на ID аутентифицированного пользователя
             action_type="update",
@@ -603,7 +555,7 @@ async def update_asset(
             )
         else:
             error_msg = f"Ошибка при обновлении актива: {str(e)}"
-            print(f"Error updating asset: {error_msg}")
+            logger.error(f"Error updating asset: {error_msg}", exc_info=True)
             flash(request, error_msg, "danger")
             return RedirectResponse(
                 url=request.url_for("edit_asset", device_id=device_id),
@@ -612,7 +564,7 @@ async def update_asset(
     except Exception as e:
         db.rollback()
         error_msg = f"Непредвиденная ошибка при обновлении актива: {str(e)}"
-        print(f"Unexpected error updating asset: {error_msg}")
+        logger.error(f"Unexpected error updating asset: {error_msg}", exc_info=True)
         flash(request, error_msg, "danger")
         return RedirectResponse(
             url=request.url_for("edit_asset", device_id=device_id),
@@ -638,7 +590,7 @@ async def delete_asset(device_id: int, request: Request, db: Session = Depends(g
         }
         
         # Логируем удаление
-        log_action(
+        log_action( # Removed await
             db=db,
             user_id=1, # TODO: Заменить на ID аутентифицированного пользователя
             action_type="delete",
@@ -656,7 +608,7 @@ async def delete_asset(device_id: int, request: Request, db: Session = Depends(g
         db.rollback()
         # import logging
         # logging.error(f"Ошибка при удалении устройства ID {device_id}", exc_info=True)
-        print(f"Ошибка при удалении устройства: {e}")
+        logger.error(f"Ошибка при удалении устройства: {e}", exc_info=True)
         flash(request, f"Ошибка при удалении актива: {str(e)}", "danger")
         return RedirectResponse(url=request.url_for("read_assets"), status_code=status.HTTP_303_SEE_OTHER)
 
@@ -719,6 +671,6 @@ async def view_logs(
         )
         
     except Exception as e:
-        print(f"Ошибка при получении логов: {str(e)}")
+        logger.error(f"Ошибка при получении логов: {str(e)}", exc_info=True)
         flash(request, f"Произошла ошибка при загрузке логов: {str(e)}", "danger")
         return RedirectResponse(url=request.url_for("read_assets"), status_code=status.HTTP_303_SEE_OTHER)

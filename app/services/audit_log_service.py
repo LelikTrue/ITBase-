@@ -1,11 +1,10 @@
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 from sqlalchemy.orm import Session
-from sqlalchemy.ext.asyncio import AsyncSession # Импортируем AsyncSession
 
 from app.models import ActionLog
 
-async def log_action( # Функция стала асинхронной
+def log_action( # Функция синхронная, так как использует Session
     db: Session,
     user_id: int,
     action_type: str,
@@ -17,7 +16,7 @@ async def log_action( # Функция стала асинхронной
     Создает запись в логе действий
     
     Args:
-        db: Асинхронная сессия базы данных
+        db: Сессия базы данных
         user_id: ID пользователя, выполнившего действие
         action_type: Тип действия (create, update, delete, etc.)
         entity_type: Тип сущности (Device, Employee, etc.)
@@ -35,8 +34,8 @@ async def log_action( # Функция стала асинхронной
         details=details or {}
     )
     
-    db.add(log_entry) # add is synchronous
-    await db.commit()
-    await db.refresh(log_entry)
+    db.add(log_entry)
+    db.commit()
+    db.refresh(log_entry)
     
     return log_entry

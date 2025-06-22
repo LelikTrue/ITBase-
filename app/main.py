@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from starlette.middleware.sessions import SessionMiddleware
+import logging # Import logging
 import os
 import secrets
 
@@ -11,6 +12,10 @@ from app.db.database import Base
 import app.models  # Важно для Alembic
 from app.api.endpoints import assets
 from app.api.endpoints import audit_logs
+
+# Настройка базового логирования
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # Событие запуска приложения (lifespan для FastAPI 0.100.0+)
 @asynccontextmanager

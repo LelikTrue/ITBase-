@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import SQLAlchemyError
-import logging
+import logging # Import logging
 
 from .. import models
 from ..schemas.device import DeviceCreate, DeviceUpdate
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class DeviceService:
     """Сервис для работы с устройствами."""
     
-    @staticmethod
+    @staticmethod # Keep staticmethod for now, but consider making it a class method or instance method if state is needed
     def get_device(db: Session, device_id: int) -> Optional[models.Device]:
         """
         Получает устройство по ID с загрузкой связанных данных.
@@ -132,7 +132,7 @@ class DeviceService:
             db.rollback()
             logger.error(f"Ошибка при создании устройства: {e}")
             raise
-    
+
     @staticmethod
     def update_device(
         db: Session,
@@ -171,7 +171,7 @@ class DeviceService:
             db.rollback()
             logger.error(f"Ошибка при обновлении устройства с ID {device_id}: {e}")
             raise
-    
+
     @staticmethod
     def delete_device(db: Session, device_id: int) -> bool:
         """

@@ -16,7 +16,7 @@
                 <div class="col-md-4">
                     <label for="action_type" class="form-label">Тип действия</label>
                     <select class="form-select" id="action_type" name="action_type">
-                        <option value="">Все типы</option>
+                        <option value="" {% if filters.action_type is none %}selected{% endif %}>Все типы</option>
                         {% for at in action_types %}
                         <option value="{{ at }}" {% if filters.action_type == at %}selected{% endif %}>{{ at }}</option>
                         {% endfor %}
@@ -25,7 +25,7 @@
                 <div class="col-md-4">
                     <label for="entity_type" class="form-label">Тип сущности</label>
                     <select class="form-select" id="entity_type" name="entity_type">
-                        <option value="">Все сущности</option>
+                        <option value="" {% if filters.entity_type is none %}selected{% endif %}>Все сущности</option>
                         {% for et in entity_types %}
                         <option value="{{ et }}" {% if filters.entity_type == et %}selected{% endif %}>{{ et }}</option>
                         {% endfor %}
@@ -57,6 +57,21 @@
                     <button type="submit" class="btn btn-primary">Применить фильтры</button>
                     <a href="{{ request.url_for('view_logs') }}" class="btn btn-secondary">Сбросить</a>
                 </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const form = e.target;
+            const inputs = form.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                if (input.value === '' || input.value === null) {
+                    input.removeAttribute('name');
+                }
+            });
+        });
+    </script>
             </form>
         </div>
     </div>
