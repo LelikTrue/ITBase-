@@ -2,8 +2,10 @@
 
 from datetime import datetime, date
 from typing import Optional
+import io
+import csv
 from fastapi import APIRouter, Response, Request, HTTPException, Form, Depends, status, Query
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import select, func
@@ -13,7 +15,7 @@ import json
 
 from app.db.database import get_db
 from app.models import (
-    Device, DeviceModel, AssetType, DeviceStatus, 
+    Device, DeviceModel, AssetType, DeviceStatus,
     Department, Location, Employee, Manufacturer
 )
 from app.config import TEMPLATES_DIR
@@ -35,25 +37,54 @@ async def read_assets(
     request: Request,
     db: Session = Depends(get_db),
     page: int = Query(1, ge=1, description="Номер страницы"),
-    page_size: int = Query(10, ge=1, le=100, description="Количество элементов на странице"),
+    page_size: int = Query(20, ge=1, le=100, description="Количество элементов на странице"),
+    search: Optional[str] = Query(None, description="Поиск по инвентарному/серийному номеру или MAC"),
+    asset_type_id: Optional[str] = Query(None, description="Фильтр по типу актива (ID)"),
+    status_id: Optional[str] = Query(None, description="Фильтр по статусу (ID)"),
+    department_id: Optional[str] = Query(None, description="Фильтр по отделу (ID)"),
+    location_id: Optional[str] = Query(None, description="Фильтр по локации (ID)"),
+    manufacturer_id: Optional[str] = Query(None, description="Фильтр по производителю (ID)"),
 ):
     """Отображает дашборд со списком активов и статистикой."""
     try:
+        def safe_int(value: Optional[str]) -> Optional[int]:
+            """Безопасно преобразует строку в int, игнорируя пустые строки и None."""
+            if value is None or value == "":
+                return None
+            return int(value)
+
+        # Преобразуем строковые ID из фильтров в целые числа
+        asset_type_id_int = safe_int(asset_type_id)
+        status_id_int = safe_int(status_id)
+        department_id_int = safe_int(department_id)
+        location_id_int = safe_int(location_id)
+        manufacturer_id_int = safe_int(manufacturer_id)
+
         offset = (page - 1) * page_size
         
         # Получаем список устройств с жадной загрузкой связанных данных
-        devices = db.query(Device).options(
+        query = db.query(Device).options(
             joinedload(Device.device_model).joinedload(DeviceModel.manufacturer),
             joinedload(Device.asset_type),
             joinedload(Device.status),
             joinedload(Device.department),
             joinedload(Device.location),
             joinedload(Device.employee)
-        ).order_by(Device.updated_at.desc())
+        )
         
-        # Применяем пагинацию
-        paginated_devices = devices.offset(offset).limit(page_size).all()
-        total_devices = devices.count()
+        # Применяем фильтры
+        if search:
+            search_term = f"%{search.strip()}%"
+            query = query.filter(
+                (Device.inventory_number.ilike(search_term)) |
+                (Device.serial_number.ilike(search_term)) |
+                (Device.mac_address.ilike(search_term))
+            )
+        if asset_type_id_int: query = query.filter(Device.asset_type_id == asset_type_id_int)
+        if status_id_int: query = query.filter(Device.status_id == status_id_int)
+        if department_id_int: query = query.filter(Device.department_id == department_id_int)
+        if location_id_int: query = query.filter(Device.location_id == location_id_int)
+        if manufacturer_id_int: query = query.join(Device.device_model).filter(DeviceModel.manufacturer_id == manufacturer_id_int)
         
         # Получаем статистику по типам устройств
         device_types_count = db.query(
@@ -78,7 +109,32 @@ async def read_assets(
         # Преобразуем результаты запросов в списки словарей
         device_types_list = [{"name": name, "count": count} for name, count in device_types_count]
         device_statuses_list = [{"name": name, "count": count} for name, count in device_statuses_count]
+
+        # Сортируем и получаем общее количество после фильтрации
+        query = query.order_by(Device.updated_at.desc())
+        total_devices = query.count()
         
+        # Применяем пагинацию
+        paginated_devices = query.offset(offset).limit(page_size).all()
+        
+        # Данные для выпадающих списков в фильтрах
+        asset_types = db.query(AssetType).order_by(AssetType.name).all()
+        device_statuses = db.query(DeviceStatus).order_by(DeviceStatus.name).all()
+        departments = db.query(Department).order_by(Department.name).all()
+        locations = db.query(Location).order_by(Location.name).all()
+        manufacturers = db.query(Manufacturer).order_by(Manufacturer.name).all()
+        
+        # Собираем фильтры в словарь для заполнения полей формы
+        filters = {
+            "search": search,
+            "asset_type_id": asset_type_id_int,
+            "status_id": status_id_int,
+            "department_id": department_id_int,
+            "location_id": location_id_int,
+            "manufacturer_id": manufacturer_id_int,
+            "page_size": page_size,
+        }
+
         # Логируем результаты для отладки
         print(f"Device types count: {device_types_list}")
         print(f"Device statuses count: {device_statuses_list}")
@@ -93,7 +149,14 @@ async def read_assets(
             "total_pages": (total_devices + page_size - 1) // page_size if page_size > 0 else 1,
             "device_types_count": device_types_list,
             "device_statuses_count": device_statuses_list,
-            "title": "IT Asset Tracker - Дашборд"
+            "title": "IT Asset Tracker - Дашборд",
+            "asset_types": asset_types,
+            "device_statuses": device_statuses,
+            "departments": departments,
+            "locations": locations,
+            "manufacturers": manufacturers,
+            "filters": filters,
+            "query_params": {k: v for k, v in filters.items() if v is not None},
         }
         
         print(f"Template context: {context}")
@@ -102,23 +165,110 @@ async def read_assets(
         
     except Exception as e:
         print(f"Error in read_assets: {str(e)}")
-        # Возвращаем ошибку с описанием
+        # Возвращаем страницу с ошибкой.
+        error_text = f"Ошибка при загрузке данных: {str(e)}"
         return templates.TemplateResponse(
             "error.html",
             {
                 "request": request,
-                "error": f"Ошибка при загрузке данных: {str(e)}",
-                "title": "Ошибка",
-                "page": 1,
-                "page_size": page_size,
+                "error": error_text,
+                "page": 1, # Значения по умолчанию для пагинации
+                "page_size": 20,
                 "device_types_count": [],
                 "device_statuses_count": [],
                 "total_pages": 1,
-                "message": {"type": "danger", "text": f"Ошибка при загрузке данных: {str(e)}"},
-                "title": "Ошибка - IT Asset Tracker"
+                "message": {"type": "danger", "text": error_text},
+                "title": "Ошибка - IT Asset Tracker",
             },
             status_code=500
         )
+
+@router.get("/export/csv", name="export_assets_csv")
+async def export_assets_csv(
+    request: Request,
+    db: Session = Depends(get_db),
+    search: Optional[str] = Query(None, description="Поиск по инвентарному/серийному номеру или MAC"),
+    asset_type_id: Optional[str] = Query(None, description="Фильтр по типу актива (ID)"),
+    status_id: Optional[str] = Query(None, description="Фильтр по статусу (ID)"),
+    department_id: Optional[str] = Query(None, description="Фильтр по отделу (ID)"),
+    location_id: Optional[str] = Query(None, description="Фильтр по локации (ID)"),
+    manufacturer_id: Optional[str] = Query(None, description="Фильтр по производителю (ID)"),
+):
+    """Экспортирует отфильтрованный список активов в CSV файл."""
+    try:
+        def safe_int(value: Optional[str]) -> Optional[int]:
+            """Безопасно преобразует строку в int, игнорируя пустые строки и None."""
+            if value is None or value == "":
+                return None
+            return int(value)
+
+        asset_type_id_int = safe_int(asset_type_id)
+        status_id_int = safe_int(status_id)
+        department_id_int = safe_int(department_id)
+        location_id_int = safe_int(location_id)
+        manufacturer_id_int = safe_int(manufacturer_id)
+
+        query = db.query(Device).options(
+            joinedload(Device.device_model).joinedload(DeviceModel.manufacturer),
+            joinedload(Device.asset_type),
+            joinedload(Device.status),
+            joinedload(Device.department),
+            joinedload(Device.location),
+            joinedload(Device.employee)
+        )
+
+        if search:
+            search_term = f"%{search.strip()}%"
+            query = query.filter(
+                (Device.inventory_number.ilike(search_term)) |
+                (Device.serial_number.ilike(search_term)) |
+                (Device.mac_address.ilike(search_term))
+            )
+        if asset_type_id_int: query = query.filter(Device.asset_type_id == asset_type_id_int)
+        if status_id_int: query = query.filter(Device.status_id == status_id_int)
+        if department_id_int: query = query.filter(Device.department_id == department_id_int)
+        if location_id_int: query = query.filter(Device.location_id == location_id_int)
+        if manufacturer_id_int: query = query.join(Device.device_model).filter(DeviceModel.manufacturer_id == manufacturer_id_int)
+
+        devices = query.order_by(Device.id).all()
+
+        output = io.StringIO()
+        output.write('\ufeff')  # BOM для корректного отображения кириллицы в Excel
+        writer = csv.writer(output)
+
+        headers = [
+            "ID", "Инвентарный номер", "Серийный номер", "MAC-адрес", "IP-адрес",
+            "Тип", "Производитель", "Модель", "Статус", "Отдел", "Локация",
+            "Сотрудник", "Дата покупки", "Окончание гарантии", "Цена", "Заметки",
+            "Дата создания", "Дата обновления"
+        ]
+        writer.writerow(headers)
+
+        for device in devices:
+            employee_name = f"{device.employee.last_name} {device.employee.first_name}" if device.employee else ""
+            row = [
+                device.id, device.inventory_number, device.serial_number, device.mac_address, device.ip_address,
+                device.asset_type.name if device.asset_type else "",
+                device.device_model.manufacturer.name if device.device_model and device.device_model.manufacturer else "",
+                device.device_model.name if device.device_model else "",
+                device.status.name if device.status else "",
+                device.department.name if device.department else "",
+                device.location.name if device.location else "",
+                employee_name, device.purchase_date, device.warranty_end_date, device.price, device.notes,
+                device.created_at.strftime("%Y-%m-%d %H:%M:%S") if device.created_at else "",
+                device.updated_at.strftime("%Y-%m-%d %H:%M:%S") if device.updated_at else "",
+            ]
+            writer.writerow(row)
+
+        output.seek(0)
+        filename = f"assets_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        response_headers = {"Content-Disposition": f"attachment; filename=\"{filename}\""}
+        return StreamingResponse(io.StringIO(output.getvalue()), media_type="text/csv", headers=response_headers)
+
+    except Exception as e:
+        print(f"Error exporting to CSV: {str(e)}")
+        request.session["message"] = {"type": "danger", "text": f"Ошибка при экспорте в CSV: {str(e)}"}
+        return RedirectResponse(url=request.url_for("read_assets"), status_code=status.HTTP_303_SEE_OTHER)
 
 @router.get("/add", response_class=HTMLResponse, name="add_asset_form")
 async def add_asset_form(request: Request, db: Session = Depends(get_db), error: str = None):
