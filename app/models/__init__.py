@@ -2,19 +2,29 @@
 # Этот файл реэкспортирует все модели из других файлов в этом пакете,
 # делая их доступными при импорте "app.models".
 
-# Импортируем все модели из центрального файла asset.py
-from .asset import (
-    Device,
-    Manufacturer,
-    DeviceModel,
-    Department,
-    Location,
-    Employee,
-    AssetType,
-    DeviceStatus,
-    Attachment,
-    ActionLog
-)
-
-# Также импортируем базовые классы для удобства
 from .base import Base, BaseMixin
+from .asset_type import AssetType
+from .department import Department
+from .device_model import DeviceModel
+from .device_status import DeviceStatus
+from .employee import Employee
+from .location import Location
+from .manufacturer import Manufacturer
+from .attachment import Attachment
+from .device import Device
+from .action_log import ActionLog
+
+__all__ = [
+    "Base",
+    "BaseMixin",
+    "AssetType",
+    "Department",
+    "DeviceModel",
+    "DeviceStatus",
+    "Employee",
+    "Location",
+    "Manufacturer",
+    "Attachment",
+    "Device",
+    "ActionLog",
+]

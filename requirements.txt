@@ -10,7 +10,7 @@ email-validator==2.1.0.post1
 # База данных
 sqlalchemy==2.0.30
 alembic==1.13.1
-psycopg2-binary==2.9.9
+asyncpg==0.29.0  # Асинхронный драйвер для PostgreSQL
 
 # Pydantic
 pydantic==2.7.1

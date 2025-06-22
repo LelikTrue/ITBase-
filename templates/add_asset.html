@@ -77,17 +77,6 @@
                                            value="{{ device.serial_number if device.serial_number is not none else '' }}">
                                 </div>
 
-                                <div class="mb-3">
-                                    <label for="mac_address" class="form-label">MAC-адрес</label>
-                                    <input type="text" class="form-control" id="mac_address" name="mac_address" 
-                                           value="{{ device.mac_address if device.mac_address is not none else '' }}">
-                                </div>
-
-                                <div class="mb-3">
-                                    <label for="ip_address" class="form-label">IP-адрес</label>
-                                    <input type="text" class="form-control" id="ip_address" name="ip_address" 
-                                           value="{{ device.ip_address if device.ip_address is not none else '' }}">
-                                </div>
                             </div>
 
                             <div class="col-md-6">
@@ -143,6 +132,33 @@
                                     <option value="gift" {% if device.source == 'gift' %}selected{% endif %}>Дар</option>
                                     <option value="transfer" {% if device.source == 'transfer' %}selected{% endif %}>Перевод</option>
                                 </select>
+                            </div>
+                        </div>
+
+                        <!-- Сетевая информация (опционально) -->
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="toggleNetwork">
+                                <label class="form-check-label" for="toggleNetwork">Сетевая информация</label>
+                            </div>
+                            <div id="networkSection" class="optional-section mt-2">
+                                <h5>Сетевая информация</h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="mac_address" class="form-label">MAC-адрес</label>
+                                            <input type="text" class="form-control" id="mac_address" name="mac_address" 
+                                                   value="{{ device.mac_address if device.mac_address is not none else '' }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="ip_address" class="form-label">IP-адрес</label>
+                                            <input type="text" class="form-control" id="ip_address" name="ip_address" 
+                                                   value="{{ device.ip_address if device.ip_address is not none else '' }}">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -282,6 +298,21 @@
 {% block scripts %}
 {{ super() }}
 <script>
+    // Функция для безопасного предварительного выбора радиокнопки в группе
+    function preselectRadio(groupName, valueToSelect) {
+        if (valueToSelect === null || valueToSelect === undefined || valueToSelect === '') {
+            return;
+        }
+
+        const radios = document.querySelectorAll(`input[name="${groupName}"][type="radio"]`);
+        
+        radios.forEach(radio => {
+            if (radio.value === String(valueToSelect)) {
+                radio.checked = true;
+            }
+        });
+    }
+
 document.addEventListener('DOMContentLoaded', function() {
     // Функция для переключения видимости опциональных полей
     function toggleOptionalFields(sectionId, checkbox) {
@@ -296,6 +327,14 @@ document.addEventListener('DOMContentLoaded', function() {
             inputs.forEach(input => input.disabled = true);
         }
     }
+
+    // Применение для поля 'source'
+    const deviceSource = "{{ device.source | default('') }}";
+    preselectRadio('source', deviceSource);
+
+    // Применение для поля 'current_wear_percentage'
+    const currentWearPercentage = "{{ device.current_wear_percentage | default('') }}";
+    preselectRadio('current_wear_percentage', currentWearPercentage);
 
     // Инициализация опциональных секций
     const optionalSections = [
@@ -333,18 +372,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Активируем соответствующие секции, если есть данные
                     if (['mac_address', 'ip_address'].includes(key) && value) {
-                        document.getElementById('toggleNetwork').checked = true;
-                        toggleOptionalFields('networkSection', document.getElementById('toggleNetwork'));
+                        const toggle = document.getElementById('toggleNetwork');
+                        if (toggle) {
+                            toggle.checked = true;
+                            toggleOptionalFields('networkSection', toggle);
+                        }
                     }
                     
                     if (['purchase_date', 'warranty_end_date', 'price'].includes(key) && value) {
-                        document.getElementById('toggleFinancial').checked = true;
-                        toggleOptionalFields('financialSection', document.getElementById('toggleFinancial'));
+                        const toggle = document.getElementById('toggleFinancial');
+                        if (toggle) {
+                            toggle.checked = true;
+                            toggleOptionalFields('financialSection', toggle);
+                        }
                     }
                     
                     if (['department_id', 'location_id', 'employee_id'].includes(key) && value) {
-                        document.getElementById('toggleLocation').checked = true;
-                        toggleOptionalFields('locationSection', document.getElementById('toggleLocation'));
+                        const toggle = document.getElementById('toggleLocation');
+                        if (toggle) {
+                            toggle.checked = true;
+                            toggleOptionalFields('locationSection', toggle);
+                        }
                     }
                 }
             });

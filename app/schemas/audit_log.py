@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Dict, Any, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class ActionLogBase(BaseModel):
     user_id: Optional[int] = None
@@ -16,5 +16,4 @@ class ActionLog(ActionLogBase):
     id: int
     timestamp: datetime
     
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

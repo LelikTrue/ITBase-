@@ -6,8 +6,8 @@ import io
 import csv
 from fastapi import APIRouter, Response, Request, HTTPException, Form, Depends, status, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
+from datetime import timezone
 from sqlalchemy import select, func
 from sqlalchemy.exc import IntegrityError
 import psycopg2.errors
@@ -15,19 +15,12 @@ import json
 
 from app.db.database import get_db
 from app.models import (
-    Device, DeviceModel, AssetType, DeviceStatus,
-    Department, Location, Employee, Manufacturer
+    Device, DeviceModel, AssetType, DeviceStatus, Department, Location,
+    Employee, Manufacturer, ActionLog
 )
-from app.config import TEMPLATES_DIR
-
-# Инициализация Jinja2Templates с настройками для корректного отображения кириллицы
-templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
-
-# Добавляем пользовательский фильтр для форматирования JSON с кириллицей
-def to_pretty_json(value):
-    return json.dumps(value, ensure_ascii=False, indent=2)
-
-templates.env.filters['to_pretty_json'] = to_pretty_json
+from app.services.audit_log_service import log_action # Импортируем сервис логирования
+from app.flash import flash
+from app.templating import templates
 
 # Инициализация APIRouter
 router = APIRouter()
@@ -276,14 +269,15 @@ async def add_asset_form(request: Request, db: Session = Depends(get_db), error:
     Отображает форму для добавления нового актива.
     """
     # Создаем пустой объект device для рендеринга формы
-    device = type('Device', (object,), {
-        'id': None, 'inventory_number': '', 'serial_number': '',
-        'mac_address': '', 'ip_address': '', 'asset_type_id': None,
-        'device_model_id': None, 'status_id': None, 'department_id': None,
-        'location_id': None, 'employee_id': None, 'notes': '', 'source': 'purchase',
-        'purchase_date': None, 'warranty_end_date': None, 'price': None,
-        'expected_lifespan_years': None, 'current_wear_percentage': None
-    })()
+    # Используем простой словарь для инициализации полей формы
+    device = {
+        'id': None, 'inventory_number': '', 'serial_number': '', 'mac_address': '',
+        'ip_address': '', 'asset_type_id': None, 'device_model_id': None,
+        'status_id': None, 'department_id': None, 'location_id': None,
+        'employee_id': None, 'notes': '', 'source': 'purchase', 'purchase_date': None,
+        'warranty_end_date': None, 'price': None, 'expected_lifespan_years': None,
+        'current_wear_percentage': None
+    }
     
     # Получаем сообщение об ошибке из параметра запроса, если оно есть
     error_message = request.query_params.get('error') if not error else error
@@ -392,19 +386,26 @@ async def create_asset(
 
         )
         
-        # Добавляем в сессию и сохраняем
-        # Явная проверка уникальности inventory_number
-        existing = db.query(Device).filter(Device.inventory_number == inventory_number.strip()).first()
-        if existing:
-            request.session["message"] = {"type": "danger", "text": "Актив с таким инвентарным номером уже существует!"}
-            return RedirectResponse(url=request.url_for("add_asset_form"), status_code=status.HTTP_303_SEE_OTHER)
-
         db.add(device)
-        db.commit()
-        db.refresh(device)
+        try:
+            db.commit()
+            db.refresh(device)
+        except IntegrityError:
+            db.rollback()
+            flash(request, "Актив с таким инвентарным номером уже существует!", "danger")
+            return RedirectResponse(url=request.url_for("add_asset_form"), status_code=status.HTTP_303_SEE_OTHER)
         
+        # Логируем создание устройства
+        log_action(
+            db=db,
+            user_id=1, # TODO: Заменить на ID аутентифицированного пользователя
+            action_type="create",
+            entity_type="Device",
+            entity_id=device.id,
+            details={"inventory_number": device.inventory_number, "device_model_id": device.device_model_id}
+        )
         # Устанавливаем сообщение об успехе в сессию
-        request.session["message"] = {"type": "success", "text": "Актив успешно добавлен!"}
+        flash(request, "Актив успешно добавлен!", "success")
         # Перенаправляем на страницу списка активов
         return RedirectResponse(url=request.url_for("read_assets"), status_code=status.HTTP_303_SEE_OTHER)
         
@@ -417,7 +418,7 @@ async def create_asset(
         print(f"Error creating asset: {error_msg}")
         
         # Устанавливаем сообщение об ошибке в сессию
-        request.session["message"] = {"type": "danger", "text": error_msg}
+        flash(request, error_msg, "danger")
         # Перенаправляем обратно на форму добавления
         return RedirectResponse(
             url=request.url_for("add_asset_form"), 
@@ -427,7 +428,7 @@ async def create_asset(
         db.rollback()
         error_msg = f"Непредвиденная ошибка при создании актива: {str(e)}"
         print(f"Unexpected error creating asset: {error_msg}")
-        request.session["message"] = {"type": "danger", "text": error_msg}
+        flash(request, error_msg, "danger")
         return RedirectResponse(
             url=request.url_for("add_asset_form"),
             status_code=status.HTTP_303_SEE_OTHER
@@ -531,6 +532,27 @@ async def update_asset(
                 except ValueError:
                     return None
             return None
+
+        # Собираем данные из формы для логирования
+        update_data = {
+            "inventory_number": inventory_number,
+            "serial_number": serial_number,
+            "mac_address": mac_address,
+            "ip_address": ip_address,
+            "asset_type_id": asset_type_id,
+            "device_model_id": device_model_id,
+            "status_id": status_id,
+            "department_id": department_id,
+            "location_id": location_id,
+            "employee_id": employee_id,
+            "notes": notes,
+            "source": source,
+            "purchase_date": purchase_date,
+            "warranty_end_date": warranty_end_date,
+            "price": price,
+            "expected_lifespan_years": expected_lifespan_years,
+            "current_wear_percentage": current_wear_percentage,
+        }
         
         # Обновляем данные устройства с безопасной обработкой значений
         device.inventory_number = inventory_number.strip()
@@ -556,6 +578,16 @@ async def update_asset(
         db.commit()
         db.refresh(device)
         
+        # Логируем обновление устройства
+        log_action(
+            db=db,
+            user_id=None, # TODO: Заменить на ID аутентифицированного пользователя
+            action_type="update",
+            entity_type="Device",
+            entity_id=device.id,
+            details={"updated_fields": {k: v for k, v in update_data.items() if v is not None}}
+        )
+        flash(request, "Актив успешно обновлен!", "success")
         # Перенаправляем на страницу списка активов с сообщением об успехе
         response = RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
         return response
@@ -564,7 +596,7 @@ async def update_asset(
         db.rollback()
         if isinstance(e.orig, psycopg2.errors.UniqueViolation):
             error_msg = "Актив с таким инвентарным номером уже существует!"
-            request.session["message"] = {"type": "danger", "text": error_msg}
+            flash(request, error_msg, "danger")
             return RedirectResponse(
                 url=request.url_for("edit_asset", device_id=device_id),
                 status_code=status.HTTP_303_SEE_OTHER
@@ -572,7 +604,7 @@ async def update_asset(
         else:
             error_msg = f"Ошибка при обновлении актива: {str(e)}"
             print(f"Error updating asset: {error_msg}")
-            request.session["message"] = {"type": "danger", "text": error_msg}
+            flash(request, error_msg, "danger")
             return RedirectResponse(
                 url=request.url_for("edit_asset", device_id=device_id),
                 status_code=status.HTTP_303_SEE_OTHER
@@ -581,14 +613,14 @@ async def update_asset(
         db.rollback()
         error_msg = f"Непредвиденная ошибка при обновлении актива: {str(e)}"
         print(f"Unexpected error updating asset: {error_msg}")
-        request.session["message"] = {"type": "danger", "text": error_msg}
+        flash(request, error_msg, "danger")
         return RedirectResponse(
             url=request.url_for("edit_asset", device_id=device_id),
             status_code=status.HTTP_303_SEE_OTHER
         )
 
 @router.post("/delete/{device_id}", name="delete_asset") # Метод POST для форм
-async def delete_asset(request: Request, device_id: int, db: Session = Depends(get_db)): # Добавлен request
+async def delete_asset(device_id: int, request: Request, db: Session = Depends(get_db)) -> RedirectResponse:
     """
     Обрабатывает удаление актива.
     """
@@ -596,14 +628,28 @@ async def delete_asset(request: Request, device_id: int, db: Session = Depends(g
         # Получаем устройство по ID
         device = db.query(Device).filter(Device.id == device_id).first()
         if not device:
-            request.session["message"] = {"type": "danger", "text": "Устройство не найдено."}
+            flash(request, "Устройство не найдено.", "danger")
             return RedirectResponse(url=request.url_for("read_assets"), status_code=status.HTTP_303_SEE_OTHER)
     
-        # Удаляем устройство
+        # Сохраняем данные перед удалением для лога
+        device_data = {
+            "inventory_number": device.inventory_number,
+            "device_model_id": device.device_model_id,
+        }
+        
+        # Логируем удаление
+        log_action(
+            db=db,
+            user_id=1, # TODO: Заменить на ID аутентифицированного пользователя
+            action_type="delete",
+            entity_type="Device",
+            entity_id=device.id,
+            details=device_data
+        )
+
         db.delete(device)
         db.commit()
-    
-        request.session["message"] = {"type": "success", "text": "Актив успешно удален."}
+        flash(request, "Актив успешно удален.", "success")
         return RedirectResponse(url=request.url_for("read_assets"), status_code=status.HTTP_303_SEE_OTHER)
     
     except Exception as e:
@@ -611,5 +657,68 @@ async def delete_asset(request: Request, device_id: int, db: Session = Depends(g
         # import logging
         # logging.error(f"Ошибка при удалении устройства ID {device_id}", exc_info=True)
         print(f"Ошибка при удалении устройства: {e}")
-        request.session["message"] = {"type": "danger", "text": f"Ошибка при удалении актива: {str(e)}"}
+        flash(request, f"Ошибка при удалении актива: {str(e)}", "danger")
+        return RedirectResponse(url=request.url_for("read_assets"), status_code=status.HTTP_303_SEE_OTHER)
+
+@router.get("/logs", response_class=HTMLResponse, name="view_logs")
+async def view_logs(
+    request: Request,
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 50,
+    user_id: Optional[int] = None,
+    action_type: Optional[str] = None,
+    entity_type: Optional[str] = None,
+    entity_id: Optional[int] = None,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+):
+    """
+    Отображает страницу с логами действий с возможностью фильтрации
+    """
+    try:
+        query = db.query(ActionLog)
+        
+        # Применяем фильтры
+        if user_id is not None:
+            query = query.filter(ActionLog.user_id == user_id)
+        if action_type:
+            query = query.filter(ActionLog.action_type == action_type)
+        if entity_type:
+            query = query.filter(ActionLog.entity_type == entity_type)
+        if entity_id is not None:
+            query = query.filter(ActionLog.entity_id == entity_id)
+        if start_date:
+            if start_date.tzinfo is None:
+                start_date = start_date.replace(tzinfo=timezone.utc)
+            query = query.filter(ActionLog.timestamp >= start_date)
+        if end_date:
+            if end_date.tzinfo is None:
+                end_date = end_date.replace(tzinfo=timezone.utc)
+            end_date = end_date.replace(hour=23, minute=59, second=59)
+            query = query.filter(ActionLog.timestamp <= end_date)
+        
+        logs = query.order_by(ActionLog.timestamp.desc()).offset(skip).limit(limit).all()
+        
+        action_types = db.query(ActionLog.action_type).distinct().all()
+        entity_types = db.query(ActionLog.entity_type).distinct().all()
+        
+        filters = {
+            "user_id": user_id, "action_type": action_type, "entity_type": entity_type,
+            "entity_id": entity_id, "start_date": start_date.date() if start_date else None,
+            "end_date": end_date.date() if end_date else None,
+        }
+        
+        return templates.TemplateResponse(
+            "audit_logs.html",
+            {
+                "request": request, "logs": logs, "action_types": [t[0] for t in action_types if t[0]],
+                "entity_types": [t[0] for t in entity_types if t[0]], "filters": filters,
+                "title": "Журнал действий"
+            }
+        )
+        
+    except Exception as e:
+        print(f"Ошибка при получении логов: {str(e)}")
+        flash(request, f"Произошла ошибка при загрузке логов: {str(e)}", "danger")
         return RedirectResponse(url=request.url_for("read_assets"), status_code=status.HTTP_303_SEE_OTHER)

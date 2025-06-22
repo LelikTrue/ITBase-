@@ -7,14 +7,10 @@ from starlette.middleware.sessions import SessionMiddleware
 import os
 import secrets
 
-from app.db.database import engine, Base, get_db
+from app.db.database import Base
 import app.models  # Важно для Alembic
 from app.api.endpoints import assets
-from app.config import TEMPLATES_DIR
-
-# Инициализируем Jinja2Templates
-print(f"Templates directory: {TEMPLATES_DIR}")
-templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+from app.api.endpoints import audit_logs
 
 # Событие запуска приложения (lifespan для FastAPI 0.100.0+)
 @asynccontextmanager
@@ -49,12 +45,12 @@ app.add_middleware(
 # Роуты из assets.py будут доступны по их прямому пути (например, /dashboard, /add)
 # Если вы захотите добавить API-префикс, например /api/v1, то измените здесь
 app.include_router(assets.router)
+app.include_router(audit_logs.router)
 
 # Корневой эндпоинт, который перенаправляет на страницу дашборда
-@app.get("/", response_class=RedirectResponse, status_code=302)
+@app.get("/", status_code=302)
 async def root_redirect(request: Request):
     """
     Перенаправляет с корневого URL на страницу дашборда.
     """
-    # Теперь 'read_assets' - это имя роута в assets.py, который находится по пути /dashboard
-    return request.url_for("read_assets")
+    return RedirectResponse(request.url_for("read_assets"))

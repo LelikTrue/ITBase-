@@ -55,7 +55,7 @@
                 </div>
                 <div class="col-12">
                     <button type="submit" class="btn btn-primary">Применить фильтры</button>
-                    <a href="{{ url_for('view_logs') }}" class="btn btn-secondary">Сбросить</a>
+                    <a href="{{ request.url_for('view_logs') }}" class="btn btn-secondary">Сбросить</a>
                 </div>
             </form>
         </div>

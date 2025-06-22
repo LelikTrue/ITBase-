@@ -297,6 +297,21 @@
 {% block scripts %}
 {{ super() }}
 <script>
+    // Функция для безопасного предварительного выбора радиокнопки в группе
+    function preselectRadio(groupName, valueToSelect) {
+        if (valueToSelect === null || valueToSelect === undefined || valueToSelect === '') {
+            return;
+        }
+
+        const radios = document.querySelectorAll(`input[name="${groupName}"][type="radio"]`);
+        
+        radios.forEach(radio => {
+            if (radio.value === String(valueToSelect)) {
+                radio.checked = true;
+            }
+        });
+    }
+
     // Функция для переключения видимости опциональных полей
     function toggleOptionalFields(sectionId, checkbox) {
         const section = document.getElementById(sectionId);
@@ -318,6 +333,9 @@
 
     // Назначение обработчиков событий
     document.addEventListener('DOMContentLoaded', function() {
+        // Применение для поля 'source'
+        // Удалены некорректные вызовы preselectRadio для select и number полей
+
         optionalSections.forEach(section => {
             const checkbox = document.getElementById(section.checkboxId);
             if (checkbox) {

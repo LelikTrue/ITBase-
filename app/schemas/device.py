@@ -1,6 +1,6 @@
 from datetime import date
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 class DeviceBase(BaseModel):
     """Базовая схема устройства."""
@@ -50,8 +50,7 @@ class DeviceInDBBase(DeviceBase):
     """Базовая схема устройства в БД."""
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class Device(DeviceInDBBase):
     """Схема для возврата устройства."""
