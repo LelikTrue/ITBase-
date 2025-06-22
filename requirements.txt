@@ -19,7 +19,6 @@ pydantic-settings==2.2.1
 # Дополнительные зависимости
 passlib[bcrypt]==1.7.4  # Для хеширования паролей
 python-jose[cryptography]==3.3.0  # Для JWT токенов
-python-multipart==0.0.9  # Для загрузки файлов
 
 # Утилиты
 python-dateutil==2.9.0  # Для работы с датами

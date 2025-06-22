@@ -1,9 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
-from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
 from contextlib import asynccontextmanager
 from starlette.middleware.sessions import SessionMiddleware
 import os
