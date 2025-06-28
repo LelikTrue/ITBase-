@@ -15,6 +15,7 @@ class DeviceBase(BaseModel):
     price: Optional[float] = Field(None, ge=0)
     expected_lifespan_years: Optional[int] = Field(None, ge=0)
     current_wear_percentage: Optional[float] = Field(None, ge=0, le=100)
+    attributes: Optional[dict] = None
     device_model_id: int = Field(..., gt=0)
     asset_type_id: int = Field(..., gt=0)
     status_id: int = Field(..., gt=0)
@@ -39,6 +40,7 @@ class DeviceUpdate(BaseModel):
     price: Optional[float] = Field(None, ge=0)
     expected_lifespan_years: Optional[int] = Field(None, ge=0)
     current_wear_percentage: Optional[float] = Field(None, ge=0, le=100)
+    attributes: Optional[dict] = None
     device_model_id: Optional[int] = Field(None, gt=0)
     asset_type_id: Optional[int] = Field(None, gt=0)
     status_id: Optional[int] = Field(None, gt=0)

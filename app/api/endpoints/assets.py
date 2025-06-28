@@ -356,7 +356,7 @@ async def create_asset(
             price=safe_float(price),
             expected_lifespan_years=safe_int(expected_lifespan_years),
             current_wear_percentage=safe_float(current_wear_percentage),
-
+            attributes={}
         )
         
         db.add(device)
@@ -480,23 +480,60 @@ async def update_asset(
     Обрабатывает обновление существующего актива.
     """
     try:
-        # Получаем устройство по ID
-        device = db.query(Device).filter(Device.id == device_id).first()
+        # Получаем устройство по ID с загрузкой связанных данных
+        device = db.query(Device).options(
+            joinedload(Device.asset_type),
+            joinedload(Device.device_model).joinedload(DeviceModel.manufacturer),
+            joinedload(Device.status),
+            joinedload(Device.department),
+            joinedload(Device.location),
+            joinedload(Device.employee)
+        ).filter(Device.id == device_id).first()
+        
         if not device:
             raise HTTPException(status_code=404, detail="Устройство не найдено")
         
-        # Собираем данные из формы для логирования
-        update_data = {
+        # Получаем связанные объекты для новых значений
+        new_asset_type = db.query(AssetType).filter(AssetType.id == int(asset_type_id)).first() if asset_type_id else None
+        new_device_model = db.query(DeviceModel).filter(DeviceModel.id == int(device_model_id)).first() if device_model_id else None
+        new_status = db.query(DeviceStatus).filter(DeviceStatus.id == int(status_id)).first() if status_id else None
+        new_department = db.query(Department).filter(Department.id == safe_int(department_id)).first() if department_id else None
+        new_location = db.query(Location).filter(Location.id == safe_int(location_id)).first() if location_id else None
+        new_employee = db.query(Employee).filter(Employee.id == safe_int(employee_id)).first() if employee_id else None
+        
+        # Сохраняем старые значения для diff с названиями вместо ID
+        old_values = {
+            "inventory_number": device.inventory_number,
+            "serial_number": device.serial_number,
+            "mac_address": device.mac_address,
+            "ip_address": device.ip_address,
+            "asset_type": device.asset_type.name if device.asset_type else None,
+            "device_model": device.device_model.name if device.device_model else None,
+            "status": device.status.name if device.status else None,
+            "department": device.department.name if device.department else "Не указан",
+            "location": device.location.name if device.location else "Не указана",
+            "employee": f"{device.employee.last_name} {device.employee.first_name}" if device.employee else "Не назначен",
+            "notes": device.notes,
+            "source": device.source,
+            "purchase_date": device.purchase_date.isoformat() if device.purchase_date else None,
+            "warranty_end_date": device.warranty_end_date.isoformat() if device.warranty_end_date else None,
+            "price": str(device.price) if device.price else None,
+            "expected_lifespan_years": str(device.expected_lifespan_years) if device.expected_lifespan_years else None,
+            "current_wear_percentage": str(device.current_wear_percentage) if device.current_wear_percentage else None,
+        }
+        
+        # Собираем новые данные из формы для логирования с названиями вместо ID
+        new_values = {
             "inventory_number": inventory_number,
             "serial_number": serial_number,
             "mac_address": mac_address,
             "ip_address": ip_address,
-            "asset_type_id": asset_type_id,
-            "device_model_id": device_model_id,
-            "status_id": status_id,
-            "department_id": department_id,
-            "location_id": location_id,
-            "employee_id": employee_id,
+            "asset_type": new_asset_type.name if new_asset_type else None,
+            "device_model": new_device_model.name if new_device_model else None,
+            "status": new_status.name if new_status else None,
+            "department": new_department.name if new_department else "Не указан",
+            "location": new_location.name if new_location else "Не указана",
+            "employee": f"{new_employee.last_name} {new_employee.first_name}" if new_employee else "Не назначен",
             "notes": notes,
             "source": source,
             "purchase_date": purchase_date,
@@ -530,6 +567,38 @@ async def update_asset(
         db.commit()
         db.refresh(device)
         
+        # Создаем diff - сравниваем старые и новые значения
+        diff = {}
+        for key in old_values:
+            if old_values[key] != new_values[key]:
+                # Добавляем человекочитаемые названия полей
+                field_names = {
+                    "inventory_number": "Инвентарный номер",
+                    "serial_number": "Серийный номер",
+                    "mac_address": "MAC-адрес",
+                    "ip_address": "IP-адрес",
+                    "asset_type": "Тип актива",
+                    "device_model": "Модель устройства",
+                    "status": "Статус",
+                    "department": "Отдел",
+                    "location": "Локация",
+                    "employee": "Сотрудник",
+                    "notes": "Примечания",
+                    "source": "Источник",
+                    "purchase_date": "Дата покупки",
+                    "warranty_end_date": "Дата окончания гарантии",
+                    "price": "Цена",
+                    "expected_lifespan_years": "Ожидаемый срок службы (лет)",
+                    "current_wear_percentage": "Процент износа"
+                }
+                
+                display_name = field_names.get(key, key)
+                
+                diff[display_name] = {
+                    "old": old_values[key],
+                    "new": new_values[key]
+                }
+        
         # Логируем обновление устройства
         log_action( # Removed await
             db=db,
@@ -537,7 +606,7 @@ async def update_asset(
             action_type="update",
             entity_type="Device",
             entity_id=device.id,
-            details={"updated_fields": {k: v for k, v in update_data.items() if v is not None}}
+            details={"diff": diff}
         )
         flash(request, "Актив успешно обновлен!", "success")
         # Перенаправляем на страницу списка активов с сообщением об успехе

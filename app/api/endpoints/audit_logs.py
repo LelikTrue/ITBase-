@@ -121,3 +121,22 @@ async def get_action_log_api(log_id: int, db: Session = Depends(get_db)):
     if not log:
         raise HTTPException(status_code=404, detail="Log entry not found")
     return log
+
+@router.delete("/api/logs/{log_id}", status_code=204)
+async def delete_action_log_api(log_id: int, db: Session = Depends(get_db)):
+    """
+    Удалить запись лога
+    """
+    log = db.query(ActionLog).filter(ActionLog.id == log_id).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="Log entry not found")
+    
+    try:
+        db.delete(log)
+        db.commit()
+        logger.info(f"Deleted log entry with ID: {log_id}")
+        return {"status": "success", "message": f"Log entry {log_id} deleted successfully"}
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting log entry: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error deleting log entry: {str(e)}")
