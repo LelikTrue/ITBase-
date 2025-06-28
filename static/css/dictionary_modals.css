@@ -1,0 +1,101 @@
+/* Стили для модальных окон справочников */
+
+/* Стили для уведомлений */
+.notification-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    min-width: 300px;
+    max-width: 500px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Стили для кнопок добавления */
+.input-group .btn-outline-secondary {
+    border-color: #ced4da;
+}
+
+.input-group .btn-outline-secondary:hover {
+    background-color: #f8f9fa;
+    border-color: #ced4da;
+}
+
+/* Стили для модальных окон */
+.modal-content {
+    background-color: rgba(33, 37, 41, 0.95); /* Темный полупрозрачный фон */
+    color: #f8f9fa; /* Светлый текст */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+    background-color: rgba(52, 58, 64, 0.8); /* Темный полупрозрачный фон */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f8f9fa;
+}
+
+.modal-footer {
+    background-color: rgba(52, 58, 64, 0.8); /* Темный полупрозрачный фон */
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Стили для полей ввода в темной теме */
+.modal-content .form-control {
+    background-color: rgba(73, 80, 87, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #f8f9fa;
+}
+
+.modal-content .form-control:focus {
+    background-color: rgba(73, 80, 87, 0.7);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.1);
+    color: #f8f9fa;
+}
+
+/* Стили для выпадающих списков в темной теме */
+.modal-content .form-select {
+    background-color: rgba(73, 80, 87, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #f8f9fa;
+}
+
+.modal-content .form-select:focus {
+    background-color: rgba(73, 80, 87, 0.7);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.1);
+    color: #f8f9fa;
+}
+
+/* Стили для меток полей в темной теме */
+.modal-content .form-label {
+    color: #f8f9fa;
+}
+
+/* Стили для обязательных полей */
+.form-label .text-danger {
+    font-weight: bold;
+}
+
+/* Анимация для уведомлений */
+@keyframes fadeInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.notification-toast {
+    animation: fadeInRight 0.3s ease-out;
+}
+
+/* Стили для ошибок в модальных окнах */
+.modal .alert-danger {
+    margin-top: 15px;
+    margin-bottom: 0;
+}

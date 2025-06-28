@@ -1,0 +1,495 @@
+<!-- Модальное окно для добавления типа актива -->
+<div
+  class="modal fade"
+  id="assetTypeModal"
+  tabindex="-1"
+  aria-labelledby="assetTypeModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="assetTypeModalLabel">
+          Добавить тип актива
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form id="assetTypeForm">
+          <div class="mb-3">
+            <label for="assetTypeName" class="form-label"
+              >Название <span class="text-danger">*</span></label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="assetTypeName"
+              name="name"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="assetTypeDescription" class="form-label"
+              >Описание</label
+            >
+            <textarea
+              class="form-control"
+              id="assetTypeDescription"
+              name="description"
+              rows="3"
+            ></textarea>
+          </div>
+        </form>
+        <div class="alert alert-danger d-none" id="assetTypeError"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Отмена
+        </button>
+        <button type="button" class="btn btn-primary" id="saveAssetType">
+          Сохранить
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно для добавления модели устройства -->
+<div
+  class="modal fade"
+  id="deviceModelModal"
+  tabindex="-1"
+  aria-labelledby="deviceModelModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deviceModelModalLabel">
+          Добавить модель устройства
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form id="deviceModelForm">
+          <div class="mb-3">
+            <label for="deviceModelName" class="form-label"
+              >Название <span class="text-danger">*</span></label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="deviceModelName"
+              name="name"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="deviceModelManufacturer" class="form-label"
+              >Производитель <span class="text-danger">*</span></label
+            >
+            <div class="input-group">
+              <select
+                class="form-select"
+                id="deviceModelManufacturer"
+                name="manufacturer_id"
+                required
+              >
+                <option value="">Выберите производителя</option>
+                <!-- Опции будут загружены динамически -->
+              </select>
+              <button
+                class="btn btn-outline-secondary"
+                type="button"
+                data-bs-toggle="modal"
+                data-bs-target="#manufacturerModal"
+              >
+                <i class="bi bi-plus"></i>
+              </button>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="deviceModelAssetType" class="form-label"
+              >Тип актива <span class="text-danger">*</span></label
+            >
+            <select
+              class="form-select"
+              id="deviceModelAssetType"
+              name="asset_type_id"
+              required
+            >
+              <option value="">Выберите тип актива</option>
+              <!-- Опции будут загружены динамически -->
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="deviceModelDescription" class="form-label"
+              >Описание</label
+            >
+            <textarea
+              class="form-control"
+              id="deviceModelDescription"
+              name="description"
+              rows="3"
+            ></textarea>
+          </div>
+        </form>
+        <div class="alert alert-danger d-none" id="deviceModelError"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Отмена
+        </button>
+        <button type="button" class="btn btn-primary" id="saveDeviceModel">
+          Сохранить
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно для добавления статуса устройства -->
+<div
+  class="modal fade"
+  id="deviceStatusModal"
+  tabindex="-1"
+  aria-labelledby="deviceStatusModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deviceStatusModalLabel">
+          Добавить статус устройства
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form id="deviceStatusForm">
+          <div class="mb-3">
+            <label for="deviceStatusName" class="form-label"
+              >Название <span class="text-danger">*</span></label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="deviceStatusName"
+              name="name"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="deviceStatusDescription" class="form-label"
+              >Описание</label
+            >
+            <textarea
+              class="form-control"
+              id="deviceStatusDescription"
+              name="description"
+              rows="3"
+            ></textarea>
+          </div>
+        </form>
+        <div class="alert alert-danger d-none" id="deviceStatusError"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Отмена
+        </button>
+        <button type="button" class="btn btn-primary" id="saveDeviceStatus">
+          Сохранить
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно для добавления производителя -->
+<div
+  class="modal fade"
+  id="manufacturerModal"
+  tabindex="-1"
+  aria-labelledby="manufacturerModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="manufacturerModalLabel">
+          Добавить производителя
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form id="manufacturerForm">
+          <div class="mb-3">
+            <label for="manufacturerName" class="form-label"
+              >Название <span class="text-danger">*</span></label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="manufacturerName"
+              name="name"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="manufacturerDescription" class="form-label"
+              >Описание</label
+            >
+            <textarea
+              class="form-control"
+              id="manufacturerDescription"
+              name="description"
+              rows="3"
+            ></textarea>
+          </div>
+        </form>
+        <div class="alert alert-danger d-none" id="manufacturerError"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Отмена
+        </button>
+        <button type="button" class="btn btn-primary" id="saveManufacturer">
+          Сохранить
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно для добавления отдела -->
+<div
+  class="modal fade"
+  id="departmentModal"
+  tabindex="-1"
+  aria-labelledby="departmentModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="departmentModalLabel">Добавить отдел</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form id="departmentForm">
+          <div class="mb-3">
+            <label for="departmentName" class="form-label"
+              >Название <span class="text-danger">*</span></label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="departmentName"
+              name="name"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="departmentDescription" class="form-label"
+              >Описание</label
+            >
+            <textarea
+              class="form-control"
+              id="departmentDescription"
+              name="description"
+              rows="3"
+            ></textarea>
+          </div>
+        </form>
+        <div class="alert alert-danger d-none" id="departmentError"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Отмена
+        </button>
+        <button type="button" class="btn btn-primary" id="saveDepartment">
+          Сохранить
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно для добавления местоположения -->
+<div
+  class="modal fade"
+  id="locationModal"
+  tabindex="-1"
+  aria-labelledby="locationModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="locationModalLabel">
+          Добавить местоположение
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form id="locationForm">
+          <div class="mb-3">
+            <label for="locationName" class="form-label"
+              >Название <span class="text-danger">*</span></label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="locationName"
+              name="name"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="locationDescription" class="form-label">Описание</label>
+            <textarea
+              class="form-control"
+              id="locationDescription"
+              name="description"
+              rows="3"
+            ></textarea>
+          </div>
+        </form>
+        <div class="alert alert-danger d-none" id="locationError"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Отмена
+        </button>
+        <button type="button" class="btn btn-primary" id="saveLocation">
+          Сохранить
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно для добавления сотрудника -->
+<div
+  class="modal fade"
+  id="employeeModal"
+  tabindex="-1"
+  aria-labelledby="employeeModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="employeeModalLabel">Добавить сотрудника</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form id="employeeForm">
+          <div class="mb-3">
+            <label for="employeeLastName" class="form-label"
+              >Фамилия <span class="text-danger">*</span></label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="employeeLastName"
+              name="last_name"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="employeeFirstName" class="form-label"
+              >Имя <span class="text-danger">*</span></label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="employeeFirstName"
+              name="first_name"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="employeePatronymic" class="form-label">Отчество</label>
+            <input
+              type="text"
+              class="form-control"
+              id="employeePatronymic"
+              name="patronymic"
+            />
+          </div>
+          <div class="mb-3">
+            <label for="employeeId" class="form-label">Табельный номер</label>
+            <input
+              type="text"
+              class="form-control"
+              id="employeeId"
+              name="employee_id"
+            />
+          </div>
+          <div class="mb-3">
+            <label for="employeeEmail" class="form-label">Email</label>
+            <input
+              type="email"
+              class="form-control"
+              id="employeeEmail"
+              name="email"
+            />
+          </div>
+          <div class="mb-3">
+            <label for="employeePhone" class="form-label">Телефон</label>
+            <input
+              type="text"
+              class="form-control"
+              id="employeePhone"
+              name="phone_number"
+            />
+          </div>
+        </form>
+        <div class="alert alert-danger d-none" id="employeeError"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Отмена
+        </button>
+        <button type="button" class="btn btn-primary" id="saveEmployee">
+          Сохранить
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

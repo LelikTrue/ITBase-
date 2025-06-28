@@ -1,0 +1,120 @@
+/* static/styles.css */
+
+/* Общие стили из base.html */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+    padding-bottom: 2rem;
+}
+
+.footer {
+    background-color: #212529;
+    padding: 1.5rem 0;
+    margin-top: auto;
+}
+
+.navbar-brand {
+    font-weight: 600;
+}
+
+.table th {
+    white-space: nowrap;
+}
+
+.btn-group .btn {
+    margin-right: 0.25rem;
+}
+
+.btn-group .btn:last-child {
+    margin-right: 0;
+}
+
+/* Стили для таблицы diff из audit_logs.html */
+.diff-table {
+    width: 100%;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.diff-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    text-align: center;
+}
+
+.diff-table td {
+    word-break: break-word;
+    padding: 0.5rem;
+    vertical-align: middle;
+}
+
+.diff-table td:first-child {
+    width: 25%;
+    font-weight: 500;
+}
+
+.diff-table td:nth-child(2),
+.diff-table td:nth-child(3) {
+    width: 37.5%;
+}
+
+.diff-table .bg-success.bg-opacity-25 {
+    background-color: rgba(25, 135, 84, 0.25) !important;
+}
+
+.diff-table .bg-light {
+    background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+.diff-table em {
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* Стили для опциональных секций из add_asset.html и edit_asset.html */
+.optional-section {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+}
+
+.form-check-input:checked + .form-check-label::before {
+    content: 'Скрыть ';
+}
+
+.form-check-input:not(:checked) + .form-check-label::before {
+    content: 'Показать ';
+}
+
+.form-check-label {
+    cursor: pointer;
+    color: #0d6efd;
+}
+
+.form-check-label:hover {
+    text-decoration: underline;
+}
+
+/* Стили из main.css */
+body[data-bs-theme="dark"] .footer .text-muted {
+    color: rgba(255, 255, 255, 0.75) !important; /* Более светлый серый для темного фона */
+}
+
+/* Стили для иконок из dashboard.html */
+.dashboard-icon-large {
+    font-size: 3rem;
+}
+
+.dashboard-icon-medium {
+    font-size: 2rem;
+}
+
+.dashboard-icon-small {
+    font-size: 1.2rem;
+}

@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             {% else %}
             <div class="text-center p-5">
-                <i class="bi bi-search text-muted" style="font-size: 3rem;"></i>
+                <i class="bi bi-search text-muted dashboard-icon-large"></i>
                 <h4 class="mt-3">Активы не найдены</h4>
                 <p class="text-muted">По вашему запросу ничего не найдено. Попробуйте изменить фильтры или <a href="{{ request.url_for('read_assets') }}">сбросить их</a>.</p>
             </div>
@@ -276,7 +276,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                         {% elif item.name == 'Монитор' %}bi-display
                                         {% elif item.name == 'Принтер' %}bi-printer
                                         {% else %}bi-hdd{% endif %} 
-                                        me-3 text-primary" style="font-size: 1.2rem;"></i>
+                                        me-3 text-primary dashboard-icon-small"></i>
                                     <span class="fw-medium">{{ item.name }}</span>
                                 </div>
                                 <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2">
@@ -286,7 +286,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             {% endfor %}
                         {% else %}
                             <div class="p-4 text-muted text-center">
-                                <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
+                                <i class="bi bi-inbox text-muted dashboard-icon-medium"></i>
                                 <p class="mt-2 mb-0">Нет данных о типах устройств</p>
                             </div>
                         {% endif %}
@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                         {% elif item.name == 'В ремонте' %}text-warning
                                         {% elif item.name == 'Списано' %}text-secondary
                                         {% else %}text-primary{% endif %}" 
-                                        style="font-size: 1.2rem;"></i>
+                                        dashboard-icon-small"></i>
                                     <span class="fw-medium">{{ item.name }}</span>
                                 </div>
                                 <span class="badge 
@@ -336,7 +336,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             {% endfor %}
                         {% else %}
                             <div class="p-4 text-muted text-center">
-                                <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
+                                <i class="bi bi-inbox text-muted dashboard-icon-medium"></i>
                                 <p class="mt-2 mb-0">Нет данных о статусах устройств</p>
                             </div>
                         {% endif %}
