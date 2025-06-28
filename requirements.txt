@@ -1,29 +1,11 @@
-# Основные зависимости
-fastapi==0.115.12
-uvicorn[standard]==0.29.0
-python-multipart==0.0.9
-Jinja2==3.1.4
-itsdangerous==2.2.0
-python-dotenv==1.0.1
-email-validator==2.1.0.post1
+# This file is maintained for backward compatibility
+# For new installations, use the requirements in the requirements/ directory
 
-# База данных
-sqlalchemy==2.0.30
-alembic==1.13.1
-asyncpg==0.29.0  # Асинхронный драйвер для PostgreSQL
+# Base requirements (production)
+-r requirements/base.txt
 
-# Pydantic
-pydantic==2.7.1
-pydantic-settings==2.2.1
+# Development dependencies (uncomment for development)
+# -r requirements/dev.txt
 
-# Дополнительные зависимости
-passlib[bcrypt]==1.7.4  # Для хеширования паролей
-python-jose[cryptography]==3.3.0  # Для JWT токенов
-
-# Утилиты
-python-dateutil==2.9.0  # Для работы с датами
-pytz==2024.1  # Часовые пояса
-
-# Кодировка и локализация
-Babel==2.14.0  # Для работы с локализацией
-chardet==5.2.0  # Для определения кодировки
+# Production dependencies (uncomment for production)
+# -r requirements/prod.txt

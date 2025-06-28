@@ -1,17 +1,19 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import RedirectResponse
+from fastapi import FastAPI, Request, Depends
+from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from contextlib import asynccontextmanager
 from starlette.middleware.sessions import SessionMiddleware
-import logging # Import logging
+import logging
 import os
 import secrets
+from typing import Dict, Any
 
-from app.db.database import Base
+from app.db.database import Base, get_db
 import app.models  # Важно для Alembic
-from app.api.endpoints import assets
-from app.api.endpoints import audit_logs
+from app.api.endpoints import assets, audit_logs, health
 
 # Настройка базового логирования
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -46,11 +48,48 @@ app.add_middleware(
     max_age=3600  # 1 час
 )
 
-# Включаем роутер для активов/устройств
-# Роуты из assets.py будут доступны по их прямому пути (например, /dashboard, /add)
-# Если вы захотите добавить API-префикс, например /api/v1, то измените здесь
+# Включаем роутеры
 app.include_router(assets.router)
-app.include_router(audit_logs.router)
+app.include_router(audit_logs.router, prefix="/api/audit", tags=["audit"])
+app.include_router(health.router, prefix="/api/health", tags=["health"])
+
+# Эндпоинты для проверки работоспособности
+@app.get("/health", include_in_schema=False)
+async def health_check() -> Dict[str, Any]:
+    """
+    Проверка работоспособности сервиса (для Kubernetes liveness probe).
+    """
+    return {"status": "ok", "service": "it-asset-management"}
+
+@app.get("/ready", include_in_schema=False)
+async def readiness_check() -> Dict[str, Any]:
+    """
+    Проверка готовности сервиса (для Kubernetes readiness probe).
+    """
+    return {"status": "ready", "service": "it-asset-management"}
+
+# Глобальные обработчики ошибок
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": exc.body},
+    )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.exception("Unhandled exception")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+    )
 
 # Корневой эндпоинт, который перенаправляет на страницу дашборда
 @app.get("/", status_code=302)

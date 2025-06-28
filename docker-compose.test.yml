@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+      target: builder
+    image: itbase-test:${CI_PIPELINE_ID:-latest}
+    container_name: itbase-test
+    env_file: .env.test
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
+      - TESTING=1
+    volumes:
+      - ./app:/app/app
+      - ./tests:/app/tests
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+    depends_on:
+      test-db:
+        condition: service_healthy
+    networks:
+      - itbase-test-network
+    command: >
+      sh -c "pytest -v --cov=app --cov-report=term-missing
+             --cov-report=xml:coverage.xml
+             --junitxml=junit/test-results.xml
+             --cov-fail-under=80
+             -p no:warnings"
+
+  test-db:
+    image: postgres:15-alpine
+    container_name: itbase-test-db
+    environment:
+      - POSTGRES_DB=${TEST_DB_NAME:-test_db}
+      - POSTGRES_USER=${TEST_DB_USER:-test_user}
+      - POSTGRES_PASSWORD=${TEST_DB_PASSWORD:-test_password}
+    ports:
+      - "5433:5432"
+    volumes:
+      - test_postgres_data:/var/lib/postgresql/data
+      - ./tests/init-test-db.sh:/docker-entrypoint-initdb.d/init-test-db.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${TEST_DB_USER:-test_user} -d ${TEST_DB_NAME:-test_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  test-redis:
+    image: redis:7-alpine
+    container_name: itbase-test-redis
+    command: redis-server --requirepass ${TEST_REDIS_PASSWORD:-test_redis}
+    ports:
+      - "6380:6379"
+    volumes:
+      - test_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+networks:
+  itbase-test-network:
+    driver: bridge
+
+volumes:
+  test_postgres_data:
+  test_redis_data:

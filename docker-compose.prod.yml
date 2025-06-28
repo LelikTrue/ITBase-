@@ -1,40 +1,89 @@
 version: '3.8'
 
+# Переменные окружения для UID/GID (можно переопределить в .env)
+x-user: &user
+  user: "${UID:-1000}:${GID:-1000}"
+
 services:
   backend:
     build:
       context: .
       dockerfile: Dockerfile.prod
-    restart: always
+      args:
+        USER_ID: ${UID:-1000}
+        GROUP_ID: ${GID:-1000}
+    restart: unless-stopped
     environment:
       - ENVIRONMENT=production
       - DEBUG=False
+      - APP_MODE=prod
+      - LOG_LEVEL=info
     ports:
       - "8000:8000"
+    user: *user
     depends_on:
       db:
         condition: service_healthy
     env_file: .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # Ограничения ресурсов
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
 
   db:
-    image: postgres:13-alpine
-    restart: always
+    image: postgres:16-alpine
+    restart: unless-stopped
     env_file: .env
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # Ограничения ресурсов
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
 
 volumes:
   postgres_data:
+    name: ${COMPOSE_PROJECT_NAME:-itbase}_postgres_data
 
 networks:
   default:
     driver: bridge
+    name: ${COMPOSE_PROJECT_NAME:-itbase}_network

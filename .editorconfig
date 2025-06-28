@@ -1,0 +1,140 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# Unix-style newlines with a newline ending every file
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# Python files
+[*.py]
+indent_size = 4
+max_line_length = 88
+
+# YAML files
+[*.{yaml,yml}]
+indent_size = 2
+
+# JSON files
+[*.json]
+indent_size = 2
+
+# TOML files
+[*.toml]
+indent_size = 4
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+
+# Shell scripts
+[*.sh]
+shell = bash
+indent_style = tab
+indent_size = 4
+
+# Docker files
+[Dockerfile*]
+indent_style = space
+indent_size = 4
+
+# Makefiles
+[Makefile]
+indent_style = tab
+
+# SQL files
+[*.sql]
+indent_style = space
+indent_size = 2
+
+# HTML templates
+[*.html]
+indent_style = space
+indent_size = 2
+
+# CSS/SCSS files
+[*.{css,scss}]
+indent_style = space
+indent_size = 2
+
+# JavaScript/TypeScript files
+[*.{js,ts,jsx,tsx}]
+indent_style = space
+indent_size = 2
+
+# XML files
+[*.xml]
+indent_style = space
+indent_size = 2
+
+# Configuration files
+[.editorconfig]
+indent_style = space
+indent_size = 2
+
+# Git configuration
+[.git*]
+indent_style = space
+indent_size = 2
+
+# Documentation
+[*.{rst,mdx}]
+trim_trailing_whitespace = false
+
+# Tests
+[**/tests/**]
+indent_size = 4
+
+# Migrations
+[**/migrations/*.py]
+indent_size = 4
+
+# Jupyter Notebooks
+[*.ipynb]
+indent_size = 2
+
+# VS Code settings
+[.vscode/*.json]
+indent_size = 2
+
+# GitHub workflows
+[.github/workflows/*.yml]
+indent_size = 2
+
+# Prettier configuration
+[.prettierrc.js]
+indent_size = 2
+
+# ESLint configuration
+[.eslintrc.js]
+indent_size = 2
+
+# Stylelint configuration
+[.stylelintrc.js]
+indent_size = 2
+
+# Babel configuration
+[babel.config.js]
+indent_size = 2
+
+# Webpack configuration
+[webpack.config.js]
+indent_size = 2
+
+# Jest configuration
+[jest.config.js]
+indent_size = 2
+
+# TypeScript configuration
+[tsconfig.json]
+indent_size = 2
+
+# VSCode settings
+[.vscode/settings.json]
+indent_size = 2

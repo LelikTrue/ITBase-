@@ -1,0 +1,82 @@
+# .pre-commit-config.yaml
+repos:
+  # Code formatters
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+        language_version: python3.12
+        args: [--line-length=88]
+
+  # Import sorting
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: isort (python)
+        args: [--profile=black, --line-length=88]
+
+  # Linter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.6
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+        types_or: [python, pyi]
+
+  # Pre-commit hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: debug-statements
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-json
+      - id: check-case-conflict
+      - id: check-executables-have-shebangs
+
+  # Type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-requests, types-python-dateutil, types-pytz]
+        args: [--ignore-missing-imports, --disallow-untyped-defs, --show-error-codes]
+        exclude: ^tests/
+
+  # Security
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.6
+    hooks:
+      - id: bandit
+        args: ["-r", "app", "-c", "pyproject.toml"]
+        exclude: ^tests/
+
+  # Tests
+  - repo: https://github.com/pre-commit/mirrors-pytest
+    rev: v8.2.1
+    hooks:
+      - id: pytest
+        additional_dependencies: [pytest-asyncio, pytest-cov, pytest-mock, pytest-xdist]
+        args: [--cov=app, --cov-report=term-missing, -n, auto, -v]
+        pass_filenames: false
+        always_run: true
+
+  # Docker
+  - repo: https://github.com/IamTheFij/docker-pre-commit
+    rev: v2.1.4
+    hooks:
+      - id: docker-compose-check
+
+  # Environment
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
+    hooks:
+      - id: python-check-blanket-noqa
+      - id: python-check-blanket-type-ignore
+      - id: python-no-log-warn
+      - id: python-use-type-annotations
+        exclude: ^tests/

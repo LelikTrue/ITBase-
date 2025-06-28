@@ -1,42 +1,104 @@
-# Используем легковесный образ Python
-FROM python:3.11-slim-buster as builder
+# ===== БИЛДЕР =====
+FROM python:3.12.3-slim-bookworm as builder
 
-# Устанавливаем системные зависимости
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Устанавливаем системные зависимости для сборки
+RUN --mount=type=cache,target=/var/cache/apt \
+    apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Устанавливаем зависимости
-WORKDIR /app
+# Создаем виртуальное окружение
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Устанавливаем зависимости с кешированием
+WORKDIR /build
 COPY requirements.txt .
-RUN pip install --user -r requirements.txt
 
-# Копируем исходный код
-COPY . .
+# Используем кеш pip и устанавливаем зависимости
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Собираем статические файлы (если есть)
-# RUN python manage.py collectstatic --noinput
+# ===== ФИНАЛЬНЫЙ ОБРАЗ =====
+FROM python:3.12.3-slim-bookworm
 
-# Финальный образ
-FROM python:3.11-slim-buster
+# Метаданные образа
+LABEL maintainer="ITBase Team <itbase@example.com>" \
+      description="ITBase Production Image" \
+      version="1.0.0"
 
-# Устанавливаем зависимости времени выполнения
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Устанавливаем только runtime зависимости
+RUN --mount=type=cache,target=/var/cache/apt \
+    apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
-# Копируем зависимости и приложение из builder
-WORKDIR /app
-COPY --from=builder /root/.local /root/.local
-COPY --from=builder /app .
+# Копируем виртуальное окружение из builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-# Убедимся, что скрипты в .local доступны
-ENV PATH=/root/.local/bin:$PATH
-ENV PYTHONPATH=/app
+# Создаем непривилегированного пользователя
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+
+RUN groupadd -r -g "${GROUP_ID}" appuser \
+    && useradd -r -u "${USER_ID}" -g appuser -d /app -s /bin/false appuser \
+    && mkdir -p /app/static /app/media /app/logs \
+    && chown -R appuser:appuser /app \
+    && chmod -R 755 /app
+
+# Рабочая директория
+WORKDIR /app
+
+# Копируем только необходимые файлы
+COPY --chown=appuser:appuser app app
+COPY --chown=appuser:appuser static static
+COPY --chown=appuser:appuser alembic alembic
+COPY --chown=appuser:appuser alembic.ini .
+COPY --chown=appuser:appuser .env.example .
+
+# Устанавливаем корректные права
+RUN chown -R appuser:appuser /app/static /app/media /app/logs \
+    && chmod -R 755 /app/static /app/media /app/logs
+
+# Настройка окружения
+ENV PYTHONPATH=/app \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONFAULTHANDLER=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONHASHSEED=random \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Очистка кеша Python
+RUN find /usr/local -type f -name '*.py[co]' -delete \
+    && find /usr/local -type d -name '__pycache__' -exec rm -rf {} + \
+    && find /opt/venv -type f -name '*.py[co]' -delete \
+    && find /opt/venv -type d -name '__pycache__' -exec rm -rf {} +
+
+# Переключаемся на непривилегированного пользователя
+USER appuser
 
 # Открываем порт
 EXPOSE 8000
 
-# Запускаем приложение
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Основная команда
+CMD ["gunicorn", "app.main:app", \
+    "-k", "uvicorn.workers.UvicornWorker", \
+    "--bind", "0.0.0.0:8000", \
+    "--workers", "$(( $(nproc) * 2 + 1 ))", \
+    "--worker-connections", "1000", \
+    "--timeout", "60", \
+    "--keep-alive", "5", \
+    "--access-logfile", "-", \
+    "--error-logfile", "-", \
+    "--log-level", "info", \
+    "--worker-tmp-dir", "/dev/shm", \
+    "--preload"]

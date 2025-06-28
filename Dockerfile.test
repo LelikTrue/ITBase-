@@ -1,0 +1,80 @@
+# ===== БИЛДЕР ДЛЯ ТЕСТОВ =====
+FROM python:3.12.3-slim-bookworm as builder
+
+# Устанавливаем системные зависимости для сборки
+RUN --mount=type=cache,target=/var/cache/apt \
+    apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Создаем виртуальное окружение
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Копируем зависимости
+WORKDIR /build
+COPY requirements-dev.txt requirements.txt ./
+
+# Устанавливаем зависимости с кешированием
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt -r requirements-dev.txt
+
+# ===== ФИНАЛЬНЫЙ ОБРАЗ ДЛЯ ТЕСТОВ =====
+FROM python:3.12.3-slim-bookwork
+
+# Устанавливаем только runtime зависимости
+RUN --mount=type=cache,target=/var/cache/apt \
+    apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Копируем виртуальное окружение из builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Создаем пользователя для тестов
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+
+RUN groupadd -r -g "${GROUP_ID}" testuser \
+    && useradd -r -u "${USER_ID}" -g testuser -d /app -s /bin/bash testuser \
+    && mkdir -p /app/tests /app/app /app/static /app/logs \
+    && chown -R testuser:testuser /app \
+    && chmod -R 755 /app
+
+# Рабочая директория
+WORKDIR /app
+
+# Копируем только необходимые файлы
+COPY --chown=testuser:testuser app /app/app
+COPY --chown=testuser:testuser tests /app/tests
+COPY --chown=testuser:testuser alembic /app/alembic
+COPY --chown=testuser:testuser alembic.ini .
+COPY --chown=testuser:testuser .env.test .env
+
+# Устанавливаем корректные права
+RUN chown -R testuser:testuser /app/static /app/logs \
+    && chmod -R 755 /app/static /app/logs
+
+# Настройка окружения
+ENV PYTHONPATH=/app \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONFAULTHANDLER=1 \
+    PYTHONHASHSEED=random \
+    TESTING=1
+
+# Очистка кеша Python
+RUN find /usr/local -type f -name '*.py[co]' -delete \
+    && find /usr/local -type d -name '__pycache__' -exec rm -rf {} + \
+    && find /opt/venv -type f -name '*.py[co]' -delete \
+    && find /opt/venv -type d -name '__pycache__' -exec rm -rf {} +
+
+# Переключаемся на непривилегированного пользователя
+USER testuser
+
+# Команда по умолчанию для запуска тестов
+CMD ["pytest", "-v", "--cov=app", "--cov-report=term-missing"]

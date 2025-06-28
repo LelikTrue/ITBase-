@@ -1,51 +1,107 @@
-# Dockerfile
+# ===== БАЗОВЫЙ ОБРАЗ =====
+FROM python:3.12.3-slim-bookworm AS base
 
-# Базовый образ: Python 3.11 на основе Debian Buster (легковесный).
-FROM python:3.11-slim-buster
-
-# Устанавливаем рабочую директорию внутри контейнера.
-# Все последующие команды будут выполняться относительно этой директории.
-WORKDIR /app
-
-# Копируем файл зависимостей Python в рабочую директорию.
-# Это делается первым, чтобы Docker мог кэшировать этот слой,
-# если requirements.txt не меняется, ускоряя последующие сборки.
-COPY requirements.txt .
-
-# Установка системных зависимостей, необходимых для psycopg2-binary (драйвера PostgreSQL).
-# 'build-essential' предоставляет инструменты для компиляции, 'libpq-dev' - заголовочные файлы для PostgreSQL.
-# 'gcc' также часто требуется для сборки C-расширений.
-# '--no-install-recommends' уменьшает количество устанавливаемых необязательных пакетов.
-# 'rm -rf /var/lib/apt/lists/*' очищает кэш пакетов после установки для уменьшения размера образа.
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Установка системных зависимостей
+RUN --mount=type=cache,target=/var/cache/apt \
+    apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
-    gcc \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Устанавливаем Python-зависимости из requirements.txt.
-# '--no-cache-dir' отключает кэш pip для уменьшения размера образа.
-RUN pip install --no-cache-dir -r requirements.txt
+# Создаем виртуальное окружение
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-# Копируем файлы проекта в рабочую директорию контейнера.
-# .env, alembic.ini и папка alembic должны быть в корневом каталоге вашего проекта на хосте.
-# Docker копирует их в /app внутри контейнера.
-COPY app/ ./app/
-COPY static/ ./static/
-COPY templates/ ./templates/
-COPY alembic.ini .
-COPY alembic/ ./alembic/
+# Копируем зависимости
+WORKDIR /build
+COPY requirements requirements/
 
-# Добавляем /app в PYTHONPATH.
-# Это позволяет Python находить модули внутри вашей директории 'app' (например, 'from app.db.database').
-ENV PYTHONPATH=/app:$PYTHONPATH
+# ===== СТАДИЯ СОБРАННЫХ ЗАВИСИМОСТЕЙ =====
+FROM base AS deps
 
-# Открываем порт 8000. Это просто декларация, фактический проброс порта делается в docker-compose.yml.
+# Устанавливаем зависимости с кешированием
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements/base.txt
+
+# ===== РАЗРАБОТКА =====
+FROM base AS dev
+
+# Устанавливаем зависимости разработки
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements/dev.txt
+
+# Копируем исходный код
+WORKDIR /app
+COPY --chown=1000:1000 . .
+
+# Настройка пользователя
+RUN useradd -u 1000 -m appuser && \
+    chown -R appuser:appuser /app
+
+USER appuser
+
+# Порт для разработки
 EXPOSE 8000
 
-# Команда, которая будет выполняться при запуске контейнера по умолчанию.
-# Uvicorn запускает ваше FastAPI приложение 'app.main:app'.
-# '--host 0.0.0.0' делает приложение доступным на всех сетевых интерфейсах контейнера.
-# '--port 8000' указывает порт, который Uvicorn будет слушать.
-# '--reload' перезагружает сервер при изменении кода (удобно для разработки).
+# Команда по умолчанию
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+# ===== ПРОДУКЦИЯ =====
+FROM base AS prod
+
+# Устанавливаем только runtime зависимости
+RUN --mount=type=cache,target=/var/cache/apt \
+    apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Копируем зависимости из стадии deps
+COPY --from=deps /opt/venv /opt/venv
+
+# Устанавливаем production зависимости
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir -r requirements/prod.txt
+
+# Копируем исходный код
+WORKDIR /app
+COPY --chown=1000:1000 . .
+
+# Создаем пользователя
+RUN useradd -u 1000 -m appuser && \
+    chown -R appuser:appuser /app
+
+# Настройка окружения
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONFAULTHANDLER=1 \
+    PYTHONPATH=/app
+
+# Создаем необходимые директории
+RUN mkdir -p /app/static /app/media /app/logs && \
+    chown -R appuser:appuser /app/static /app/media /app/logs
+
+# Переключаемся на непривилегированного пользователя
+USER appuser
+
+# Открываем порт
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Команда запуска
+CMD ["gunicorn", "app.main:app", \
+    "-k", "uvicorn.workers.UvicornWorker", \
+    "--bind", "0.0.0.0:8000", \
+    "--workers", "$(( $(nproc) * 2 + 1 ))", \
+    "--worker-connections", "1000", \
+    "--timeout", "60", \
+    "--keep-alive", "5", \
+    "--access-logfile", "-", \
+    "--error-logfile", "-", \
+    "--log-level", "info", \
+    "--worker-tmp-dir", "/dev/shm"]

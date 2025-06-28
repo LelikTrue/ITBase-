@@ -5,59 +5,114 @@
 
 version: '3.8'
 
+# Общие переменные окружения (можно переопределить в .env)
+x-env: &env
+  env_file: .env
+  environment:
+    - PYTHONUNBUFFERED=1
+    - PYTHONDONTWRITEBYTECODE=1
+    - TZ=Europe/Moscow
+
 services:
   # Сервис базы данных PostgreSQL
   db:
-    image: postgres:13-alpine
+    image: postgres:16-alpine
     container_name: itbase-db
-    restart: always
+    restart: unless-stopped
     env_file: .env
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-itbase}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./schema.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./initdb:/docker-entrypoint-initdb.d
     ports:
       - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-itbase}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - itbase-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Сервис Adminer для управления базой данных через веб-интерфейс
   adminer:
     image: adminer:latest
     container_name: itbase-adminer
-    restart: always
+    restart: unless-stopped
     ports:
       - "${ADMINER_PORT:-8080}:8080"
     environment:
       ADMINER_DEFAULT_SERVER: db
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - itbase-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # Сервис бэкенд-приложения (FastAPI)
   backend:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - APP_MODE=${APP_MODE:-dev}
     container_name: itbase-backend
-    restart: always
+    restart: unless-stopped
     ports:
       - "${APP_PORT:-8000}:8000"
     env_file: .env
+    environment:
+      <<: *env
+      - APP_MODE=${APP_MODE:-dev}
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-itbase}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     networks:
       - itbase-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # Ограничения ресурсов (можно раскомментировать при необходимости)
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '1'
+    #       memory: 2G
+    #     reservations:
+    #       cpus: '0.5'
+    #       memory: 512M
 
 # Определение томов для постоянного хранения данных
 volumes:
   postgres_data:
+    name: ${COMPOSE_PROJECT_NAME:-itbase}_postgres_data
 
 # Определение пользовательской сети для сервисов
 networks:
   itbase-network:
     driver: bridge
+    name: ${COMPOSE_PROJECT_NAME:-itbase}_network

@@ -1,0 +1,143 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  PYTHON_VERSION: '3.12'
+  POSTGRES_DB: test_db
+  POSTGRES_USER: test_user
+  POSTGRES_PASSWORD: test_password
+  POSTGRES_HOST: localhost
+  POSTGRES_PORT: 5432
+  DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
+  REDIS_URL: redis://localhost:6379/0
+  PYTHONPATH: ${{ github.workspace }}
+
+jobs:
+  test:
+    name: Test with Python ${{ env.PYTHON_VERSION }}
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ${{ env.POSTGRES_USER }}"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+        cache-dependency-path: '**/requirements*.txt'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements/dev.txt
+
+    - name: Run pre-commit
+      run: |
+        pre-commit run --all-files --show-diff-on-failure
+
+    - name: Run tests with coverage
+      env:
+        TEST_DATABASE_URL: ${{ env.DATABASE_URL }}
+        TEST_REDIS_URL: ${{ env.REDIS_URL }}
+      run: |
+        pytest --cov=app --cov-report=xml --cov-report=term-missing tests/
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+        verbose: true
+
+  security:
+    name: Security checks
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install security tools
+      run: |
+        pip install safety bandit
+
+    - name: Check for vulnerabilities in dependencies
+      run: safety check --full-report
+
+    - name: Run bandit security linter
+      run: bandit -r app -c pyproject.toml
+
+  docker:
+    name: Docker build and test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Cache Docker layers
+      uses: actions/cache@v3
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-
+
+    
+    - name: Build and test Docker image
+      run: |
+        docker build -t itbase:test .
+        docker run -d --name itbase_test -p 8000:8000 itbase:test
+        
+        # Wait for the container to be ready
+        for i in {1..10}; do
+          if curl -s http://localhost:8000/health | grep -q '"status":"ok"'; then
+            echo "Container is ready"
+            break
+          fi
+          echo "Waiting for container to be ready..."
+          sleep 5
+        done
+        
+        # Run tests inside the container
+        docker exec itbase_test pytest /app/tests/
+
+        # Cleanup
+        docker stop itbase_test
+        docker rm itbase_test
