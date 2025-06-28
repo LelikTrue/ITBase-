@@ -83,22 +83,83 @@
    pre-commit install
    ```
 
-3. **Запуск приложения:**
-   ```bash
-   # Запуск с помощью Docker (рекомендуется)
-   docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build
-   
-   # Или напрямую
-   uvicorn app.main:app --reload
-   ```
+## 🚀 Запуск приложения
 
-4. **Доступ к сервисам:**
-   - Приложение: <http://localhost:8000>
-   - Документация API: <http://localhost:8000/docs>
-   - Redoc: <http://localhost:8000/redoc>
-   - Adminer (управление БД): <http://localhost:8080>
-   - PgAdmin: <http://localhost:5050> (если включен в docker-compose)
-   - ReDoc документация: <http://localhost:8000/redoc>
+### Локальная разработка с hot-reload
+Для локальной разработки с автоматической перезагрузкой при изменениях:
+```bash
+docker compose -f docker-compose.yml -f docker-compose.override.yml up --build
+```
+
+### Полный dev-стек
+Для запуска всего стека разработки (бэкенд, БД, Adminer):
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+
+### Продакшн-режим
+Для запуска в продакшн-режиме:
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+### Тестирование
+Для запуска тестов:
+```bash
+docker compose -f docker-compose.test.yml run --rm test
+```
+
+### CI/CD сценарии
+Для использования в CI/CD пайплайнах:
+```bash
+docker compose -f docker-compose.ci.yml up --exit-code-from app
+```
+
+## 🔌 Доступ к сервисам
+
+После запуска приложения будут доступны следующие сервисы:
+
+- **Основное приложение**: <http://localhost:8000>
+- **Документация API (Swagger UI)**: <http://localhost:8000/docs>
+- **Документация API (ReDoc)**: <http://localhost:8000/redoc>
+- **Adminer (управление БД)**: <http://localhost:8080>
+  - Система: PostgreSQL
+  - Сервер: db
+  - Пользователь: ${POSTGRES_USER:-postgres}
+  - Пароль: ${POSTGRES_PASSWORD:-postgres}
+  - База данных: ${POSTGRES_DB:-itbase}
+
+## 🛠 Полезные команды
+
+### Управление контейнерами
+```bash
+# Остановить все контейнеры
+docker compose down
+
+# Остановить и удалить тома
+docker compose down -v
+
+# Пересобрать конкретный сервис (например, backend)
+docker compose build backend
+
+# Обновить образы и перезапустить
+docker compose pull && docker compose up -d
+
+# Просмотр логов сервиса
+docker compose logs -f backend
+```
+
+### Управление базой данных
+```bash
+# Применить миграции
+docker compose exec backend alembic upgrade head
+
+# Создать новую миграцию
+docker compose exec backend alembic revision --autogenerate -m "описание изменений"
+
+# Откатить последнюю миграцию
+docker compose exec backend alembic downgrade -1
+```
 
 Подробные инструкции смотрите в [CONTRIBUTING.md](CONTRIBUTING.md)
 
