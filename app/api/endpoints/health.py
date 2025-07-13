@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from typing import Dict, Any
 
-from app.db.session import get_db
+from app.db.database import get_db
 
 router = APIRouter()
 
