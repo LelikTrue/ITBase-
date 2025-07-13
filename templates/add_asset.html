@@ -63,32 +63,47 @@
                                 <!-- Основные обязательные поля (продолжение) -->
                                 <div class="mb-3">
                                     <label for="asset_type_id" class="form-label">Тип актива <span class="text-danger">*</span></label>
-                                    <select class="form-select" id="asset_type_id" name="asset_type_id" required>
-                                        <option value="">Выберите тип актива</option>
-                                        {% for asset_type in asset_types %}
-                                        <option value="{{ asset_type.id }}" {% if device.asset_type_id == asset_type.id %}selected{% endif %}>{{ asset_type.name }}</option>
-                                        {% endfor %}
-                                    </select>
+                                    <div class="input-group">
+                                        <select class="form-select" id="asset_type_id" name="asset_type_id" required>
+                                            <option value="">Выберите тип актива</option>
+                                            {% for asset_type in asset_types %}
+                                            <option value="{{ asset_type.id }}" {% if device.asset_type_id == asset_type.id %}selected{% endif %}>{{ asset_type.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#assetTypeModal">
+                                            <i class="bi bi-plus"></i>
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="device_model_id" class="form-label">Модель устройства <span class="text-danger">*</span></label>
-                                    <select class="form-select" id="device_model_id" name="device_model_id" required>
-                                        <option value="">Выберите модель устройства</option>
-                                        {% for model in device_models %}
-                                        <option value="{{ model.id }}" {% if device.device_model_id == model.id %}selected{% endif %}>{{ model.name }} ({{ model.manufacturer.name if model.manufacturer else 'Неизвестный производитель' }})</option>
-                                        {% endfor %}
-                                    </select>
+                                    <label for="device_model_id" class="form-label">Модел�� устройства <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <select class="form-select" id="device_model_id" name="device_model_id" required>
+                                            <option value="">Выберите модель устройства</option>
+                                            {% for model in device_models %}
+                                            <option value="{{ model.id }}" {% if device.device_model_id == model.id %}selected{% endif %}>{{ model.name }} ({{ model.manufacturer.name if model.manufacturer else 'Неизвестный производитель' }})</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#deviceModelModal">
+                                            <i class="bi bi-plus"></i>
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div class="mb-3">
                                     <label for="status_id" class="form-label">Статус <span class="text-danger">*</span></label>
-                                    <select class="form-select" id="status_id" name="status_id" required>
-                                        <option value="">Выберите статус</option>
-                                        {% for status in device_statuses %}
-                                        <option value="{{ status.id }}" {% if device.status_id == status.id %}selected{% endif %}>{{ status.name }}</option>
-                                        {% endfor %}
-                                    </select>
+                                    <div class="input-group">
+                                        <select class="form-select" id="status_id" name="status_id" required>
+                                            <option value="">Выберите статус</option>
+                                            {% for status in device_statuses %}
+                                            <option value="{{ status.id }}" {% if device.status_id == status.id %}selected{% endif %}>{{ status.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#deviceStatusModal">
+                                            <i class="bi bi-plus"></i>
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div class="mb-3">

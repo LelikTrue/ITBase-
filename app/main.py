@@ -13,7 +13,7 @@ from typing import Dict, Any
 
 from app.db.database import Base, get_db
 import app.models  # Важно для Alembic
-from app.api.endpoints import assets, audit_logs, health
+from app.api.endpoints import assets, audit_logs, health, dictionaries
 
 # Настройка базового логирования
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -52,6 +52,7 @@ app.add_middleware(
 app.include_router(assets.router)
 app.include_router(audit_logs.router, prefix="/api/audit", tags=["audit"])
 app.include_router(health.router, prefix="/api/health", tags=["health"])
+app.include_router(dictionaries.router)
 
 # Эндпоинты для проверки работоспособности
 @app.get("/health", include_in_schema=False)
