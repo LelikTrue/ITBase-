@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block title %}Управление справочниками{% endblock %}
+
+{% block head_extra %}
+{{ super() }}
+<style>
+.admin-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.admin-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.dictionary-item {
+    border-left: 4px solid #007bff;
+    transition: border-color 0.3s;
+}
+
+.dictionary-item:hover {
+    border-left-color: #28a745;
+}
+
+.breadcrumb {
+    background: none;
+    padding: 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('read_assets') }}">Главная</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Администрирование</li>
+            <li class="breadcrumb-item active" aria-current="page">Справочники</li>
+        </ol>
+    </nav>
+
+    <!-- Заголовок -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-gear-fill text-primary me-2"></i>
+            Управление справочниками
+        </h1>
+        <div>
+            <button class="btn btn-outline-primary" onclick="refreshStats()">
+                <i class="bi bi-arrow-clockwise"></i> Обновить
+            </button>
+        </div>
+    </div>
+
+    <!-- Статистика -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-collection fs-1 mb-2"></i>
+                    <div class="stat-number">{{ stats.asset_types }}</div>
+                    <div>Типов активов</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card h-100" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="card-body text-center">
+                    <i class="bi bi-laptop fs-1 mb-2"></i>
+                    <div class="stat-number">{{ stats.device_models }}</div>
+                    <div>Моделей устройств</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card h-100" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="card-body text-center">
+                    <i class="bi bi-check-circle fs-1 mb-2"></i>
+                    <div class="stat-number">{{ stats.device_statuses }}</div>
+                    <div>Статусов</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card h-100" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <div class="card-body text-center">
+                    <i class="bi bi-people fs-1 mb-2"></i>
+                    <div class="stat-number">{{ stats.employees }}</div>
+                    <div>Сотрудников</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Управление справочниками -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card admin-card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul me-2"></i>
+                        Справочники системы
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <!-- Типы активов -->
+                        <div class="list-group-item dictionary-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-collection text-primary fs-4 me-3"></i>
+                                    <div>
+                                        <h6 class="mb-1">Типы активов</h6>
+                                        <small class="text-muted">Категории оборудования ({{ stats.asset_types }} записей)</small>
+                                    </div>
+                                </div>
+                                <a href="{{ url_for('manage_dictionary', dictionary_type='asset-types') }}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-gear"></i> Управлять
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Модели устройств -->
+                        <div class="list-group-item dictionary-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-laptop text-info fs-4 me-3"></i>
+                                    <div>
+                                        <h6 class="mb-1">Модели устройств</h6>
+                                        <small class="text-muted">Конкретные модели оборудования ({{ stats.device_models }} записей)</small>
+                                    </div>
+                                </div>
+                                <a href="{{ url_for('manage_dictionary', dictionary_type='device-models') }}" 
+                                   class="btn btn-outline-info btn-sm">
+                                    <i class="bi bi-gear"></i> Управлять
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Статусы устройств -->
+                        <div class="list-group-item dictionary-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-check-circle text-success fs-4 me-3"></i>
+                                    <div>
+                                        <h6 class="mb-1">Статусы устройств</h6>
+                                        <small class="text-muted">Состояния оборудования ({{ stats.device_statuses }} записей)</small>
+                                    </div>
+                                </div>
+                                <a href="{{ url_for('manage_dictionary', dictionary_type='device-statuses') }}" 
+                                   class="btn btn-outline-success btn-sm">
+                                    <i class="bi bi-gear"></i> Управлять
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Производители -->
+                        <div class="list-group-item dictionary-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-building text-warning fs-4 me-3"></i>
+                                    <div>
+                                        <h6 class="mb-1">Производители</h6>
+                                        <small class="text-muted">Компании-производители ({{ stats.manufacturers }} записей)</small>
+                                    </div>
+                                </div>
+                                <a href="{{ url_for('manage_dictionary', dictionary_type='manufacturers') }}" 
+                                   class="btn btn-outline-warning btn-sm">
+                                    <i class="bi bi-gear"></i> Управлять
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Отделы -->
+                        <div class="list-group-item dictionary-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-diagram-3 text-secondary fs-4 me-3"></i>
+                                    <div>
+                                        <h6 class="mb-1">Отделы</h6>
+                                        <small class="text-muted">Подразделения организации ({{ stats.departments }} записей)</small>
+                                    </div>
+                                </div>
+                                <a href="{{ url_for('manage_dictionary', dictionary_type='departments') }}" 
+                                   class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-gear"></i> Управлять
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Местоположения -->
+                        <div class="list-group-item dictionary-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-geo-alt text-danger fs-4 me-3"></i>
+                                    <div>
+                                        <h6 class="mb-1">Местоположения</h6>
+                                        <small class="text-muted">Физические расположения ({{ stats.locations }} записей)</small>
+                                    </div>
+                                </div>
+                                <a href="{{ url_for('manage_dictionary', dictionary_type='locations') }}" 
+                                   class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-gear"></i> Управлять
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Сотрудники -->
+                        <div class="list-group-item dictionary-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-people text-dark fs-4 me-3"></i>
+                                    <div>
+                                        <h6 class="mb-1">Сотрудники</h6>
+                                        <small class="text-muted">Персонал организации ({{ stats.employees }} записей)</small>
+                                    </div>
+                                </div>
+                                <a href="{{ url_for('manage_dictionary', dictionary_type='employees') }}" 
+                                   class="btn btn-outline-dark btn-sm">
+                                    <i class="bi bi-gear"></i> Управлять
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Последние изменения -->
+            <div class="card admin-card">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-clock-history me-2"></i>
+                        Последние добавления
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if recent_items.asset_types %}
+                    <h6 class="text-muted">Типы активов</h6>
+                    <ul class="list-unstyled mb-3">
+                        {% for item in recent_items.asset_types %}
+                        <li class="mb-1">
+                            <small><i class="bi bi-dot"></i> {{ item.name }}</small>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+
+                    {% if recent_items.device_models %}
+                    <h6 class="text-muted">Модели устройств</h6>
+                    <ul class="list-unstyled mb-3">
+                        {% for item in recent_items.device_models %}
+                        <li class="mb-1">
+                            <small><i class="bi bi-dot"></i> {{ item.name }}</small>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+
+                    {% if recent_items.device_statuses %}
+                    <h6 class="text-muted">Статусы</h6>
+                    <ul class="list-unstyled">
+                        {% for item in recent_items.device_statuses %}
+                        <li class="mb-1">
+                            <small><i class="bi bi-dot"></i> {{ item.name }}</small>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Быстрые действия -->
+            <div class="card admin-card mt-3">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-lightning me-2"></i>
+                        Быстрые действия
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary btn-sm" onclick="openQuickAdd('asset-types')">
+                            <i class="bi bi-plus-circle"></i> Добавить тип актива
+                        </button>
+                        <button class="btn btn-outline-info btn-sm" onclick="openQuickAdd('device-statuses')">
+                            <i class="bi bi-plus-circle"></i> Добавить статус
+                        </button>
+                        <button class="btn btn-outline-warning btn-sm" onclick="openQuickAdd('manufacturers')">
+                            <i class="bi bi-plus-circle"></i> Добавить производителя
+                        </button>
+                        <hr>
+                        <a href="{{ url_for('read_assets') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-left"></i> Вернуться к активам
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+function refreshStats() {
+    // Обновление статистики
+    fetch('/admin/api/dictionaries/stats')
+        .then(response => response.json())
+        .then(data => {
+            // Обновляем числа в карточках статистики
+            console.log('Статистика обновлена:', data);
+            // Здесь можно добавить обновление DOM
+        })
+        .catch(error => {
+            console.error('Ошибка при обновлении статистики:', error);
+        });
+}
+
+function openQuickAdd(dictionaryType) {
+    // Быстрое добавление записи
+    const urls = {
+        'asset-types': '/admin/dictionaries/asset-types',
+        'device-statuses': '/admin/dictionaries/device-statuses', 
+        'manufacturers': '/admin/dictionaries/manufacturers'
+    };
+    
+    if (urls[dictionaryType]) {
+        window.location.href = urls[dictionaryType];
+    }
+}
+
+// Анимация при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.admin-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %}

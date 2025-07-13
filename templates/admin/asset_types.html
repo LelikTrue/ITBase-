@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+
+{% block title %}Управление типами активов{% endblock %}
+
+{% block head_extra %}
+{{ super() }}
+<style>
+.table-actions {
+    white-space: nowrap;
+}
+
+.edit-form {
+    display: none;
+}
+
+.edit-mode .view-mode {
+    display: none;
+}
+
+.edit-mode .edit-form {
+    display: block;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('read_assets') }}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('dictionaries_dashboard') }}">Администрирование</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Типы активов</li>
+        </ol>
+    </nav>
+
+    <!-- Заголовок -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-collection text-primary me-2"></i>
+            Управление типами активов
+        </h1>
+        <div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+                <i class="bi bi-plus-circle"></i> Добавить тип актива
+            </button>
+        </div>
+    </div>
+
+    <!-- Поиск и фильтры -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" id="searchInput" placeholder="Поиск по названию...">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary" onclick="clearSearch()">
+                            <i class="bi bi-x-circle"></i> Очистить
+                        </button>
+                        <button class="btn btn-outline-info" onclick="refreshTable()">
+                            <i class="bi bi-arrow-clockwise"></i> Обновить
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Таблица -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Список типов активов ({{ items|length }} записей)</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="assetTypesTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 50px;">#</th>
+                            <th>Название</th>
+                            <th>Описание</th>
+                            <th style="width: 150px;">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr data-id="{{ item.id }}">
+                            <td>{{ item.id }}</td>
+                            <td>
+                                <div class="view-mode">
+                                    <strong>{{ item.name }}</strong>
+                                </div>
+                                <div class="edit-form">
+                                    <input type="text" class="form-control form-control-sm" 
+                                           value="{{ item.name }}" name="name" required>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="view-mode">
+                                    <span class="text-muted">{{ item.description or 'Нет описания' }}</span>
+                                </div>
+                                <div class="edit-form">
+                                    <textarea class="form-control form-control-sm" 
+                                              name="description" rows="2">{{ item.description or '' }}</textarea>
+                                </div>
+                            </td>
+                            <td class="table-actions">
+                                <div class="view-mode">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editRow({{ item.id }})">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteItem({{ item.id }}, '{{ item.name }}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                                <div class="edit-form">
+                                    <button class="btn btn-sm btn-success" onclick="saveRow({{ item.id }})">
+                                        <i class="bi bi-check"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-secondary" onclick="cancelEdit({{ item.id }})">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно добавления -->
+<div class="modal fade" id="addModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Добавить тип актива</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="addName" class="form-label">Название <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="addName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addDescription" class="form-label">Описание</label>
+                        <textarea class="form-control" id="addDescription" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Создать</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтверждение удаления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить тип актива <strong id="deleteItemName"></strong>?</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Это действие нельзя отменить. Убедитесь, что тип актива не используется в устройствах.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">Удалить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+let currentEditId = null;
+let deleteItemId = null;
+
+// Поиск
+document.getElementById('searchInput').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#assetTypesTable tbody tr');
+    
+    rows.forEach(row => {
+        const name = row.cells[1].textContent.toLowerCase();
+        const description = row.cells[2].textContent.toLowerCase();
+        
+        if (name.includes(searchTerm) || description.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+
+// Очистка поиска
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    document.querySelectorAll('#assetTypesTable tbody tr').forEach(row => {
+        row.style.display = '';
+    });
+}
+
+// Обновление таблицы
+function refreshTable() {
+    location.reload();
+}
+
+// Редактирование строки
+function editRow(id) {
+    if (currentEditId && currentEditId !== id) {
+        cancelEdit(currentEditId);
+    }
+    
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    row.classList.add('edit-mode');
+    currentEditId = id;
+}
+
+// Отмена редактирования
+function cancelEdit(id) {
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    row.classList.remove('edit-mode');
+    currentEditId = null;
+}
+
+// Сохранение изменений
+async function saveRow(id) {
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    const name = row.querySelector('input[name="name"]').value.trim();
+    const description = row.querySelector('textarea[name="description"]').value.trim();
+    
+    if (!name) {
+        alert('Название обязательно для заполнения');
+        return;
+    }
+    
+    try {
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('description', description);
+        
+        const response = await fetch(`/api/dictionaries/asset-types/${id}`, {
+            method: 'PUT',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            // Обновляем отображение
+            row.querySelector('.view-mode strong').textContent = name;
+            row.querySelector('.view-mode .text-muted').textContent = description || 'Нет описания';
+            
+            cancelEdit(id);
+            showNotification('success', result.message || 'Тип актива успешно обновлен');
+        } else {
+            throw new Error(result.detail || 'Ошибка при сохранении');
+        }
+    } catch (error) {
+        console.error('��шибка:', error);
+        showNotification('error', error.message);
+    }
+}
+
+// Удаление элемента
+function deleteItem(id, name) {
+    deleteItemId = id;
+    document.getElementById('deleteItemName').textContent = name;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+// Подтверждение удаления
+document.getElementById('confirmDelete').addEventListener('click', async function() {
+    if (!deleteItemId) return;
+    
+    try {
+        const response = await fetch(`/api/dictionaries/asset-types/${deleteItemId}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            // Удаляем строку из таблицы
+            document.querySelector(`tr[data-id="${deleteItemId}"]`).remove();
+            
+            bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+            showNotification('success', result.message || 'Тип актива успешно удален');
+        } else {
+            throw new Error(result.detail || 'Ошибка при удалении');
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showNotification('error', error.message);
+    }
+    
+    deleteItemId = null;
+});
+
+// Добавление нового элемента
+document.getElementById('addForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    try {
+        const response = await fetch('/api/dictionaries/asset-types', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
+            showNotification('success', result.message || 'Тип актива успешно создан');
+            
+            // Перезагружаем страницу для отображения нового элемента
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            throw new Error(result.detail || 'Ошибка при создании');
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showNotification('error', error.message);
+    }
+});
+
+// Функция показа уведомлений
+function showNotification(type, message) {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const icon = type === 'success' ? 'check-circle' : 'exclamation-triangle';
+    
+    const notification = document.createElement('div');
+    notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        <i class="bi bi-${icon} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Автоматическое удаление через 5 секунд
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// Очистка формы при закрытии модального окна
+document.getElementById('addModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('addForm').reset();
+});
+</script>
+{% endblock %}
