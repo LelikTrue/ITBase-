@@ -75,12 +75,13 @@ DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST", "localhost") # 'localhost' как значение по умолчанию
 DB_NAME = os.getenv("DB_NAME")
+DB_PORT = os.getenv("DB_PORT", "5432")
 
 # Проверяем, что все переменные загрузились
 # if not all([DB_USER, DB_PASSWORD, DB_HOST, DB_NAME]):
 #     raise ValueError("Не все переменные окружения для подключения к БД заданы в .env файле")
 
-db_url = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:5432/{DB_NAME}"
+db_url = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 config.set_main_option("sqlalchemy.url", db_url)
 
 
