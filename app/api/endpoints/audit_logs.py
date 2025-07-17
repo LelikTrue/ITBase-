@@ -17,13 +17,11 @@ async def view_logs_page(
     request: Request,
     db: Session = Depends(get_db),
     action_type: Optional[str] = Query(None),
-
     entity_type: Optional[str] = Query(None),
-
-    user_id: Optional[int] = Query(None),
-    entity_id: Optional[int] = Query(None),
-    start_date: Optional[date] = Query(None),
-    end_date: Optional[date] = Query(None),
+    user_id: Optional[str] = Query(None),
+    entity_id: Optional[str] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
 ):
     query = db.query(ActionLog)
 

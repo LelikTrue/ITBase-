@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title | default('Список активов') }}{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const table = document.querySelector('.table-assets');
+    if (!table) return;
+
+    const headers = table.querySelectorAll('thead th');
+    const columnList = document.getElementById('column-list');
+    const storageKey = 'assetsListColumnVisibility';
+
+    // Загружаем состояние из localStorage или устанавливаем значения по умолчанию
+    let columnVisibility = JSON.parse(localStorage.getItem(storageKey)) || {
+        'ID': true,
+        'Инвентарный №': true,
+        'Модель': true,
+        'Производитель': true,
+        'Тип': true,
+        'Статус': true,
+        'Отдел': true,
+        'Сотрудник': false, // Скрыто по умолчанию
+        'Локация': false,   // Скрыто по умолчанию
+        'Действия': true
+    };
+
+    // Функция для переключения видимости колонки
+    function toggleColumn(colIndex, show) {
+        const cells = table.querySelectorAll(`tr > *:nth-child(${colIndex + 1})`);
+        cells.forEach(cell => {
+            cell.style.display = show ? '' : 'none';
+        });
+    }
+
+    headers.forEach((th, index) => {
+        const columnName = th.innerText.trim();
+        if (!columnName) return;
+
+        // Устанавливаем видимость по умолчанию, если колонка новая
+        if (columnVisibility[columnName] === undefined) {
+            columnVisibility[columnName] = true;
+        }
+
+        // Создаем чекбокс для колонки
+        const li = document.createElement('li');
+        li.className = 'dropdown-item pe-2';
+        li.innerHTML = `
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="col-check-${index}" 
+                       ${columnVisibility[columnName] ? 'checked' : ''} 
+                       ${columnName === 'Действия' ? 'disabled' : ''}>
+                <label class="form-check-label" for="col-check-${index}">
+                    ${columnName}
+                </label>
+            </div>
+        `;
+        columnList.appendChild(li);
+
+        // Добавляем обработчик события
+        const checkbox = li.querySelector('input');
+        if (columnName !== 'Действия') {
+            checkbox.addEventListener('change', () => {
+                toggleColumn(index, checkbox.checked);
+                columnVisibility[columnName] = checkbox.checked;
+                localStorage.setItem(storageKey, JSON.stringify(columnVisibility));
+            });
+        }
+    });
+
+    // Применяем начальную видимость при загрузке страницы
+    headers.forEach((th, index) => {
+        const columnName = th.innerText.trim();
+        if (columnVisibility[columnName] !== undefined) {
+            toggleColumn(index, columnVisibility[columnName]);
+        }
+    });
+
+    // Предотвращаем закрытие выпадающего меню при клике на чекбокс
+    columnList.addEventListener('click', function (e) {
+        e.stopPropagation();
+    });
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Список активов</h1>
+        <div class="btn-group">
+            <a href="{{ request.url_for('add_asset_form') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Добавить актив
+            </a>
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="columnSelector" data-bs-toggle="dropdown" aria-expanded="false" title="Выбрать столбцы">
+                <i class="bi bi-layout-three-columns"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="columnSelector" id="column-list">
+                <!-- Чекбоксы для колонок будут добавлены через JS -->
+            </ul>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Активы</h5>
+            <div class="text-muted">Всего: {{ total_devices }} активов</div>
+        </div>
+        <div class="card-body">
+            <!-- Фильтры -->
+            <div class="filters-panel mb-4 p-3 bg-body-tertiary rounded border">
+                <form method="get" class="row g-3 align-items-end">
+                    <div class="col-md-6 col-lg-4">
+                        <label for="search" class="form-label">Поиск</label>
+                        <input type="text" class="form-control" id="search" name="search" value="{{ filters.search or '' }}" placeholder="Инвентарный, серийный, MAC...">
+                    </div>
+                    <div class="col-md-6 col-lg-2">
+                        <label for="asset_type_id" class="form-label">Тип</label>
+                        <select class="form-select" id="asset_type_id" name="asset_type_id">
+                            <option value="">Все</option>
+                            {% for item in asset_types %}<option value="{{ item.id }}" {% if filters.asset_type_id == item.id %}selected{% endif %}>{{ item.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 col-lg-2">
+                        <label for="status_id" class="form-label">Статус</label>
+                        <select class="form-select" id="status_id" name="status_id">
+                            <option value="">Все</option>
+                            {% for item in device_statuses %}<option value="{{ item.id }}" {% if filters.status_id == item.id %}selected{% endif %}>{{ item.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 col-lg-2">
+                        <label for="department_id" class="form-label">Отдел</label>
+                        <select class="form-select" id="department_id" name="department_id">
+                            <option value="">Все</option>
+                            {% for item in departments %}<option value="{{ item.id }}" {% if filters.department_id == item.id %}selected{% endif %}>{{ item.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 col-lg-2">
+                        <label for="location_id" class="form-label">Локация</label>
+                        <select class="form-select" id="location_id" name="location_id">
+                            <option value="">Все</option>
+                            {% for item in locations %}<option value="{{ item.id }}" {% if filters.location_id == item.id %}selected{% endif %}>{{ item.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 col-lg-2">
+                        <label for="manufacturer_id" class="form-label">Производитель</label>
+                        <select class="form-select" id="manufacturer_id" name="manufacturer_id">
+                            <option value="">Все</option>
+                            {% for item in manufacturers %}<option value="{{ item.id }}" {% if filters.manufacturer_id == item.id %}selected{% endif %}>{{ item.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 col-lg-2">
+                        <button type="submit" class="btn btn-primary w-100">Применить</button>
+                    </div>
+                    <div class="col-md-6 col-lg-2">
+                        <a href="{{ request.url_for('read_assets') }}" class="btn btn-secondary w-100">Сбросить</a>
+                    </div>
+                    <div class="col-md-6 col-lg-2">
+                        <a href="{{ request.url_for('export_assets_csv') }}?{{ query_params|urlencode }}" class="btn btn-success w-100"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Экспорт</a>
+                    </div>
+                </form>
+            </div>
+
+            {# Проверяем, есть ли активы в списке "devices" #}
+            {% if devices %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover table-assets">
+                    <thead class="table-dark">
+                        <tr>
+                            <th scope="col">ID</th>
+                            <th scope="col">Инвентарный №</th>
+                            <th scope="col">Модель</th>
+                            <th scope="col">Производитель</th>
+                            <th scope="col">Тип</th>
+                            <th scope="col">Статус</th>
+                            <th scope="col">Отдел</th>
+                            <th scope="col">Сотрудник</th>
+                            <th scope="col">Локация</th>
+                            <th scope="col" class="text-end">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {# Итерируемся по устройствам #}
+                        {% for device in devices %}
+                        <tr>
+                            <th scope="row">{{ device.id }}</th>
+                            <td>{{ device.inventory_number or '-' }}</td>
+                            <td>{{ device.device_model.name if device.device_model else '-' }}</td>
+                            <td>{{ device.device_model.manufacturer.name if device.device_model and device.device_model.manufacturer else '-' }}</td>
+                            <td>{{ device.asset_type.name if device.asset_type else '-' }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if device.status and device.status.name.lower() == 'в эксплуатации' else 'warning' }}">
+                                    {{ device.status.name if device.status else 'Не указан' }}
+                                </span>
+                            </td>
+                            <td>{{ device.department.name if device.department else '-' }}</td>
+                            <td>{{ (device.employee.last_name + ' ' + device.employee.first_name[0] + '.') if device.employee else '-' }}</td>
+                            <td>{{ device.location.name if device.location else '-' }}</td>
+
+                            <td class="text-end">
+                                <div class="btn-group" role="group">
+                                    <a href="{{ request.url_for('edit_asset', device_id=device.id) }}" 
+                                       class="btn btn-sm btn-outline-primary" 
+                                       title="Редактировать">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form action="{{ request.url_for('delete_asset', device_id=device.id) }}" 
+                                          method="POST" 
+                                          class="d-inline"
+                                          onsubmit="return confirm('Вы уверены, что хотите удалить этот актив?')">
+                                        <input type="hidden" name="_method" value="DELETE">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Удалить">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {# Пагинация #}
+            {% if total_pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {% if page == 1 %}disabled{% endif %}">
+                        {% set prev_page_params = query_params.copy() %}
+                        {% set _ = prev_page_params.update({'page': page - 1}) %}
+                        <a class="page-link" href="{{ request.url_for('read_assets') }}?{{ prev_page_params|urlencode }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% for p in range(1, total_pages + 1) %}
+                    <li class="page-item {% if p == page %}active{% endif %}">
+                        {% set page_params = query_params.copy() %}
+                        {% set _ = page_params.update({'page': p}) %}
+                        <a class="page-link" href="{{ request.url_for('read_assets') }}?{{ page_params|urlencode }}">{{ p }}</a>
+                    </li>
+                    {% endfor %}
+                    <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+                        {% set next_page_params = query_params.copy() %}
+                        {% set _ = next_page_params.update({'page': page + 1}) %}
+                        <a class="page-link" href="{{ request.url_for('read_assets') }}?{{ next_page_params|urlencode }}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center p-5">
+                <i class="bi bi-search text-muted dashboard-icon-large"></i>
+                <h4 class="mt-3">Активы не найдены</h4>
+                <p class="text-muted">По вашему запросу ничего не найдено. Попробуйте изменить фильтры или <a href="{{ request.url_for('read_assets') }}">сбросить их</a>.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

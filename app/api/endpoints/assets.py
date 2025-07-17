@@ -31,7 +31,11 @@ logger = logging.getLogger(__name__)
 # Инициализация APIRouter
 router = APIRouter()
 
-@router.get("/dashboard", response_class=HTMLResponse, name="read_assets")
+@router.get("/assets-list-test")
+async def test_assets_list():
+    return {"message": "Assets list route works!"}
+
+@router.get("/assets-list", response_class=HTMLResponse, name="read_assets")
 async def read_assets(
     request: Request,
     db: Session = Depends(get_db),
@@ -142,7 +146,7 @@ async def read_assets(
             "total_pages": (total_devices + page_size - 1) // page_size if page_size > 0 else 1,
             "device_types_count": device_types_list,
             "device_statuses_count": device_statuses_list,
-            "title": "IT Asset Tracker - Дашборд",
+            "title": "Список активов",
             "asset_types": asset_types,
             "device_statuses": device_statuses,
             "departments": departments,
@@ -154,7 +158,7 @@ async def read_assets(
         
         logger.debug(f"Template context: {context}")
         
-        return templates.TemplateResponse("dashboard.html", context)
+        return templates.TemplateResponse("assets_list.html", context)
         
     except Exception as e:
         logger.error(f"Error in read_assets: {str(e)}", exc_info=True)
@@ -171,6 +175,59 @@ async def read_assets(
                 "device_statuses_count": [],
                 "total_pages": 1,
                 "message": {"type": "danger", "text": error_text},
+                "title": "Ошибка - IT Asset Tracker",
+            },
+            status_code=500
+        )
+
+@router.get("/dashboard", response_class=HTMLResponse, name="dashboard")
+async def dashboard(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """Отображает дашборд с аналитикой."""
+    try:
+        # Получаем статистику по типам устройств
+        device_types_query = (
+            db.query(
+                AssetType.name,
+                func.count(Device.id).label('count')
+            )
+            .outerjoin(Device, Device.asset_type_id == AssetType.id)
+            .group_by(AssetType.id, AssetType.name)
+            .order_by(AssetType.name)
+        )
+        device_types_list = [{'name': name, 'count': count} for name, count in device_types_query.all()]
+        
+        # Получаем статистику по статусам устройств
+        device_statuses_query = (
+            db.query(
+                DeviceStatus.name,
+                func.count(Device.id).label('count')
+            )
+            .outerjoin(Device, Device.status_id == DeviceStatus.id)
+            .group_by(DeviceStatus.id, DeviceStatus.name)
+            .order_by(DeviceStatus.name)
+        )
+        device_statuses_list = [{'name': name, 'count': count} for name, count in device_statuses_query.all()]
+        
+        context = {
+            "request": request,
+            "device_types_count": device_types_list,
+            "device_statuses_count": device_statuses_list,
+            "title": "Дашборд - IT Asset Tracker",
+        }
+        
+        return templates.TemplateResponse("dashboard.html", context)
+        
+    except Exception as e:
+        logger.error(f"Error in dashboard: {str(e)}", exc_info=True)
+        error_text = f"Ошибка при загрузке дашборда: {str(e)}"
+        return templates.TemplateResponse(
+            "error.html",
+            {
+                "request": request,
+                "error": error_text,
                 "title": "Ошибка - IT Asset Tracker",
             },
             status_code=500

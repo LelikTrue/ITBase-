@@ -99,4 +99,4 @@ async def root_redirect(request: Request):
     """
     Перенаправляет с корневого URL на страницу дашборда.
     """
-    return RedirectResponse(request.url_for("read_assets"))
+    return RedirectResponse(request.url_for("dashboard"))

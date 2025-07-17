@@ -132,6 +132,8 @@
                                         <div class="card card-body mt-2">
                                             {% if log.action_type == 'update' and log.details and log.details.diff is defined %}
                                                 {{ log.details|format_diff|safe }}
+                                            {% elif log.action_type == 'create' %}
+                                                {{ log.details|format_create_data|safe }}
                                             {% else %}
                                                 <pre class="mb-0">{{ log.details|to_pretty_json }}</pre>
                                             {% endif %}
@@ -207,7 +209,7 @@
         confirmDeleteBtn.addEventListener('click', function() {
             if (currentLogId) {
                 // Отправляем DELETE-запрос на API
-                fetch(`/api/logs/${currentLogId}`, {
+                fetch(`/api/audit/api/logs/${currentLogId}`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',

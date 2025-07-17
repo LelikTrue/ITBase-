@@ -166,3 +166,149 @@ async def get_dictionaries_stats(db: Session = Depends(get_db)):
     }
     
     return stats
+
+# CRUD endpoints для справочников
+
+@router.post("/dictionaries/{dictionary_type}")
+async def create_dictionary_item(
+    dictionary_type: str,
+    item_data: Dict[str, Any],
+    db: Session = Depends(get_db)
+):
+    """Создание нового элемента справочника"""
+    
+    # Маппинг типов справочников
+    dictionary_mapping = {
+        "asset-types": AssetType,
+        "device-models": DeviceModel,
+        "device-statuses": DeviceStatus,
+        "manufacturers": Manufacturer,
+        "departments": Department,
+        "locations": Location,
+        "employees": Employee
+    }
+    
+    if dictionary_type not in dictionary_mapping:
+        raise HTTPException(status_code=404, detail="Справочник не найден")
+    
+    model = dictionary_mapping[dictionary_type]
+    
+    try:
+        # Создаем новый объект
+        new_item = model(**item_data)
+        db.add(new_item)
+        db.commit()
+        db.refresh(new_item)
+        
+        return {"status": "success", "id": new_item.id, "message": "Элемент успешно создан"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Ошибка при создании: {str(e)}")
+
+@router.put("/dictionaries/{dictionary_type}/{item_id}")
+async def update_dictionary_item(
+    dictionary_type: str,
+    item_id: int,
+    item_data: Dict[str, Any],
+    db: Session = Depends(get_db)
+):
+    """Обновление элемента справочника"""
+    
+    # Маппинг типов справочников
+    dictionary_mapping = {
+        "asset-types": AssetType,
+        "device-models": DeviceModel,
+        "device-statuses": DeviceStatus,
+        "manufacturers": Manufacturer,
+        "departments": Department,
+        "locations": Location,
+        "employees": Employee
+    }
+    
+    if dictionary_type not in dictionary_mapping:
+        raise HTTPException(status_code=404, detail="Справочник не найден")
+    
+    model = dictionary_mapping[dictionary_type]
+    
+    # Находим элемент
+    item = db.query(model).filter(model.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Элемент не найден")
+    
+    try:
+        # Обновляем поля
+        for key, value in item_data.items():
+            if hasattr(item, key):
+                setattr(item, key, value)
+        
+        db.commit()
+        db.refresh(item)
+        
+        return {"status": "success", "message": "Элемент успешно обновлен"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Ошибка при обновлении: {str(e)}")
+
+@router.delete("/dictionaries/{dictionary_type}/{item_id}")
+async def delete_dictionary_item(
+    dictionary_type: str,
+    item_id: int,
+    db: Session = Depends(get_db)
+):
+    """Удаление элемента справочника"""
+    
+    # Маппинг типов справочников
+    dictionary_mapping = {
+        "asset-types": AssetType,
+        "device-models": DeviceModel,
+        "device-statuses": DeviceStatus,
+        "manufacturers": Manufacturer,
+        "departments": Department,
+        "locations": Location,
+        "employees": Employee
+    }
+    
+    if dictionary_type not in dictionary_mapping:
+        raise HTTPException(status_code=404, detail="Справочник не найден")
+    
+    model = dictionary_mapping[dictionary_type]
+    
+    # Находим элемент
+    item = db.query(model).filter(model.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Элемент не найден")
+    
+    try:
+        # Проверяем, используется ли элемент
+        if dictionary_type == "device-statuses":
+            usage_count = db.query(Device).filter(Device.status_id == item_id).count()
+            if usage_count > 0:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Нельзя удалить статус, используемый в {usage_count} устройствах"
+                )
+        elif dictionary_type == "manufacturers":
+            usage_count = db.query(DeviceModel).filter(DeviceModel.manufacturer_id == item_id).count()
+            if usage_count > 0:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Нельзя удалить производителя, используемого в {usage_count} моделях"
+                )
+        elif dictionary_type == "asset-types":
+            usage_count = db.query(Device).filter(Device.asset_type_id == item_id).count()
+            if usage_count > 0:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Нельзя удалить тип актива, используемый в {usage_count} устройствах"
+                )
+        
+        db.delete(item)
+        db.commit()
+        
+        return {"status": "success", "message": "Элемент успешно удален"}
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Ошибка при удалении: {str(e)}")

@@ -76,7 +76,79 @@ def format_diff(value):
     result.append("</tbody></table>")
     return "".join(result)
 
+def format_create_data(value):
+    """Форматирует данные создания для красивого отображения."""
+    if not value or not isinstance(value, dict):
+        return to_pretty_json(value)
+    
+    result = []
+    result.append("<table class='table table-sm table-bordered create-data-table'>")
+    result.append("<thead><tr><th>Поле</th><th>Значение</th></tr></thead>")
+    result.append("<tbody>")
+    
+    # Сортируем поля для более логичного отображения
+    sorted_fields = sorted(value.keys())
+    
+    for field in sorted_fields:
+        field_value = value[field]
+        
+        # Форматируем значения для отображения
+        if field_value is None:
+            field_value = '<em>пусто</em>'
+        elif isinstance(field_value, bool):
+            field_value = 'Да' if field_value else 'Нет'
+        elif isinstance(field_value, (int, float)) and field == 'price':
+            # Форматируем цену
+            try:
+                field_value = f"{float(field_value):,.2f} ₽".replace(",", " ").replace(".", ",")
+            except (ValueError, TypeError):
+                pass
+        elif isinstance(field_value, str) and field in ["purchase_date", "warranty_end_date"]:
+            # Форматируем даты
+            try:
+                date_obj = datetime.fromisoformat(field_value)
+                field_value = date_obj.strftime("%d.%m.%Y")
+            except (ValueError, TypeError):
+                pass
+        
+        # Переводим названия полей на русский
+        field_translations = {
+            'name': 'Название',
+            'description': 'Описание',
+            'serial_number': 'Серийный номер',
+            'inventory_number': 'Инвентарный номер',
+            'purchase_date': 'Дата покупки',
+            'warranty_end_date': 'Дата окончания гарантии',
+            'price': 'Цена',
+            'location_id': 'Локация',
+            'department_id': 'Отдел',
+            'employee_id': 'Сотрудник',
+            'asset_type_id': 'Тип актива',
+            'manufacturer_id': 'Производитель',
+            'device_model_id': 'Модель устройства',
+            'device_status_id': 'Статус устройства',
+            'ip_address': 'IP-адрес',
+            'mac_address': 'MAC-адрес',
+            'warranty_period': 'Срок гарантии',
+            'expected_service_life': 'Ожидаемый срок службы',
+            'notes': 'Примечания',
+            'wear_percentage': 'Процент износа',
+            'asset_type': 'Тип актива',
+            'computer_name': 'Имя компьютера'
+        }
+        
+        display_field = field_translations.get(field, field)
+        
+        result.append(f"<tr>")
+        result.append(f"<td><strong>{display_field}</strong></td>")
+        result.append(f"<td class='bg-success bg-opacity-25'>{field_value}</td>")
+        result.append(f"</tr>")
+    
+    result.append("</tbody></table>")
+    return "".join(result)
+
 # Добавляем глобальные функции и фильтры в окружение Jinja2
 templates.env.globals['get_flashed_messages'] = get_flashed_messages
 templates.env.filters['to_pretty_json'] = to_pretty_json
 templates.env.filters['format_diff'] = format_diff
+templates.env.filters['format_create_data'] = format_create_data
