@@ -83,6 +83,8 @@
    pre-commit install
    ```
 
+   > ⚠️ **Важно для продакшена**: При развертывании на сервере обязательно установите `DEBUG=False` в файле `.env` и используйте надежные, сгенерированные пароли и `SECRET_KEY`!
+
 ## 🚀 Запуск приложения
 
 ### Локальная разработка с hot-reload
@@ -103,13 +105,46 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
+### 🚀 Первый запуск на сервере (пошаговая инструкция)
+
+Для абсолютных новичков - последовательность действий при первом развертывании на сервере:
+
+1. **Клонирование и переход в директорию:**
+   ```bash
+   git clone https://github.com/LelikTrue/ITBase-.git
+   cd ITBase-
+   ```
+
+2. **Настройка конфигурации для продакшена:**
+   ```bash
+   cp .env.example .env
+   # Отредактируйте .env файл:
+   # - Установите DEBUG=False
+   # - Смените пароли на надежные
+   # - Сгенерируйте новый SECRET_KEY
+   ```
+
+3. **Запуск продакшн-контейнеров:**
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+   ```
+
+4. **Создание таблиц в базе данных (критически важно!):**
+   ```bash
+   docker compose exec backend alembic upgrade head
+   ```
+
+   > ⚠️ **Важно**: Этот шаг обязателен после первого запуска для создания всех необходимых таблиц в базе данных.
+
 ### Тестирование
+
 Для запуска тестов:
 ```bash
 docker compose -f docker-compose.test.yml run --rm test
 ```
 
 ### CI/CD сценарии
+
 Для использования в CI/CD пайплайнах:
 ```bash
 docker compose -f docker-compose.ci.yml up --exit-code-from app
@@ -117,7 +152,7 @@ docker compose -f docker-compose.ci.yml up --exit-code-from app
 
 ## 🔌 Доступ к сервисам
 
-После запуска приложения будут доступны следующие сервисы:
+**Для локальной разработки:**
 
 - **Основное приложение**: <http://localhost:8000>
 - **Документация API (Swagger UI)**: <http://localhost:8000/docs>
@@ -128,6 +163,9 @@ docker compose -f docker-compose.ci.yml up --exit-code-from app
   - Пользователь: ${POSTGRES_USER:-postgres}
   - Пароль: ${POSTGRES_PASSWORD:-postgres}
   - База данных: ${POSTGRES_DB:-itbase}
+
+**Для продакшн-сервера:**
+> При развертывании на сервере используйте `http://<IP-адрес_вашего_сервера>:8000` вместо `localhost`
 
 ## 🛠 Полезные команды
 

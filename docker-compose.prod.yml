@@ -37,14 +37,9 @@ services:
         max-size: "10m"
         max-file: "3"
     # Ограничения ресурсов
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
+    mem_limit: 2G
+    cpus: 1.0
+    mem_reservation: 512M
 
   db:
     image: postgres:16-alpine
@@ -70,14 +65,9 @@ services:
         max-size: "10m"
         max-file: "3"
     # Ограничения ресурсов
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 4G
-        reservations:
-          cpus: '0.5'
-          memory: 1G
+    mem_limit: 4G
+    cpus: 2.0
+    mem_reservation: 1G
 
 volumes:
   postgres_data:
