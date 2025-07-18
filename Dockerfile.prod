@@ -1,11 +1,13 @@
 # ===== БИЛДЕР =====
 FROM python:3.12.3-slim-bookworm as builder
 
-# Устанавливаем системные зависимости для сборки
+# Устанавливаем системные зависимости для сборки И ДЛЯ РАБОТЫ
+# libpq5 нужна в финальном образе, поэтому ставим ее здесь
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
+    libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
 # Создаем виртуальное окружение
@@ -29,11 +31,9 @@ LABEL maintainer="ITBase Team <itbase@example.com>" \
       description="ITBase Production Image" \
       version="1.0.0"
 
-# Устанавливаем только runtime зависимости
-RUN --mount=type=cache,target=/var/cache/apt \
-    apt-get update && apt-get install -y --no-install-recommends \
-    libpq5 \
-    && rm -rf /var/lib/apt/lists/*
+# Копируем системные зависимости из builder-а.
+# БОЛЬШЕ НИКАКИХ APT-GET UPDATE ЗДЕСЬ!
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libpq.so.5 /usr/lib/x86_64-linux-gnu/
 
 # Копируем виртуальное окружение из builder
 COPY --from=builder /opt/venv /opt/venv
