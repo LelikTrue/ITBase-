@@ -3,7 +3,8 @@ FROM python:3.12.3-slim-bookworm as builder
 
 # Устанавливаем системные зависимости для сборки И ДЛЯ РАБОТЫ
 # libpq5 нужна в финальном образе, поэтому ставим ее здесь
-RUN --mount=type=cache,target=/var/cache/apt \
+# Добавлен id=apt-prod-cache для изоляции кеша от других Dockerfile
+RUN --mount=type=cache,id=apt-prod-cache,target=/var/cache/apt \
     apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
@@ -16,15 +17,19 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 # Устанавливаем зависимости с кешированием
 WORKDIR /build
+
+# Копируем файл и папку с зависимостями
 COPY requirements.txt .
+COPY requirements/ ./requirements/
 
 # Используем кеш pip и устанавливаем зависимости
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r requirements/prod.txt
+
 
 # ===== ФИНАЛЬНЫЙ ОБРАЗ =====
-FROM python:3.12.3-slim-bookworm
+FROM python:3.12.3-slim-bookworm as final
 
 # Метаданные образа
 LABEL maintainer="ITBase Team <itbase@example.com>" \
@@ -70,8 +75,7 @@ ENV PYTHONPATH=/app \
     PYTHONFAULTHANDLER=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PYTHONHASHSEED=random \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONHASHSEED=random
 
 # Очистка кеша Python
 RUN find /usr/local -type f -name '*.py[co]' -delete \
@@ -90,7 +94,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 # Основная команда
-CMD ["gunicorn", "app.main:app", \
+CMD ["/opt/venv/bin/gunicorn", "app.main:app", \
     "-k", "uvicorn.workers.UvicornWorker", \
     "--bind", "0.0.0.0:8000", \
     "--workers", "$(( $(nproc) * 2 + 1 ))", \

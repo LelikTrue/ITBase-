@@ -2,9 +2,6 @@
 # Базовый файл конфигурации Docker Compose для ITBase
 # Для разработки используйте docker-compose.override.yml
 # Для продакшена используйте docker-compose.prod.yml
-
-version: '3.8'
-
 # Общие переменные окружения (можно переопределить в .env)
 x-env: &env
   env_file: .env
@@ -20,11 +17,11 @@ services:
     container_name: itbase-db
     restart: unless-stopped
     env_file: .env
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-itbase}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      PGDATA: /var/lib/postgresql/data/pgdata
+    # environment:
+      # POSTGRES_DB: ${POSTGRES_DB:-itbase}
+      # POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      # POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      # PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./initdb:/docker-entrypoint-initdb.d
