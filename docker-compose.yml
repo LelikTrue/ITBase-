@@ -77,7 +77,9 @@ services:
       - "${APP_PORT:-8000}:8000"
     env_file: .env
     environment:
-      <<: *env
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - TZ=Europe/Moscow
       - APP_MODE=${APP_MODE:-dev}
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-itbase}
     depends_on:
