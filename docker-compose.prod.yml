@@ -1,9 +1,5 @@
 version: '3.8'
 
-# Переменные окружения для UID/GID (можно переопределить в .env)
-x-user: &user
-  user: "${UID:-1000}:${GID:-1000}"
-
 services:
   backend:
     build:
@@ -20,7 +16,7 @@ services:
       - LOG_LEVEL=info
     ports:
       - "8000:8000"
-    user: *user
+    user: "${UID:-1000}:${GID:-1000}"
     depends_on:
       db:
         condition: service_healthy
