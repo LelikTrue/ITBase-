@@ -1,7 +1,7 @@
 # ===== БИЛДЕР =====
 FROM python:3.12.3-slim-bookworm as builder
 
-# Устанавливаем системные зависимости для сборки И ДЛЯ РАБОТЫ
+# Устанавливаем системные зависимости для сборки И ДЛЯ РАБ��ТЫ
 # libpq5 нужна в финальном образе, поэтому ставим ее здесь
 # Добавлен id=apt-prod-cache для изоляции кеша от других Dockerfile
 RUN --mount=type=cache,id=apt-prod-cache,target=/var/cache/apt \
@@ -83,6 +83,10 @@ RUN find /usr/local -type f -name '*.py[co]' -delete \
     && find /opt/venv -type f -name '*.py[co]' -delete \
     && find /opt/venv -type d -name '__pycache__' -exec rm -rf {} +
 
+# Копируем скрипт запуска ДО смены пользователя, чтобы установить права
+COPY --chown=appuser:appuser docker-entrypoint.sh /app/
+RUN chmod +x /app/docker-entrypoint.sh
+
 # Переключаемся на непривилегированного пользователя
 USER appuser
 
@@ -93,16 +97,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Основная команда
-CMD /opt/venv/bin/gunicorn app.main:app \
-    -k uvicorn.workers.UvicornWorker \
-    "--bind", "0.0.0.0:8000", \
-    "--workers", "$(( $(nproc) * 2 + 1 ))", \
-    "--worker-connections", "1000", \
-    "--timeout", "60", \
-    "--keep-alive", "5", \
-    "--access-logfile", "-", \
-    "--error-logfile", "-", \
-    "--log-level", "info", \
-    "--worker-tmp-dir", "/dev/shm", \
-    "--preload"]
+# Основная команда теперь просто запускает наш скрипт
+CMD ["/app/docker-entrypoint.sh"]
