@@ -1,12 +1,16 @@
 
 services:
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
-      args:
-        USER_ID: ${UID:-1000}
-        GROUP_ID: ${GID:-1000}
+    # build:
+      # context: .
+      # dockerfile: Dockerfile.prod
+      # args:
+        # USER_ID: ${UID:-1000}
+        # GROUP_ID: ${GID:-1000}
+        
+       # ДОБАВЛЯЕМ ЭТУ СТРОКУ временно
+    image: itbase-manual-build:latest
+    
     restart: unless-stopped
     environment:
       - ENVIRONMENT=production
