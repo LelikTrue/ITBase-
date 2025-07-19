@@ -1,28 +1,18 @@
 # ===== БИЛДЕР =====
 FROM python:3.12.3-slim-bookworm as builder
 
-# Устанавливаем системные зависимости для сборки И ДЛЯ РАБ��ТЫ
-# libpq5 нужна в финальном образе, поэтому ставим ее здесь
-# Добавлен id=apt-prod-cache для изоляции кеша от других Dockerfile
+# ... (вся builder-стадия остается БЕЗ ИЗМЕНЕНИЙ) ...
 RUN --mount=type=cache,id=apt-prod-cache,target=/var/cache/apt \
     apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     libpq5 \
     && rm -rf /var/lib/apt/lists/*
-
-# Создаем виртуальное окружение
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-
-# Устанавливаем зависимости с кешированием
 WORKDIR /build
-
-# Копируем файл и папку с зависимостями
 COPY requirements.txt .
 COPY requirements/ ./requirements/
-
-# Используем кеш pip и устанавливаем зависимости
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements/prod.txt
@@ -31,44 +21,35 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # ===== ФИНАЛЬНЫЙ ОБРАЗ =====
 FROM python:3.12.3-slim-bookworm as final
 
-# Метаданные образа
+# ... (начало final-стадии без изменений) ...
 LABEL maintainer="ITBase Team <itbase@example.com>" \
       description="ITBase Production Image" \
       version="1.0.0"
-
-# Копируем системные зависимости из builder-а.
-# БОЛЬШЕ НИКАКИХ APT-GET UPDATE ЗДЕСЬ!
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libpq.so.5 /usr/lib/x86_64-linux-gnu/
-
-# Копируем виртуальное окружение из builder
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-
-# Создаем непривилегированного пользователя
 ARG USER_ID=1000
 ARG GROUP_ID=1000
-
 RUN groupadd -r -g "${GROUP_ID}" appuser \
     && useradd -r -u "${USER_ID}" -g appuser -d /app -s /bin/false appuser \
     && mkdir -p /app/static /app/media /app/logs \
     && chown -R appuser:appuser /app \
     && chmod -R 755 /app
-
-# Рабочая директория
 WORKDIR /app
 
-# Копируем только необходимые файлы
+# --- ИЗМЕНЕНИЯ ЗДЕСЬ ---
+# Копируем ВСЕ необходимые файлы
 COPY --chown=appuser:appuser app app
 COPY --chown=appuser:appuser static static
+COPY --chown=appuser:appuser templates templates  # <-- ДОБАВЛЕНО
 COPY --chown=appuser:appuser alembic alembic
 COPY --chown=appuser:appuser alembic.ini .
 COPY --chown=appuser:appuser .env.example .
+COPY --chown=appuser:appuser init_data.py .      # <-- ДОБАВЛЕНО
 
-# Устанавливаем корректные права
+# ... (остальная часть файла без изменений) ...
 RUN chown -R appuser:appuser /app/static /app/media /app/logs \
     && chmod -R 755 /app/static /app/media /app/logs
-
-# Настройка окружения
 ENV PYTHONPATH=/app \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -76,26 +57,14 @@ ENV PYTHONPATH=/app \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PYTHONHASHSEED=random
-
-# Очистка кеша Python
 RUN find /usr/local -type f -name '*.py[co]' -delete \
     && find /usr/local -type d -name '__pycache__' -exec rm -rf {} + \
     && find /opt/venv -type f -name '*.py[co]' -delete \
     && find /opt/venv -type d -name '__pycache__' -exec rm -rf {} +
-
-# Копируем скрипт запуска ДО смены пользователя, чтобы установить права
 COPY --chown=appuser:appuser docker-entrypoint.sh /app/
 RUN chmod +x /app/docker-entrypoint.sh
-
-# Переключаемся на непривилегированного пользователя
 USER appuser
-
-# Открываем порт
 EXPOSE 8000
-
-# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
-
-# Основная команда теперь просто запускает наш скрипт
 CMD ["/app/docker-entrypoint.sh"]
