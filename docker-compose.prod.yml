@@ -1,11 +1,11 @@
 services:
   backend:
-    # ЯВНО УКАЗЫВАЕМ ПРАВИЛЬНЫЙ DOCKERFILE ДЛЯ СБОРКИ
     build:
       context: .
       dockerfile: Dockerfile.prod
-    image: itbase-prod-backend  # Даем образу уникальное имя
+    image: itbase-prod-backend
     restart: unless-stopped
+    container_name: itbase-backend
     env_file: .env
     environment:
       - ENVIRONMENT=production
@@ -17,12 +17,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
     networks:
       - itbase-network
 
@@ -34,7 +28,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTG-RES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5

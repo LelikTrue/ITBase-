@@ -172,3 +172,4 @@ add-Claude.md
 # Игнорируем локальные настройки Docker.
 .dockerignore
 .docker/
+sync_config.jsonc

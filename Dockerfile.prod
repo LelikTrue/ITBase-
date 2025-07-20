@@ -1,7 +1,6 @@
-# ===== БИЛДЕР =====
+# ===== BUILDER STAGE =====
 FROM python:3.12.3-slim-bookworm as builder
 
-# ... (вся builder-стадия остается БЕЗ ИЗМЕНЕНИЙ) ...
 RUN --mount=type=cache,id=apt-prod-cache,target=/var/cache/apt \
     apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -17,12 +16,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements/prod.txt
 
-
-# ===== ФИНАЛЬНЫЙ ОБРАЗ =====
+# ===== FINAL IMAGE =====
 FROM python:3.12.3-slim-bookworm as final
 
-# ... (начало final-стадии без изменений) ...
-LABEL maintainer="ITBase Team <itbase@example.com>" \
+LABEL maintainer="ITBase Team <devkerch@gmail.com>" \
       description="ITBase Production Image" \
       version="1.0.0"
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libpq.so.5 /usr/lib/x86_64-linux-gnu/
@@ -36,18 +33,13 @@ RUN groupadd -r -g "${GROUP_ID}" appuser \
     && chown -R appuser:appuser /app \
     && chmod -R 755 /app
 WORKDIR /app
-
-# --- ИЗМЕНЕНИЯ ЗДЕСЬ ---
-# Копируем ВСЕ необходимые файлы
 COPY --chown=appuser:appuser app app
 COPY --chown=appuser:appuser static static
-COPY --chown=appuser:appuser templates templates  # <-- ДОБАВЛЕНО
+COPY --chown=appuser:appuser templates templates
 COPY --chown=appuser:appuser alembic alembic
 COPY --chown=appuser:appuser alembic.ini .
 COPY --chown=appuser:appuser .env.example .
-COPY --chown=appuser:appuser init_data.py .      # <-- ДОБАВЛЕНО
-
-# ... (остальная часть файла без изменений) ...
+COPY --chown=appuser:appuser init_data.py .
 RUN chown -R appuser:appuser /app/static /app/media /app/logs \
     && chmod -R 755 /app/static /app/media /app/logs
 ENV PYTHONPATH=/app \
