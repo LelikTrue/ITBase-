@@ -1,0 +1,37 @@
+[
+    {
+        "name": "OptiPlex 7090",
+        "manufacturer_name": "Dell",
+        "asset_type_name": "Компьютер",
+        "description": "Настольный компьютер Dell OptiPlex 7090",
+        "specification": {"cpu": "Intel Core i5", "ram": "8GB", "storage": "256GB SSD"}
+    },
+    {
+        "name": "ThinkPad T14",
+        "manufacturer_name": "Lenovo",
+        "asset_type_name": "Компьютер",
+        "description": "Ноутбук Lenovo ThinkPad T14",
+        "specification": {"cpu": "Intel Core i7", "ram": "16GB", "storage": "512GB SSD"}
+    },
+    {
+        "name": "EliteBook 850",
+        "manufacturer_name": "HP",
+        "asset_type_name": "Компьютер",
+        "description": "Ноутбук HP EliteBook 850",
+        "specification": {"cpu": "Intel Core i5", "ram": "8GB", "storage": "256GB SSD"}
+    },
+    {
+        "name": "UltraSharp U2419H",
+        "manufacturer_name": "Dell",
+        "asset_type_name": "Монитор",
+        "description": "Монитор Dell UltraSharp 24 дюйма",
+        "specification": {"size": "24 inch", "resolution": "1920x1080", "type": "IPS"}
+    },
+    {
+        "name": "LaserJet Pro M404n",
+        "manufacturer_name": "HP",
+        "asset_type_name": "Принтер",
+        "description": "Лазерный принтер HP LaserJet Pro",
+        "specification": {"type": "Laser", "color": "Monochrome", "speed": "38 ppm"}
+    }
+]

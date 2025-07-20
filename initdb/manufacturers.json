@@ -1,0 +1,17 @@
+[
+    {"name": "Dell", "description": "Dell Technologies"},
+    {"name": "HP", "description": "Hewlett-Packard"},
+    {"name": "Lenovo", "description": "Lenovo Group"},
+    {"name": "ASUS", "description": "ASUSTeK Computer"},
+    {"name": "Acer", "description": "Acer Inc."},
+    {"name": "Apple", "description": "Apple Inc."},
+    {"name": "Samsung", "description": "Samsung Electronics"},
+    {"name": "LG", "description": "LG Electronics"},
+    {"name": "Canon", "description": "Canon Inc."},
+    {"name": "Epson", "description": "Seiko Epson"},
+    {"name": "Cisco", "description": "Cisco Systems"},
+    {"name": "D-Link", "description": "D-Link Corporation"},
+    {"name": "TP-Link", "description": "TP-Link Technologies"},
+    {"name": "Logitech", "description": "Logitech International"},
+    {"name": "Microsoft", "description": "Microsoft Corporation"}
+]
