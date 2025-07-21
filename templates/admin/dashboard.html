@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Панель администратора{% endblock %}
+
+{% block content %}
+<div class="container mt-3">
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-3">
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}" class="text-decoration-none"><i class="bi bi-arrow-left me-1"></i>Назад</a></li>
+            <li class="breadcrumb-item active">Администрирование</li>
+        </ol>
+    </nav>
+
+    <!-- Заголовок -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h4 mb-0">
+            <i class="bi bi-sliders text-primary me-2"></i>
+            Панель администратора
+        </h2>
+    </div>
+
+    <!-- Отладочная информация -->
+    {% if debug %}
+    <div class="alert alert-info mb-4">
+        <h5>Отладочная информация:</h5>
+        <p>Загружено разделов: {{ admin_sections|length }}</p>
+        <pre class="d-none">{{ admin_sections|tojson(indent=2) }}</pre>
+    </div>
+    {% endif %}
+
+    <!-- Карточки разделов -->
+    <div class="row g-4">
+        {% if admin_sections %}
+            {% for section in admin_sections %}
+            <div class="col-12 col-md-6 col-lg-4 mb-3">
+                <div class="admin-card card h-100">
+                    <div class="card-body text-center p-3">
+                        <div class="mb-2">
+                            <i class="bi {{ section.icon }} fs-4"></i>
+                        </div>
+                        <h3 class="h6 mb-2">{{ section.title }}</h3>
+                        <p class="small text-muted mb-3">
+                            {{ section.description }}
+                        </p>
+                        <a href="{{ url_for(section.endpoint) }}" class="btn btn-sm btn-outline-primary w-100">
+                            Перейти <i class="bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Нет доступных разделов администрирования.
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

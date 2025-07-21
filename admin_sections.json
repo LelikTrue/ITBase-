@@ -1,0 +1,18 @@
+{
+  "sections": [
+    {
+      "id": "dictionaries",
+      "title": "Справочники",
+      "description": "Управление справочными данными системы: типы активов, модели, статусы, отделы и т.д.",
+      "icon": "bi-book",
+      "endpoint": "dictionaries_dashboard"
+    },
+    {
+      "id": "audit_logs",
+      "title": "Журнал действий",
+      "description": "Просмотр и анализ всех значимых действий, совершенных пользователями в системе.",
+      "icon": "bi-journal-text",
+      "endpoint": "view_action_logs_page"
+    }
+  ]
+}

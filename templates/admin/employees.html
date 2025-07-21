@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Управление сотрудниками{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Администрирование</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('dictionaries_dashboard') }}">Справочники</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Сотрудники</li>
+        </ol>
+    </nav>
+
+    <!-- Заголовок -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-people text-primary me-2"></i>
+            Управление сотрудниками
+        </h1>
+        <div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+                <i class="bi bi-plus-circle"></i> Добавить сотрудника
+            </button>
+        </div>
+    </div>
+
+    <!-- Поиск и фильтры -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" id="searchInput" placeholder="Поиск по ФИО, ID, email...">
+                        <button class="btn btn-outline-secondary btn-clear-search" type="button">
+                            <i class="bi bi-x-circle"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <button class="btn btn-outline-primary btn-refresh">
+                        <i class="bi bi-arrow-clockwise"></i> Обновить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Таблица -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Список сотрудников ({{ items|length }} записей)</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="itemsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>ФИО</th>
+                            <th>Таб. номер</th>
+                            <th>Email</th>
+                            <th>Телефон</th>
+                            <th class="table-actions">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr id="row-{{ item.id }}">
+                            <td>{{ item.id }}</td>
+                            <td>
+                                <div class="view-mode">{{ item.last_name }} {{ item.first_name }} {{ item.patronymic or '' }}</div>
+                                <div class="edit-form">
+                                    <input type="text" class="form-control form-control-sm mb-1" value="{{ item.last_name }}" name="last_name" placeholder="Фамилия">
+                                    <input type="text" class="form-control form-control-sm mb-1" value="{{ item.first_name }}" name="first_name" placeholder="Имя">
+                                    <input type="text" class="form-control form-control-sm" value="{{ item.patronymic or '' }}" name="patronymic" placeholder="Отчество">
+                                </div>
+                            </td>
+                            <td>
+                                <div class="view-mode">{{ item.employee_id or '-' }}</div>
+                                <div class="edit-form">
+                                    <input type="text" class="form-control form-control-sm" value="{{ item.employee_id or '' }}" name="employee_id">
+                                </div>
+                            </td>
+                            <td>
+                                <div class="view-mode">{{ item.email or '-' }}</div>
+                                <div class="edit-form">
+                                    <input type="email" class="form-control form-control-sm" value="{{ item.email or '' }}" name="email">
+                                </div>
+                            </td>
+                            <td>
+                                <div class="view-mode">{{ item.phone_number or '-' }}</div>
+                                <div class="edit-form">
+                                    <input type="text" class="form-control form-control-sm" value="{{ item.phone_number or '' }}" name="phone_number">
+                                </div>
+                            </td>
+                            <td class="table-actions">
+                                <div class="view-mode">
+                                    <button class="btn btn-sm btn-outline-primary btn-edit" data-id="{{ item.id }}"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger btn-delete" data-id="{{ item.id }}" data-name="{{ item.last_name }} {{ item.first_name }}"><i class="bi bi-trash"></i></button>
+                                </div>
+                                <div class="edit-form">
+                                    <button class="btn btn-sm btn-success me-1 btn-save" data-id="{{ item.id }}"><i class="bi bi-check"></i></button>
+                                    <button class="btn btn-sm btn-secondary btn-cancel" data-id="{{ item.id }}"><i class="bi bi-x"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">Нет сотрудников</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно добавления -->
+<div class="modal fade" id="addModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Добавить сотрудника</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addForm">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Фамилия <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="last_name" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Имя <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="first_name" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Отчество</label>
+                            <input type="text" class="form-control" name="patronymic">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Табельный номер</label>
+                            <input type="text" class="form-control" name="employee_id">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email">
+                        </div>
+                    </div>
+                     <div class="mb-3">
+                        <label class="form-label">Номер телефона</label>
+                        <input type="text" class="form-control" name="phone_number">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Добавить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтверждение удаления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить сотрудника "<strong id="deleteItemName"></strong>"?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">Удалить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='js/crud_logic.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCrud({
+        entityName: 'Сотрудник',
+        apiEndpoint: '/admin/employees'
+    });
+});
+</script>
+{% endblock %}

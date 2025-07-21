@@ -64,16 +64,8 @@
             </li>
             <li class="nav-item">
               <a
-                class="nav-link"
-                href="{{ url_for('view_audit_logs_page') }}"
-              >
-                <i class="bi bi-journal-text me-1"></i>Журнал действий
-              </a>
-            </li>
-            <li class="nav-item">
-              <a
-                class="nav-link"
-                href="{{ url_for('dictionaries_dashboard') }}"
+                class="nav-link {% if request.url.path.startswith('/admin') %}active{% endif %}"
+                href="{{ url_for('admin_dashboard') }}"
               >
                 <i class="bi bi-gear me-1"></i>Администрирование
               </a>
@@ -135,6 +127,9 @@
         });
       });
     </script>
+
+    <script src="{{ url_for('static', path='js/notifications.js') }}"></script>
+    <script src="{{ url_for('static', path='js/form_utils.js') }}"></script>
 
     {% block scripts %}{% endblock %}
   </body>

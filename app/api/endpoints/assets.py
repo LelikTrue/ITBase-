@@ -18,7 +18,7 @@ from app.models import (
     Device, DeviceModel, AssetType, DeviceStatus, Department, Location,
     Employee, Manufacturer, ActionLog
 )
-from app.services.audit_log_service import log_action # Импортируем сервис логирования
+from app.services.action_log_service import log_action # Импортируем сервис логирования
 from app.services.device import DeviceService # Импортируем DeviceService
 from app.flash import flash
 from app.templating import templates
@@ -736,67 +736,4 @@ async def delete_asset(device_id: int, request: Request, db: Session = Depends(g
         # logging.error(f"Ошибка при удалении устройства ID {device_id}", exc_info=True)
         logger.error(f"Ошибка при удалении устройства: {e}", exc_info=True)
         flash(request, f"Ошибка при удалении актива: {str(e)}", "danger")
-        return RedirectResponse(url=request.url_for("read_assets"), status_code=status.HTTP_303_SEE_OTHER)
-
-@router.get("/logs", response_class=HTMLResponse, name="view_logs")
-async def view_logs(
-    request: Request,
-    db: Session = Depends(get_db),
-    skip: int = 0,
-    limit: int = 50,
-    user_id: Optional[int] = None,
-    action_type: Optional[str] = None,
-    entity_type: Optional[str] = None,
-    entity_id: Optional[int] = None,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
-):
-    """
-    Отображает страницу с логами действий с возможностью фильтрации
-    """
-    try:
-        query = db.query(ActionLog)
-        
-        # Применяем фильтры
-        if user_id is not None:
-            query = query.filter(ActionLog.user_id == user_id)
-        if action_type:
-            query = query.filter(ActionLog.action_type == action_type)
-        if entity_type:
-            query = query.filter(ActionLog.entity_type == entity_type)
-        if entity_id is not None:
-            query = query.filter(ActionLog.entity_id == entity_id)
-        if start_date:
-            if start_date.tzinfo is None:
-                start_date = start_date.replace(tzinfo=timezone.utc)
-            query = query.filter(ActionLog.timestamp >= start_date)
-        if end_date:
-            if end_date.tzinfo is None:
-                end_date = end_date.replace(tzinfo=timezone.utc)
-            end_date = end_date.replace(hour=23, minute=59, second=59)
-            query = query.filter(ActionLog.timestamp <= end_date)
-        
-        logs = query.order_by(ActionLog.timestamp.desc()).offset(skip).limit(limit).all()
-        
-        action_types = db.query(ActionLog.action_type).distinct().all()
-        entity_types = db.query(ActionLog.entity_type).distinct().all()
-        
-        filters = {
-            "user_id": user_id, "action_type": action_type, "entity_type": entity_type,
-            "entity_id": entity_id, "start_date": start_date.date() if start_date else None,
-            "end_date": end_date.date() if end_date else None,
-        }
-        
-        return templates.TemplateResponse(
-            "audit_logs.html",
-            {
-                "request": request, "logs": logs, "action_types": [t[0] for t in action_types if t[0]],
-                "entity_types": [t[0] for t in entity_types if t[0]], "filters": filters,
-                "title": "Журнал действий"
-            }
-        )
-        
-    except Exception as e:
-        logger.error(f"Ошибка при получении логов: {str(e)}", exc_info=True)
-        flash(request, f"Произошла ошибка при загрузке логов: {str(e)}", "danger")
         return RedirectResponse(url=request.url_for("read_assets"), status_code=status.HTTP_303_SEE_OTHER)

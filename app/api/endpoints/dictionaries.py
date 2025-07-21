@@ -11,14 +11,14 @@ from app.models import (
     AssetType, DeviceModel, DeviceStatus, Manufacturer, 
     Department, Location, Employee
 )
-from app.services.audit_log_service import log_action
+from app.services.action_log_service import log_action
 import logging
 
 # Настройка логирования
 logger = logging.getLogger(__name__)
 
 # Инициализация APIRouter
-router = APIRouter(prefix="/api/dictionaries", tags=["dictionaries"])
+router = APIRouter(tags=["dictionaries"])
 
 # Эндпоинты для типов активов (AssetType)
 @router.get("/asset-types", response_model=List[dict])
@@ -338,6 +338,89 @@ async def create_department(
             detail=f"Ошибка при создании отдела: {str(e)}"
         )
 
+@router.put("/departments/{department_id}", response_model=dict)
+async def update_department(
+    department_id: int,
+    name: str = Form(...),
+    description: Optional[str] = Form(None),
+    db: Session = Depends(get_db)
+):
+    """Обновить отдел"""
+    try:
+        department = db.query(Department).filter(Department.id == department_id).first()
+        if not department:
+            raise HTTPException(status_code=404, detail="Отдел не найден")
+        
+        department.name = name.strip()
+        department.description = description.strip() if description else None
+        
+        db.commit()
+        db.refresh(department)
+        
+        log_action(
+            db=db,
+            user_id=None,
+            action_type="update",
+            entity_type="Department",
+            entity_id=department.id,
+            details={"name": department.name}
+        )
+        
+        return {
+            "id": department.id,
+            "name": department.name,
+            "description": department.description,
+            "message": "Отдел успешно обновлен"
+        }
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Отдел с таким названием уже существует"
+        )
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating department: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка при обновлении отдела: {str(e)}"
+        )
+
+@router.delete("/departments/{department_id}")
+async def delete_department(department_id: int, db: Session = Depends(get_db)):
+    """Удалить отдел"""
+    try:
+        department = db.query(Department).filter(Department.id == department_id).first()
+        if not department:
+            raise HTTPException(status_code=404, detail="Отдел не найден")
+        
+        # Проверяем, используется ли отдел
+        from app.models import Device
+        devices_count = db.query(Device).filter(Device.department_id == department_id).count()
+        
+        if devices_count > 0:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Нельзя удалить отдел. Используется в {devices_count} устройствах"
+            )
+        
+        log_action(
+            db=db,
+            user_id=None,
+            action_type="delete",
+            entity_type="Department",
+            entity_id=department.id,
+            details={"name": department.name}
+        )
+        
+        db.delete(department)
+        db.commit()
+        
+        return {"message": "Отдел успешно удален"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Ошибка при удалении отдела: {str(e)}")
+
 # Эндпоинты для местоположений (Location)
 @router.get("/locations", response_model=List[dict])
 async def get_locations(db: Session = Depends(get_db)):
@@ -391,6 +474,89 @@ async def create_location(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ошибка при создании местоположения: {str(e)}"
         )
+
+@router.put("/locations/{location_id}", response_model=dict)
+async def update_location(
+    location_id: int,
+    name: str = Form(...),
+    description: Optional[str] = Form(None),
+    db: Session = Depends(get_db)
+):
+    """Обновить местоположение"""
+    try:
+        location = db.query(Location).filter(Location.id == location_id).first()
+        if not location:
+            raise HTTPException(status_code=404, detail="Местоположение не найдено")
+        
+        location.name = name.strip()
+        location.description = description.strip() if description else None
+        
+        db.commit()
+        db.refresh(location)
+        
+        log_action(
+            db=db,
+            user_id=None,
+            action_type="update",
+            entity_type="Location",
+            entity_id=location.id,
+            details={"name": location.name}
+        )
+        
+        return {
+            "id": location.id,
+            "name": location.name,
+            "description": location.description,
+            "message": "Местоположение успешно обновлено"
+        }
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Местоположение с таким названием уже существует"
+        )
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating location: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка при обновлении местоположения: {str(e)}"
+        )
+
+@router.delete("/locations/{location_id}")
+async def delete_location(location_id: int, db: Session = Depends(get_db)):
+    """Удалить местоположение"""
+    try:
+        location = db.query(Location).filter(Location.id == location_id).first()
+        if not location:
+            raise HTTPException(status_code=404, detail="Местоположение не найдено")
+        
+        # Проверяем, используется ли местоположение
+        from app.models import Device
+        devices_count = db.query(Device).filter(Device.location_id == location_id).count()
+        
+        if devices_count > 0:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Нельзя удалить местоположение. Используется в {devices_count} устройствах"
+            )
+        
+        log_action(
+            db=db,
+            user_id=None,
+            action_type="delete",
+            entity_type="Location",
+            entity_id=location.id,
+            details={"name": location.name}
+        )
+        
+        db.delete(location)
+        db.commit()
+        
+        return {"message": "Местоположение успешно удалено"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Ошибка при удалении местоположения: {str(e)}")
 
 # Эндпоинты для сотрудников (Employee)
 @router.get("/employees", response_model=List[dict])
@@ -478,6 +644,119 @@ async def create_employee(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ошибка при создании сотрудника: {str(e)}"
+        )
+
+@router.put("/employees/{employee_id_path}", response_model=dict)
+async def update_employee(
+    employee_id_path: int,
+    first_name: str = Form(...),
+    last_name: str = Form(...),
+    patronymic: Optional[str] = Form(None),
+    employee_id: Optional[str] = Form(None),
+    email: Optional[str] = Form(None),
+    phone_number: Optional[str] = Form(None),
+    db: Session = Depends(get_db)
+):
+    """Обновить сотрудника"""
+    try:
+        employee = db.query(Employee).filter(Employee.id == employee_id_path).first()
+        if not employee:
+            raise HTTPException(status_code=404, detail="Сотрудник не найден")
+
+        # Обновляем поля
+        employee.first_name = first_name.strip()
+        employee.last_name = last_name.strip()
+        employee.patronymic = patronymic.strip() if patronymic else None
+        employee.employee_id = employee_id.strip() if employee_id else None
+        employee.email = email.strip() if email else None
+        employee.phone_number = phone_number.strip() if phone_number else None
+
+        db.commit()
+        db.refresh(employee)
+
+        # Логируем изменение
+        log_action(
+            db=db,
+            user_id=None,
+            action_type="update",
+            entity_type="Employee",
+            entity_id=employee.id,
+            details={"name": f"{employee.last_name} {employee.first_name}"}
+        )
+
+        return {
+            "id": employee.id,
+            "first_name": employee.first_name,
+            "last_name": employee.last_name,
+            "patronymic": employee.patronymic,
+            "employee_id": employee.employee_id,
+            "email": employee.email,
+            "phone_number": employee.phone_number,
+            "full_name": f"{employee.last_name} {employee.first_name} {employee.patronymic or ''}".strip(),
+            "message": "Сотрудник успешно обновлен"
+        }
+    except IntegrityError as e:
+        db.rollback()
+        if "employee_id" in str(e).lower():
+            detail = "Сотрудник с таким ID уже существует"
+        elif "email" in str(e).lower():
+            detail = "Сотрудник с таким email уже существует"
+        else:
+            detail = "Ошибка уникальности данных"
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=detail
+        )
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating employee: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка при обновлении сотрудника: {str(e)}"
+        )
+
+@router.delete("/employees/{employee_id}")
+async def delete_employee(employee_id: int, db: Session = Depends(get_db)):
+    """Удалить сотрудника"""
+    try:
+        employee = db.query(Employee).filter(Employee.id == employee_id).first()
+        if not employee:
+            raise HTTPException(status_code=404, detail="Сотрудник не найден")
+
+        # Проверяем, используется ли сотрудник
+        from app.models import Device
+        devices_count = db.query(Device).filter(Device.employee_id == employee_id).count()
+
+        if devices_count > 0:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Нельзя удалить сотрудника. Закреплен за {devices_count} устройствами"
+            )
+
+        # Логируем удаление
+        log_action(
+            db=db,
+            user_id=None,
+            action_type="delete",
+            entity_type="Employee",
+            entity_id=employee.id,
+            details={"name": f"{employee.last_name} {employee.first_name}"}
+        )
+
+        db.delete(employee)
+        db.commit()
+
+        return {"message": "Сотрудник успешно удален"}
+
+    except HTTPException:
+        # Перебрасываем HTTP исключения, чтобы не маскировать их как 500
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting employee: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка при удалении сотрудника: {str(e)}"
         )
 
 # Универсальные эндпоинты для редактирования и удаления

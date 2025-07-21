@@ -4,23 +4,6 @@
 
 {% block head_extra %}
 {{ super() }}
-<style>
-.table-actions {
-    white-space: nowrap;
-}
-
-.edit-form {
-    display: none;
-}
-
-.edit-mode .view-mode {
-    display: none;
-}
-
-.edit-mode .edit-form {
-    display: block;
-}
-</style>
 {% endblock %}
 
 {% block content %}
@@ -28,8 +11,9 @@
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url_for('read_assets') }}">Главная</a></li>
-            <li class="breadcrumb-item"><a href="{{ url_for('dictionaries_dashboard') }}">Администрирование</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Администрирование</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('dictionaries_dashboard') }}">Справочники</a></li>
             <li class="breadcrumb-item active" aria-current="page">Статусы устройств</li>
         </ol>
     </nav>
@@ -55,13 +39,13 @@
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-search"></i></span>
                         <input type="text" class="form-control" id="searchInput" placeholder="Поиск по названию или описанию...">
-                        <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">
+                        <button class="btn btn-outline-secondary btn-clear-search" type="button">
                             <i class="bi bi-x-circle"></i>
                         </button>
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <button class="btn btn-outline-primary" onclick="refreshTable()">
+                    <button class="btn btn-outline-primary btn-refresh">
                         <i class="bi bi-arrow-clockwise"></i> Обновить
                     </button>
                 </div>
@@ -92,29 +76,29 @@
                             <td>
                                 <div class="view-mode">{{ item.name }}</div>
                                 <div class="edit-form">
-                                    <input type="text" class="form-control form-control-sm" value="{{ item.name }}" id="edit-name-{{ item.id }}">
+                                    <input type="text" class="form-control form-control-sm" value="{{ item.name }}" name="name" required>
                                 </div>
                             </td>
                             <td>
                                 <div class="view-mode">{{ item.description or '-' }}</div>
                                 <div class="edit-form">
-                                    <input type="text" class="form-control form-control-sm" value="{{ item.description or '' }}" id="edit-description-{{ item.id }}">
+                                    <input type="text" class="form-control form-control-sm" value="{{ item.description or '' }}" name="description">
                                 </div>
                             </td>
                             <td class="table-actions">
                                 <div class="view-mode">
-                                    <button class="btn btn-sm btn-outline-primary" onclick="editRow({{ item.id }})">
+                                    <button class="btn btn-sm btn-outline-primary btn-edit" data-id="{{ item.id }}">
                                         <i class="bi bi-pencil"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteItem({{ item.id }}, '{{ item.name }}')">
+                                    <button class="btn btn-sm btn-outline-danger btn-delete" data-id="{{ item.id }}" data-name="{{ item.name }}">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </div>
                                 <div class="edit-form">
-                                    <button class="btn btn-sm btn-success me-1" onclick="saveRow({{ item.id }})">
+                                    <button class="btn btn-sm btn-success me-1 btn-save" data-id="{{ item.id }}">
                                         <i class="bi bi-check"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-secondary" onclick="cancelEdit({{ item.id }})">
+                                    <button class="btn btn-sm btn-secondary btn-cancel" data-id="{{ item.id }}">
                                         <i class="bi bi-x"></i>
                                     </button>
                                 </div>
@@ -183,176 +167,17 @@
     </div>
 </div>
 
+{% block scripts %}
+<!-- Подключаем общую логику CRUD -->
+<script src="{{ url_for('static', path='js/crud_logic.js') }}"></script>
 <script>
-let deleteItemId = null;
-
-// Поиск
-document.getElementById('searchInput').addEventListener('input', function() {
-    const searchTerm = this.value.toLowerCase();
-    const rows = document.querySelectorAll('#itemsTable tbody tr');
-    
-    rows.forEach(row => {
-        const name = row.cells[1]?.textContent.toLowerCase() || '';
-        const description = row.cells[2]?.textContent.toLowerCase() || '';
-        
-        if (name.includes(searchTerm) || description.includes(searchTerm)) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализируем CRUD-логику для этой страницы
+    initializeCrud({
+        entityName: 'Статус устройства',
+        apiEndpoint: '/admin/device-statuses'
     });
-});
-
-// Очистка поиска
-function clearSearch() {
-    document.getElementById('searchInput').value = '';
-    document.querySelectorAll('#itemsTable tbody tr').forEach(row => {
-        row.style.display = '';
-    });
-}
-
-// Обновление таблицы
-function refreshTable() {
-    window.location.reload();
-}
-
-// Редактирование строки
-function editRow(id) {
-    const row = document.getElementById(`row-${id}`);
-    row.classList.add('edit-mode');
-}
-
-// Отмена редактирования
-function cancelEdit(id) {
-    const row = document.getElementById(`row-${id}`);
-    row.classList.remove('edit-mode');
-}
-
-// Сохранение изменений
-async function saveRow(id) {
-    const name = document.getElementById(`edit-name-${id}`).value.trim();
-    const description = document.getElementById(`edit-description-${id}`).value.trim();
-    
-    if (!name) {
-        showNotification('danger', 'Название не может быть пустым');
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/admin/dictionaries/device-statuses/${id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                name: name,
-                description: description || null
-            })
-        });
-        
-        if (response.ok) {
-            showNotification('success', 'Статус устройства успешно обновлен');
-            setTimeout(() => window.location.reload(), 1000);
-        } else {
-            const error = await response.json();
-            showNotification('danger', error.detail || 'Ошибка при обновлении');
-        }
-    } catch (error) {
-        showNotification('danger', 'Ошибка сети при обновлении');
-    }
-}
-
-// Удаление элемента
-function deleteItem(id, name) {
-    deleteItemId = id;
-    document.getElementById('deleteItemName').textContent = name;
-    new bootstrap.Modal(document.getElementById('deleteModal')).show();
-}
-
-// Подтверждение удаления
-document.getElementById('confirmDelete').addEventListener('click', async function() {
-    if (!deleteItemId) return;
-    
-    try {
-        const response = await fetch(`/admin/dictionaries/device-statuses/${deleteItemId}`, {
-            method: 'DELETE'
-        });
-        
-        if (response.ok) {
-            showNotification('success', 'Статус устройства успешно удален');
-            setTimeout(() => window.location.reload(), 1000);
-        } else {
-            const error = await response.json();
-            showNotification('danger', error.detail || 'Ошибка при удалении');
-        }
-    } catch (error) {
-        showNotification('danger', 'Ошибка сети при удалении');
-    }
-    
-    bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
-    deleteItemId = null;
-});
-
-// Добавление нового элемента
-document.getElementById('addForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const data = {
-        name: formData.get('name').trim(),
-        description: formData.get('description').trim() || null
-    };
-    
-    if (!data.name) {
-        showNotification('danger', 'Название не может быть пустым');
-        return;
-    }
-    
-    try {
-        const response = await fetch('/admin/dictionaries/device-statuses', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        });
-        
-        if (response.ok) {
-            showNotification('success', 'Статус устройства успешно добавлен');
-            setTimeout(() => window.location.reload(), 1000);
-        } else {
-            const error = await response.json();
-            showNotification('danger', error.detail || 'Ошибка при добавлении');
-        }
-    } catch (error) {
-        showNotification('danger', 'Ошибка сети при добавлении');
-    }
-    
-    bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
-});
-
-// Функция показа уведомлений
-function showNotification(type, message) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    document.body.appendChild(alertDiv);
-    
-    setTimeout(() => {
-        if (alertDiv.parentNode) {
-            alertDiv.parentNode.removeChild(alertDiv);
-        }
-    }, 5000);
-}
-
-// Очистка формы при закрытии модального окна
-document.getElementById('addModal').addEventListener('hidden.bs.modal', function() {
-    document.getElementById('addForm').reset();
 });
 </script>
+{% endblock %}
 {% endblock %}

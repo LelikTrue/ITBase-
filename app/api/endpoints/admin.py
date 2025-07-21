@@ -2,48 +2,80 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import Dict, Any
+from datetime import datetime
 
 from app.db.database import get_db
 from app.models import (
-    AssetType, DeviceModel, DeviceStatus, Manufacturer, 
-    Department, Location, Employee, Device
+    AssetType, DeviceModel, DeviceStatus, Manufacturer,
+    Department, Location, Employee, Device, ActionLog
 )
+from app.templating import templates
 
 # Инициализация
-router = APIRouter(prefix="/admin", tags=["admin"])
-templates = Jinja2Templates(directory="templates")
+router = APIRouter(tags=["admin"])
 
 @router.get("/dictionaries", response_class=HTMLResponse)
 async def dictionaries_dashboard(request: Request, db: Session = Depends(get_db)):
     """Главная страница управления справочниками"""
-    
-    # Получаем статистику по всем справочникам
+
+    # 1. Define a comprehensive dictionary configuration
+    DICTIONARY_CONFIG = {
+        "asset-types": {"model": AssetType, "title": "Типы активов", "icon": "bi-collection", "color": "primary", "description": "Категории оборудования"},
+        "device-models": {"model": DeviceModel, "title": "Модели устройств", "icon": "bi-laptop", "color": "info", "description": "Конкретные модели оборудования"},
+        "device-statuses": {"model": DeviceStatus, "title": "Статусы устройств", "icon": "bi-check-circle", "color": "success", "description": "Состояния оборудования"},
+        "manufacturers": {"model": Manufacturer, "title": "Производители", "icon": "bi-building", "color": "warning", "description": "Компании-производители"},
+        "departments": {"model": Department, "title": "Отделы", "icon": "bi-diagram-3", "color": "secondary", "description": "Подразделения организации"},
+        "locations": {"model": Location, "title": "Местоположения", "icon": "bi-geo-alt", "color": "danger", "description": "Физические расположения"},
+        "employees": {"model": Employee, "title": "Сотрудники", "icon": "bi-people", "color": "primary", "description": "Персонал организации"}
+    }
+
+    # 2. Get statistics
     stats = {
-        "asset_types": db.query(AssetType).count(),
-        "device_models": db.query(DeviceModel).count(),
-        "device_statuses": db.query(DeviceStatus).count(),
-        "manufacturers": db.query(Manufacturer).count(),
-        "departments": db.query(Department).count(),
-        "locations": db.query(Location).count(),
-        "employees": db.query(Employee).count(),
+        "asset_types": db.query(func.count(AssetType.id)).scalar(),
+        "device_models": db.query(func.count(DeviceModel.id)).scalar(),
+        "device_statuses": db.query(func.count(DeviceStatus.id)).scalar(),
+        "manufacturers": db.query(func.count(Manufacturer.id)).scalar(),
+        "departments": db.query(func.count(Department.id)).scalar(),
+        "locations": db.query(func.count(Location.id)).scalar(),
+        "employees": db.query(func.count(Employee.id)).scalar(),
         "devices": db.query(Device).count(),
     }
-    
-    # Получаем последние добавленные записи
-    recent_items = {
-        "asset_types": db.query(AssetType).order_by(AssetType.id.desc()).limit(3).all(),
-        "device_models": db.query(DeviceModel).order_by(DeviceModel.id.desc()).limit(3).all(),
-        "device_statuses": db.query(DeviceStatus).order_by(DeviceStatus.id.desc()).limit(3).all(),
-    }
-    
+
+    # 3. Get last update times from audit log
+    last_updates_query = db.query(
+        ActionLog.entity_type,
+        func.max(ActionLog.timestamp).label('last_updated')
+    ).group_by(ActionLog.entity_type).all()
+    last_updates = {row.entity_type: row.last_updated for row in last_updates_query}
+
+    # 4. Combine data into a list of dictionaries
+    dictionaries_list = []
+    for slug, config in DICTIONARY_CONFIG.items():
+        model_name = config['model'].__name__
+        stat_key = slug.replace('-', '_')
+        
+        dict_info = {
+            "slug": slug,
+            "title": config['title'],
+            "description": config['description'],
+            "icon": config['icon'],
+            "color": config['color'],
+            "count": stats.get(stat_key, 0),
+            "last_updated": last_updates.get(model_name)
+        }
+        dictionaries_list.append(dict_info)
+
+    # 5. Sort the list by last update time (most recent first)
+    min_datetime = datetime.min
+    dictionaries_list.sort(key=lambda x: (x['last_updated'] or min_datetime), reverse=True)
+
     return templates.TemplateResponse("admin/dictionaries_dashboard.html", {
         "request": request,
         "stats": stats,
-        "recent_items": recent_items,
+        "dictionaries": dictionaries_list,
         "title": "Управление справочниками"
     })
 
@@ -166,149 +198,3 @@ async def get_dictionaries_stats(db: Session = Depends(get_db)):
     }
     
     return stats
-
-# CRUD endpoints для справочников
-
-@router.post("/dictionaries/{dictionary_type}")
-async def create_dictionary_item(
-    dictionary_type: str,
-    item_data: Dict[str, Any],
-    db: Session = Depends(get_db)
-):
-    """Создание нового элемента справочника"""
-    
-    # Маппинг типов справочников
-    dictionary_mapping = {
-        "asset-types": AssetType,
-        "device-models": DeviceModel,
-        "device-statuses": DeviceStatus,
-        "manufacturers": Manufacturer,
-        "departments": Department,
-        "locations": Location,
-        "employees": Employee
-    }
-    
-    if dictionary_type not in dictionary_mapping:
-        raise HTTPException(status_code=404, detail="Справочник не найден")
-    
-    model = dictionary_mapping[dictionary_type]
-    
-    try:
-        # Создаем новый объект
-        new_item = model(**item_data)
-        db.add(new_item)
-        db.commit()
-        db.refresh(new_item)
-        
-        return {"status": "success", "id": new_item.id, "message": "Элемент успешно создан"}
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=400, detail=f"Ошибка при создании: {str(e)}")
-
-@router.put("/dictionaries/{dictionary_type}/{item_id}")
-async def update_dictionary_item(
-    dictionary_type: str,
-    item_id: int,
-    item_data: Dict[str, Any],
-    db: Session = Depends(get_db)
-):
-    """Обновление элемента справочника"""
-    
-    # Маппинг типов справочников
-    dictionary_mapping = {
-        "asset-types": AssetType,
-        "device-models": DeviceModel,
-        "device-statuses": DeviceStatus,
-        "manufacturers": Manufacturer,
-        "departments": Department,
-        "locations": Location,
-        "employees": Employee
-    }
-    
-    if dictionary_type not in dictionary_mapping:
-        raise HTTPException(status_code=404, detail="Справочник не найден")
-    
-    model = dictionary_mapping[dictionary_type]
-    
-    # Находим элемент
-    item = db.query(model).filter(model.id == item_id).first()
-    if not item:
-        raise HTTPException(status_code=404, detail="Элемент не найден")
-    
-    try:
-        # Обновляем поля
-        for key, value in item_data.items():
-            if hasattr(item, key):
-                setattr(item, key, value)
-        
-        db.commit()
-        db.refresh(item)
-        
-        return {"status": "success", "message": "Элемент успешно обновлен"}
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=400, detail=f"Ошибка при обновлении: {str(e)}")
-
-@router.delete("/dictionaries/{dictionary_type}/{item_id}")
-async def delete_dictionary_item(
-    dictionary_type: str,
-    item_id: int,
-    db: Session = Depends(get_db)
-):
-    """Удаление элемента справочника"""
-    
-    # Маппинг типов справочников
-    dictionary_mapping = {
-        "asset-types": AssetType,
-        "device-models": DeviceModel,
-        "device-statuses": DeviceStatus,
-        "manufacturers": Manufacturer,
-        "departments": Department,
-        "locations": Location,
-        "employees": Employee
-    }
-    
-    if dictionary_type not in dictionary_mapping:
-        raise HTTPException(status_code=404, detail="Справочник не найден")
-    
-    model = dictionary_mapping[dictionary_type]
-    
-    # Находим элемент
-    item = db.query(model).filter(model.id == item_id).first()
-    if not item:
-        raise HTTPException(status_code=404, detail="Элемент не найден")
-    
-    try:
-        # Проверяем, используется ли элемент
-        if dictionary_type == "device-statuses":
-            usage_count = db.query(Device).filter(Device.status_id == item_id).count()
-            if usage_count > 0:
-                raise HTTPException(
-                    status_code=400, 
-                    detail=f"Нельзя удалить статус, используемый в {usage_count} устройствах"
-                )
-        elif dictionary_type == "manufacturers":
-            usage_count = db.query(DeviceModel).filter(DeviceModel.manufacturer_id == item_id).count()
-            if usage_count > 0:
-                raise HTTPException(
-                    status_code=400, 
-                    detail=f"Нельзя удалить производителя, используемого в {usage_count} моделях"
-                )
-        elif dictionary_type == "asset-types":
-            usage_count = db.query(Device).filter(Device.asset_type_id == item_id).count()
-            if usage_count > 0:
-                raise HTTPException(
-                    status_code=400, 
-                    detail=f"Нельзя удалить тип актива, используемый в {usage_count} устройствах"
-                )
-        
-        db.delete(item)
-        db.commit()
-        
-        return {"status": "success", "message": "Элемент успешно удален"}
-    except HTTPException:
-        db.rollback()
-        raise
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=400, detail=f"Ошибка при удалении: {str(e)}")

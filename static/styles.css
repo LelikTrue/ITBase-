@@ -1,5 +1,73 @@
 /* static/styles.css */
 
+/* Стили для блока статистики */
+.stat-card {
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    height: 100%;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card .card-body {
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+}
+
+.stat-icon {
+    font-size: 1.5rem;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+
+.stat-content {
+    text-align: left;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Цвета фона для иконок */
+.bg-soft-primary {
+    background-color: rgba(13, 110, 253, 0.1) !important;
+}
+
+.bg-soft-info {
+    background-color: rgba(13, 202, 240, 0.1) !important;
+}
+
+.bg-soft-success {
+    background-color: rgba(25, 135, 84, 0.1) !important;
+}
+
+.bg-soft-warning {
+    background-color: rgba(255, 193, 7, 0.1) !important;
+}
+
 /* Общие стили из base.html */
 body {
     min-height: 100vh;
@@ -117,4 +185,74 @@ body[data-bs-theme="dark"] .footer .text-muted {
 
 .dashboard-icon-small {
     font-size: 1.2rem;
+}
+
+/* Стили для карточек на странице администрирования */
+.admin-section-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    height: 100%;
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+
+.admin-section-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.admin-section-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: var(--bs-primary);
+}
+
+.admin-section-description {
+    color: var(--bs-secondary-color);
+    font-size: 0.9rem;
+}
+
+/* Стили для страниц управления справочниками */
+.table-actions {
+    white-space: nowrap;
+}
+
+.edit-form {
+    display: none;
+}
+
+.edit-mode .view-mode {
+    display: none;
+}
+
+.edit-mode .edit-form {
+    display: block;
+}
+
+.dictionary-item {
+    border-left: 3px solid var(--bs-primary);
+    transition: all 0.2s ease-in-out;
+}
+
+.dictionary-item:hover {
+    border-left-color: var(--bs-success);
+    background-color: var(--bs-secondary-bg);
+}
+
+/* Custom table header style */
+thead.table-light {
+    --bs-table-bg: #9d9fbb8e; /* Цвет фона таблиц / шапка */
+    --bs-table-color: #212529;
+    --bs-table-border-color: #dee2e6;
+    vertical-align: middle;
+}
+
+/* Ссылка для карточек статистики */
+.stat-card-link {
+    text-decoration: none;
+    display: block;
+    height: 100%;
+}
+.stat-card-link:hover {
+    text-decoration: none;
 }
