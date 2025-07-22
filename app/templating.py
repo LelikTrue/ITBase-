@@ -1,6 +1,6 @@
 import json
 from fastapi.templating import Jinja2Templates
-from markupsafe import Markup
+from markupsafe import Markup, escape
 
 templates = Jinja2Templates(directory="templates")
 
@@ -20,20 +20,44 @@ def to_pretty_json(value):
     return Markup(html)
 
 def format_diff(details):
-    """Formats a 'diff' dictionary into an HTML table for better readability."""
-    if not isinstance(details, dict) or 'diff' not in details:
-        return to_pretty_json(details)
+    """
+    Форматирует данные в HTML-таблицу для лучшей читаемости.
+    Поддерживает как старый формат (плоский словарь), так и новый формат с 'diff'.
+    """
+    # Если details не словарь, выводим ошибку
+    if not isinstance(details, dict):
+        return Markup('<div class="text-warning p-2"><em>Некорректный формат данных: ожидался словарь</em></div>')
+    
+    # Проверяем, есть ли вложенный 'diff'
+    if 'diff' in details and isinstance(details['diff'], dict):
+        diff_data = details['diff']
+    else:
+        # Если 'diff' нет, используем сам details как diff_data
+        diff_data = details
+    
+    # Если diff_data пуст, выводим сообщение
+    if not diff_data:
+        return Markup('<div class="text-muted p-2"><em>Нет данных для отображения</em></div>')
 
-    diff_data = details['diff']
+    # Случай 4: Собираем таблицу из данных.
     rows = []
     for field, changes in diff_data.items():
-        old_val = changes.get('old', '<em>N/A</em>')
-        new_val = changes.get('new', '<em>N/A</em>')
+        # Убеждаемся, что 'changes' - это словарь, чтобы избежать ошибок
+        if isinstance(changes, dict):
+            old_val = changes.get('old')
+            new_val = changes.get('new')
+        else:
+            old_val, new_val = ('<em>Ошибка данных</em>', '<em>Ошибка данных</em>')
+
+        # Безопасно отображаем значения, обрабатывая None и пустые строки
+        old_display = escape(old_val) if old_val is not None else '<em>пусто</em>'
+        new_display = escape(new_val) if new_val is not None else '<em>пусто</em>'
+
         rows.append(f"""
         <tr>
-            <td><strong>{field}</strong></td>
-            <td class="bg-light text-muted">{old_val or '<em>пусто</em>'}</td>
-            <td class="bg-success bg-opacity-25">{new_val or '<em>пусто</em>'}</td>
+            <td><strong>{escape(field)}</strong></td>
+            <td class="bg-light text-muted">{old_display}</td>
+            <td class="bg-success bg-opacity-25">{new_display}</td>
         </tr>
         """)
     
@@ -41,9 +65,9 @@ def format_diff(details):
     <table class="table table-bordered table-sm diff-table">
         <thead class="table-light">
             <tr>
-                <th>Поле</th>
-                <th>Старое значение</th>
-                <th>Новое значение</th>
+                <th style="width: 25%;">Поле</th>
+                <th style="width: 37.5%;">Старое значение</th>
+                <th style="width: 37.5%;">Новое значение</th>
             </tr>
         </thead>
         <tbody>
@@ -54,13 +78,17 @@ def format_diff(details):
     return Markup(table_html)
 
 def format_create_data(details):
-    """Formats data for a 'create' action into a simple HTML list."""
+    """Форматирует данные для действия 'create' в виде простого HTML-списка."""
     if not isinstance(details, dict):
-        return to_pretty_json(details)
+        return Markup('<div class="text-warning p-2"><em>Некорректный формат данных для события создания.</em></div>')
     
+    if not details:
+        return Markup('<div class="text-muted p-2"><em>Нет данных для отображения.</em></div>')
+
     items = []
     for key, value in details.items():
-        items.append(f'<li><strong>{key}:</strong> {value}</li>')
+        display_value = escape(value) if value is not None else '<em>не задано</em>'
+        items.append(f'<li><strong>{escape(key)}:</strong> {display_value}</li>')
     
     return Markup(f'<ul class="list-unstyled mb-0">{"".join(items)}</ul>')
 

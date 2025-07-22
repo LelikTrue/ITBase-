@@ -103,7 +103,7 @@ app.add_middleware(
 app.include_router(assets.router)
 app.include_router(action_logs.router, prefix="/admin", tags=["admin", "audit"])
 app.include_router(health.router, prefix="/api/health", tags=["health"])
-app.include_router(dictionaries.router, prefix="/admin")
+app.include_router(dictionaries.router, prefix="/api/dictionaries", tags=["dictionaries"])
 app.include_router(admin.router, prefix="/admin")
 
 # Эндпоинты для проверки работоспособности

@@ -57,14 +57,19 @@ async def create_asset_type(
         db.commit()
         db.refresh(asset_type)
         
-        # Логируем создание
+        # Логируем создание с унифицированным форматом данных
         log_action(
             db=db,
             user_id=None,  # TODO: Заменить на ID аутентифицированного пользователя
             action_type="create",
             entity_type="AssetType",
             entity_id=asset_type.id,
-            details={"name": asset_type.name}
+            details={
+                "diff": {
+                    "name": {"old": None, "new": asset_type.name},
+                    "description": {"old": None, "new": asset_type.description}
+                }
+            }
         )
         
         return {
@@ -139,14 +144,21 @@ async def create_device_model(
         db.commit()
         db.refresh(device_model)
         
-        # Логируем создание
+        # Логируем создание с унифицированным форматом данных
         log_action(
             db=db,
             user_id=None,  # TODO: Заменить на ID аутентифицированного пользователя
             action_type="create",
             entity_type="DeviceModel",
             entity_id=device_model.id,
-            details={"name": device_model.name, "manufacturer_id": device_model.manufacturer_id}
+            details={
+                "diff": {
+                    "name": {"old": None, "new": device_model.name},
+                    "manufacturer_id": {"old": None, "new": device_model.manufacturer_id},
+                    "asset_type_id": {"old": None, "new": device_model.asset_type_id},
+                    "description": {"old": None, "new": device_model.description}
+                }
+            }
         )
         
         return {
@@ -200,14 +212,19 @@ async def create_device_status(
         db.commit()
         db.refresh(device_status)
         
-        # Логируем создание
+        # Логируем создание с унифицированным форматом данных
         log_action(
             db=db,
             user_id=None,  # TODO: Заменить на ID аутентифицированного пользователя
             action_type="create",
             entity_type="DeviceStatus",
             entity_id=device_status.id,
-            details={"name": device_status.name}
+            details={
+                "diff": {
+                    "name": {"old": None, "new": device_status.name},
+                    "description": {"old": None, "new": device_status.description}
+                }
+            }
         )
         
         return {
@@ -254,14 +271,19 @@ async def create_manufacturer(
         db.commit()
         db.refresh(manufacturer)
         
-        # Логируем создание
+        # Логируем создание с унифицированным форматом данных
         log_action(
             db=db,
             user_id=None,  # TODO: Заменить на ID аутентифицированного пользователя
             action_type="create",
             entity_type="Manufacturer",
             entity_id=manufacturer.id,
-            details={"name": manufacturer.name}
+            details={
+                "diff": {
+                    "name": {"old": None, "new": manufacturer.name},
+                    "description": {"old": None, "new": manufacturer.description}
+                }
+            }
         )
         
         return {
@@ -308,14 +330,19 @@ async def create_department(
         db.commit()
         db.refresh(department)
         
-        # Логируем создание
+        # Логируем создание с унифицированным форматом данных
         log_action(
             db=db,
             user_id=None,  # TODO: Заменить на ID аутентифицированного пользователя
             action_type="create",
             entity_type="Department",
             entity_id=department.id,
-            details={"name": department.name}
+            details={
+                "diff": {
+                    "name": {"old": None, "new": department.name},
+                    "description": {"old": None, "new": department.description}
+                }
+            }
         )
         
         return {
@@ -351,19 +378,36 @@ async def update_department(
         if not department:
             raise HTTPException(status_code=404, detail="Отдел не найден")
         
+        # Сохраняем старые значения
+        old_name = department.name
+        old_description = department.description
+        
+        # Обновляем значения
         department.name = name.strip()
         department.description = description.strip() if description else None
         
         db.commit()
         db.refresh(department)
         
+        # Логируем изменение в едином формате
         log_action(
             db=db,
-            user_id=None,
+            user_id=None,  # TODO: Заменить на ID аутентифицированного пользователя
             action_type="update",
             entity_type="Department",
             entity_id=department.id,
-            details={"name": department.name}
+            details={
+                "diff": {
+                    "name": {
+                        "old": old_name,
+                        "new": department.name
+                    },
+                    "description": {
+                        "old": old_description,
+                        "new": department.description
+                    }
+                }
+            }
         )
         
         return {
@@ -445,14 +489,19 @@ async def create_location(
         db.commit()
         db.refresh(location)
         
-        # Логируем создание
+        # Логируем создание с унифицированным форматом данных
         log_action(
             db=db,
             user_id=None,  # TODO: Заменить на ID аутентифицированного пользователя
             action_type="create",
             entity_type="Location",
             entity_id=location.id,
-            details={"name": location.name}
+            details={
+                "diff": {
+                    "name": {"old": None, "new": location.name},
+                    "description": {"old": None, "new": location.description}
+                }
+            }
         )
         
         return {
@@ -488,19 +537,36 @@ async def update_location(
         if not location:
             raise HTTPException(status_code=404, detail="Местоположение не найдено")
         
+        # Сохраняем старые значения
+        old_name = location.name
+        old_description = location.description
+        
+        # Обновляем значения
         location.name = name.strip()
         location.description = description.strip() if description else None
         
         db.commit()
         db.refresh(location)
         
+        # Логируем изменение в едином формате
         log_action(
             db=db,
-            user_id=None,
+            user_id=None,  # TODO: Заменить на ID аутентифицированного пользователя
             action_type="update",
             entity_type="Location",
             entity_id=location.id,
-            details={"name": location.name}
+            details={
+                "diff": {
+                    "name": {
+                        "old": old_name,
+                        "new": location.name
+                    },
+                    "description": {
+                        "old": old_description,
+                        "new": location.description
+                    }
+                }
+            }
         )
         
         return {
@@ -605,14 +671,23 @@ async def create_employee(
         db.commit()
         db.refresh(employee)
         
-        # Логируем создание
+        # Логируем создание с унифицированным форматом данных
         log_action(
             db=db,
             user_id=None,  # TODO: Заменить на ID аутентифицированного пользователя
             action_type="create",
             entity_type="Employee",
             entity_id=employee.id,
-            details={"name": f"{employee.last_name} {employee.first_name}"}
+            details={
+                "diff": {
+                    "last_name": {"old": None, "new": employee.last_name},
+                    "first_name": {"old": None, "new": employee.first_name},
+                    "patronymic": {"old": None, "new": employee.patronymic},
+                    "employee_id": {"old": None, "new": employee.employee_id},
+                    "email": {"old": None, "new": employee.email},
+                    "phone_number": {"old": None, "new": employee.phone_number}
+                }
+            }
         )
         
         return {
@@ -662,28 +737,63 @@ async def update_employee(
         employee = db.query(Employee).filter(Employee.id == employee_id_path).first()
         if not employee:
             raise HTTPException(status_code=404, detail="Сотрудник не найден")
-
-        # Обновляем поля
+        
+        # Сохраняем старые значения
+        old_first_name = employee.first_name
+        old_last_name = employee.last_name
+        old_patronymic = employee.patronymic
+        old_employee_id = employee.employee_id
+        old_email = employee.email
+        old_phone_number = employee.phone_number
+        
+        # Обновляем значения
         employee.first_name = first_name.strip()
         employee.last_name = last_name.strip()
         employee.patronymic = patronymic.strip() if patronymic else None
         employee.employee_id = employee_id.strip() if employee_id else None
         employee.email = email.strip() if email else None
         employee.phone_number = phone_number.strip() if phone_number else None
-
+        
         db.commit()
         db.refresh(employee)
-
-        # Логируем изменение
+        
+        # Логируем изменение в едином формате
         log_action(
             db=db,
-            user_id=None,
+            user_id=None,  # TODO: Заменить на ID аутентифицированного пользователя
             action_type="update",
             entity_type="Employee",
             entity_id=employee.id,
-            details={"name": f"{employee.last_name} {employee.first_name}"}
+            details={
+                "diff": {
+                    "first_name": {
+                        "old": old_first_name,
+                        "new": employee.first_name
+                    },
+                    "last_name": {
+                        "old": old_last_name,
+                        "new": employee.last_name
+                    },
+                    "patronymic": {
+                        "old": old_patronymic,
+                        "new": employee.patronymic
+                    },
+                    "employee_id": {
+                        "old": old_employee_id,
+                        "new": employee.employee_id
+                    },
+                    "email": {
+                        "old": old_email,
+                        "new": employee.email
+                    },
+                    "phone_number": {
+                        "old": old_phone_number,
+                        "new": employee.phone_number
+                    }
+                }
+            }
         )
-
+        
         return {
             "id": employee.id,
             "first_name": employee.first_name,
@@ -759,58 +869,7 @@ async def delete_employee(employee_id: int, db: Session = Depends(get_db)):
             detail=f"Ошибка при удалении сотрудника: {str(e)}"
         )
 
-# Универсальные эндпоинты для редактирования и удаления
-@router.put("/asset-types/{asset_type_id}", response_model=dict)
-async def update_asset_type(
-    asset_type_id: int,
-    name: str = Form(...),
-    description: Optional[str] = Form(None),
-    db: Session = Depends(get_db)
-):
-    """Обновить тип актива"""
-    try:
-        asset_type = db.query(AssetType).filter(AssetType.id == asset_type_id).first()
-        if not asset_type:
-            raise HTTPException(status_code=404, detail="Тип актива не найден")
-        
-        asset_type.name = name.strip()
-        asset_type.description = description.strip() if description else None
-        
-        db.commit()
-        db.refresh(asset_type)
-        
-        # Логируем изменение
-        log_action(
-            db=db,
-            user_id=None,
-            action_type="update",
-            entity_type="AssetType",
-            entity_id=asset_type.id,
-            details={"name": asset_type.name}
-        )
-        
-        return {
-            "id": asset_type.id,
-            "name": asset_type.name,
-            "description": asset_type.description,
-            "message": "Тип актива успешно обновлен"
-        }
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Тип актива с таким названием уже существует"
-        )
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error updating asset type: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Ошибка при обновлении типа актива: {str(e)}"
-        )
 
-@router.delete("/asset-types/{asset_type_id}")
-async def delete_asset_type(asset_type_id: int, db: Session = Depends(get_db)):
     """Удалить тип актива"""
     try:
         asset_type = db.query(AssetType).filter(AssetType.id == asset_type_id).first()
@@ -863,29 +922,46 @@ async def update_device_status(
 ):
     """Обновить статус устройства"""
     try:
-        device_status = db.query(DeviceStatus).filter(DeviceStatus.id == status_id).first()
-        if not device_status:
+        status_ = db.query(DeviceStatus).filter(DeviceStatus.id == status_id).first()
+        if not status_:
             raise HTTPException(status_code=404, detail="Статус устройства не найден")
         
-        device_status.name = name.strip()
-        device_status.description = description.strip() if description else None
+        # Сохраняем старые значения
+        old_name = status_.name
+        old_description = status_.description
+        
+        # Обновляем значения
+        status_.name = name.strip()
+        status_.description = description.strip() if description else None
         
         db.commit()
-        db.refresh(device_status)
+        db.refresh(status_)
         
+        # Логируем изменение в едином формате
         log_action(
             db=db,
-            user_id=None,
+            user_id=None,  # TODO: Заменить на ID аутентифицированного пользователя
             action_type="update",
             entity_type="DeviceStatus",
-            entity_id=device_status.id,
-            details={"name": device_status.name}
+            entity_id=status_.id,
+            details={
+                "diff": {
+                    "name": {
+                        "old": old_name,
+                        "new": status_.name
+                    },
+                    "description": {
+                        "old": old_description,
+                        "new": status_.description
+                    }
+                }
+            }
         )
         
         return {
-            "id": device_status.id,
-            "name": device_status.name,
-            "description": device_status.description,
+            "id": status_.id,
+            "name": status_.name,
+            "description": status_.description,
             "message": "Статус устройства успешно обновлен"
         }
     except IntegrityError:
@@ -958,19 +1034,36 @@ async def update_manufacturer(
         if not manufacturer:
             raise HTTPException(status_code=404, detail="Производитель не найден")
         
+        # Сохраняем старые значения
+        old_name = manufacturer.name
+        old_description = manufacturer.description
+        
+        # Обновляем значения
         manufacturer.name = name.strip()
         manufacturer.description = description.strip() if description else None
         
         db.commit()
         db.refresh(manufacturer)
         
+        # Логируем изменение в едином формате
         log_action(
             db=db,
-            user_id=None,
+            user_id=None,  # TODO: Заменить на ID аутентифицированного пользователя
             action_type="update",
             entity_type="Manufacturer",
             entity_id=manufacturer.id,
-            details={"name": manufacturer.name}
+            details={
+                "diff": {
+                    "name": {
+                        "old": old_name,
+                        "new": manufacturer.name
+                    },
+                    "description": {
+                        "old": old_description,
+                        "new": manufacturer.description
+                    }
+                }
+            }
         )
         
         return {
@@ -1070,12 +1163,21 @@ async def update_device_model(
         # Проверяем существование производителя и типа актива
         manufacturer = db.query(Manufacturer).filter(Manufacturer.id == manufacturer_id).first()
         if not manufacturer:
-            raise HTTPException(status_code=404, detail="Производитель не найден")
+            raise HTTPException(status_code=404, detail="Указанный производитель не найден")
             
         asset_type = db.query(AssetType).filter(AssetType.id == asset_type_id).first()
         if not asset_type:
-            raise HTTPException(status_code=404, detail="Тип актива не найден")
+            raise HTTPException(status_code=404, detail="Указанный тип актива не найден")
         
+        # Сохраняем старые значения
+        old_name = device_model.name
+        old_manufacturer_id = device_model.manufacturer_id
+        old_manufacturer_name = device_model.manufacturer.name if device_model.manufacturer else None
+        old_asset_type_id = device_model.asset_type_id
+        old_asset_type_name = device_model.asset_type.name if device_model.asset_type else None
+        old_description = device_model.description
+        
+        # Обновляем модель устройства
         device_model.name = name.strip()
         device_model.manufacturer_id = manufacturer_id
         device_model.asset_type_id = asset_type_id
@@ -1084,22 +1186,58 @@ async def update_device_model(
         db.commit()
         db.refresh(device_model)
         
+        # Получаем новые связанные объекты для логирования
+        new_manufacturer = db.query(Manufacturer).get(manufacturer_id)
+        new_asset_type = db.query(AssetType).get(asset_type_id)
+        
+        # Логируем действие в едином формате
         log_action(
             db=db,
-            user_id=None,
+            user_id=None,  # TODO: Заменить на ID аутентифицированного пользователя
             action_type="update",
             entity_type="DeviceModel",
             entity_id=device_model.id,
-            details={"name": device_model.name}
+            details={
+                "diff": {
+                    "name": {
+                        "old": old_name,
+                        "new": device_model.name
+                    },
+                    "manufacturer": {
+                        "old": {
+                            "id": old_manufacturer_id,
+                            "name": old_manufacturer_name
+                        },
+                        "new": {
+                            "id": device_model.manufacturer_id,
+                            "name": new_manufacturer.name if new_manufacturer else None
+                        }
+                    },
+                    "asset_type": {
+                        "old": {
+                            "id": old_asset_type_id,
+                            "name": old_asset_type_name
+                        },
+                        "new": {
+                            "id": device_model.asset_type_id,
+                            "name": new_asset_type.name if new_asset_type else None
+                        }
+                    },
+                    "description": {
+                        "old": old_description,
+                        "new": device_model.description
+                    }
+                }
+            }
         )
         
         return {
             "id": device_model.id,
             "name": device_model.name,
             "manufacturer_id": device_model.manufacturer_id,
-            "manufacturer_name": manufacturer.name,
+            "manufacturer_name": new_manufacturer.name,
             "asset_type_id": device_model.asset_type_id,
-            "asset_type_name": asset_type.name,
+            "asset_type_name": new_asset_type.name,
             "description": device_model.description,
             "message": "Модель устройства успешно обновлена"
         }

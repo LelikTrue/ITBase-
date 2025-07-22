@@ -178,13 +178,8 @@
                                 <td colspan="7" class="p-0" style="border-top: none;">
                                     <div class="collapse" id="details-{{ log.id }}">
                                         <div class="details-card-body p-3">
-                                            {% if log.action_type == 'update' and log.details and log.details.diff is defined %}
-                                                {{ log.details|format_diff|safe }}
-                                            {% elif log.action_type == 'create' %}
-                                                {{ log.details|format_create_data|safe }}
-                                            {% else %}
-                                                {{ log.details|to_pretty_json|safe }}
-                                            {% endif %}
+                                            {# Унифицированный формат отображения для всех типов действий #}
+                                            {{ log.details|format_diff|safe }}
                                         </div>
                                     </div>
                                 </td>
