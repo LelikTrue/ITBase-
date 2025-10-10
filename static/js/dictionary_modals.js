@@ -199,80 +199,90 @@ function initModalHandler(prefix, url, selectIds, isEmployee = false) {
     const form = document.getElementById(`${prefix}Form`);
     const modal = document.getElementById(`${prefix}Modal`);
     const errorAlert = document.getElementById(`${prefix}Error`);
-    
+
     if (!saveButton || !form || !modal) return;
-    
+
     saveButton.addEventListener('click', function() {
-        // Проверяем валидность формы
         if (!form.checkValidity()) {
             form.reportValidity();
             return;
         }
-        
-        // Собираем данные формы
+
         const formData = new FormData(form);
-        
-        // Отправляем данные на сервер
+
         fetch(url, {
             method: 'POST',
             body: formData
         })
         .then(response => {
+            // --- НАЧАЛО КЛЮЧЕВЫХ ИЗМЕНЕНИЙ ---
             if (!response.ok) {
-                return response.json().then(data => {
-                    throw new Error(data.detail || 'Ошибка при сохранении данных');
+                // Если ответ НЕ успешный, мы парсим JSON с ошибкой...
+                return response.json().then(errorData => {
+                    // ...и ОТКЛОНЯЕМ промис, передавая в него ПОЛНЫЙ объект ошибки.
+                    // Это правильный способ обработки ошибок в fetch.
+                    return Promise.reject(errorData);
                 });
             }
+            // Если ответ успешный, просто парсим JSON.
             return response.json();
+            // --- КОНЕЦ КЛЮЧЕВЫХ ИЗМЕНЕНИЙ ---
         })
         .then(data => {
-            // Закрываем модальное окно
+            // Этот блок теперь выполняется ТОЛЬКО для успешных ответов (2xx).
             const modalInstance = bootstrap.Modal.getInstance(modal);
             modalInstance.hide();
-            
-            // Обновляем выпадающие списки
-            if (isEmployee) {
-                // Для сотрудников обновляем все связанные выпадающие списки
-                fetchDictionaryData('/api/dictionaries/employees', function(employees) {
-                    selectIds.forEach(selectId => {
-                        populateEmployeeSelect(selectId, employees);
-                        
-                        // Устанавливаем новое значение в выпадающем списке
-                        const select = document.getElementById(selectId);
-                        if (select) {
-                            select.value = data.id;
-                            // Вызываем событие change для обновления зависимых полей
-                            select.dispatchEvent(new Event('change'));
+
+            const updateFunction = isEmployee ? populateEmployeeSelect : populateSelect;
+            const dataSourceUrl = isEmployee ? '/api/dictionaries/employees' : url;
+
+            fetchDictionaryData(dataSourceUrl, function(items) {
+                selectIds.forEach(selectId => {
+                    updateFunction(selectId, items);
+                    const select = document.getElementById(selectId);
+                    if (select) {
+                        select.value = data.id;
+
+                        // Обновляем TomSelect, если он используется на этом элементе
+                        if (select.tomselect) {
+                            select.tomselect.sync();
+                            select.tomselect.setValue(data.id, true); // true - не вызывать onchange
                         }
-                    });
+
+                        select.dispatchEvent(new Event('change'));
+                    }
                 });
-            } else {
-                // Для остальных справочников обновляем все связанные выпадающие списки
-                fetchDictionaryData(url, function(items) {
-                    selectIds.forEach(selectId => {
-                        populateSelect(selectId, items);
-                        
-                        // Устанавливаем новое значение в выпадающем списке
-                        const select = document.getElementById(selectId);
-                        if (select) {
-                            select.value = data.id;
-                            // Вызываем событие change для обновления зависимых полей
-                            select.dispatchEvent(new Event('change'));
-                        }
-                    });
-                });
-            }
-            
-            // Показываем уведомление об успешном сохранении
+            });
+
             showNotification('success', data.message || 'Запись успешно создана');
         })
         .catch(error => {
-            // Показываем ошибку в модальном окне
+            // --- НАЧАЛО ИСПРАВЛЕНИЙ В CATCH ---
+            // Теперь 'error' — это наш объект { detail: [...] } с сервера, а не Error.
             if (errorAlert) {
-                errorAlert.textContent = error.message;
+                let errorMessage = 'Произошла неизвестная ошибка.';
+
+                if (error && error.detail) {
+                    if (Array.isArray(error.detail)) {
+                        // Стандартная ошибка валидации FastAPI
+                        const firstError = error.detail[0];
+                        const fieldName = firstError.loc && firstError.loc.length > 1 ? firstError.loc[1] : 'поле';
+                        // Используем msg, который приходит от Pydantic
+                        errorMessage = `Ошибка в поле '${fieldName}': ${firstError.msg}`;
+                    } else if (typeof error.detail === 'string') {
+                        // Наша кастомная ошибка (например, DuplicateError)
+                        errorMessage = error.detail;
+                    }
+                } else if (error && error.message) {
+                    // Обычная ошибка JavaScript (например, нет сети)
+                    errorMessage = error.message;
+                }
+
+                errorAlert.textContent = errorMessage;
                 errorAlert.classList.remove('d-none');
             }
-            console.error('Ошибка при сохранении данных:', error);
+            console.error('Ошибка при сохранении данных:', error); // Логируем полный объект
+            // --- КОНЕЦ ИСПРАВЛЕНИЙ В CATCH ---
         });
     });
 }
