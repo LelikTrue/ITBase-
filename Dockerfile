@@ -94,14 +94,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 # Команда запуска
-CMD ["gunicorn", "app.main:app", \
-    "-k", "uvicorn.workers.UvicornWorker", \
-    "--bind", "0.0.0.0:8000", \
-    "--workers", "$(( $(nproc) * 2 + 1 ))", \
-    "--worker-connections", "1000", \
-    "--timeout", "60", \
-    "--keep-alive", "5", \
-    "--access-logfile", "-", \
-    "--error-logfile", "-", \
-    "--log-level", "info", \
-    "--worker-tmp-dir", "/dev/shm"]
+CMD ["/bin/sh", "-c", "gunicorn app.main:app -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 --workers $(( $(nproc) * 2 + 1 )) --worker-connections 1000 --timeout 60 --keep-alive 5 --access-logfile - --error-logfile - --log-level info --worker-tmp-dir /dev/shm"]
