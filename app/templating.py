@@ -1,11 +1,21 @@
 import json
 from datetime import datetime
 from fastapi.templating import Jinja2Templates
-from .config import TEMPLATES_DIR
+from jinja2 import Environment, FileSystemLoader, ChainableUndefined
+from .config import settings
 from .flash import get_flashed_messages
 
 # Инициализация Jinja2Templates
-templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+# !# ИСПРАВЛЕНИЕ: Создаем кастомное окружение Jinja2, чтобы включить `attribute()`
+env = Environment(
+    # Указываем загрузчик, который ищет шаблоны в директории 'templates'
+    loader=FileSystemLoader(str(settings.TEMPLATES_DIR)),
+    # Включаем автоматическое экранирование для безопасности
+    autoescape=True,
+    # Добавляем `undefined=ChainableUndefined`, чтобы включить `attribute()` и другие полезные возможности
+    undefined=ChainableUndefined
+)
+templates = Jinja2Templates(env=env)
 
 def to_pretty_json(value):
     """Formats a dictionary to a pretty JSON string with non-ASCII support."""

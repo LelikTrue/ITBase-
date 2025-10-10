@@ -8,61 +8,41 @@ from app.db.database import get_db
 router = APIRouter()
 
 
-@router.get("/health", response_model=Dict[str, Any], tags=["health"])
-async def health_check(db: AsyncSession = Depends(get_db)):
+# Этот эндпоинт оставляем как есть, он для примера.
+@router.get("/health", tags=["health"])
+async def health_check():
+    """Простая проверка, что API жив."""
+    return {"status": "ok"}
+
+
+# ИЗМЕНЯЕМ ЭТОТ ЭНДПОИНТ
+@router.get("/ready", response_model=Dict[str, str], tags=["health"])
+async def readiness_check(db: AsyncSession = Depends(get_db)):
     """
-    Проверка работоспособности сервиса.
-    
-    Проверяет:
-    - Доступность API
-    - Подключение к базе данных
-    - Другие критические зависимости
-    
-    Returns:
-        Dict: Статус сервиса и его компонентов
+    Проверяет готовность сервиса к приему трафика,
+    включая подключение к базе данных.
     """
-    status = {
-        "status": "ok",
-        "version": "1.0.0",
-        "services": {
-            "database": "ok",
-        }
-    }
-    
-    # Проверка подключения к базе данных
     try:
+        # Выполняем простой запрос, чтобы убедиться, что соединение работает
         await db.execute(text("SELECT 1"))
-    except Exception as e:
-        status["status"] = "error"
-        status["services"]["database"] = f"error: {str(e)}"
+        db_status = "ok"
+        status_code = 200
+    except Exception:
+        db_status = "error"
+        status_code = 503  # Service Unavailable
+
+    response_data = {"db_status": db_status}
+
+    if status_code != 200:
+        raise HTTPException(status_code=status_code, detail=response_data)
     
-    # Если есть ошибки, возвращаем 503 Service Unavailable
-    if status["status"] == "error":
-        raise HTTPException(
-            status_code=503,
-            detail=status
-        )
-    
-    return status
+    return response_data
 
 
-@router.get("/ready", tags=["health"])
-async def readiness_check():
-    """
-    Проверка готовности сервиса к работе.
-    
-    Используется для проверки готовности сервиса к приему трафика.
-    Kubernetes использует этот эндпоинт для проверки готовности пода.
-    """
-    return {"status": "ready"}
-
-
+# Этот эндпоинт можно удалить или оставить, он в тестах не участвует
 @router.get("/startup", tags=["health"])
 async def startup_check():
     """
     Проверка успешного запуска сервиса.
-    
-    Используется для проверки успешного запуска сервиса.
-    Kubernetes использует этот эндпоинт для проверки успешности старта пода.
     """
     return {"status": "started"}

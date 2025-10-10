@@ -1,11 +1,11 @@
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import ActionLog
 
-def log_action( # Функция синхронная, так как использует Session
-    db: Session,
+async def log_action(
+    db: AsyncSession,
     user_id: int,
     action_type: str,
     entity_type: str,
@@ -13,7 +13,7 @@ def log_action( # Функция синхронная, так как испол�
     details: Optional[Dict[str, Any]] = None
 ) -> ActionLog:
     """
-    Создает запись в логе действий
+    Асинхронно создает запись в логе действий
     
     Args:
         db: Сессия базы данных
@@ -35,7 +35,7 @@ def log_action( # Функция синхронная, так как испол�
     )
     
     db.add(log_entry)
-    db.commit()
-    db.refresh(log_entry)
+    # Убираем commit. Управление транзакцией теперь на стороне вызывающего кода.
+    # Это позволяет объединять несколько операций в одну атомарную транзакцию.
     
     return log_entry
