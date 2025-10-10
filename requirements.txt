@@ -1,11 +1,7 @@
-# This file is maintained for backward compatibility
-# For new installations, use the requirements in the requirements/ directory
+# Этот файл предназначен для быстрой настройки окружения разработки.
+# Он включает в себя все необходимые зависимости из `requirements/dev.txt`.
+#
+# Для production-сборки используйте `requirements/prod.txt`.
 
-# Base requirements (production)
--r requirements/base.txt
-
-# Development dependencies (uncomment for development)
-# -r requirements/dev.txt
-
-# Production dependencies (uncomment for production)
-# -r requirements/prod.txt
+# Включаем все зависимости для разработки
+-r requirements/dev.txt

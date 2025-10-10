@@ -33,6 +33,7 @@ watchfiles==0.21.0
 # Debugging
 ipdb==0.13.13
 python-dotenv==1.0.1
+pretty-errors==1.2.25
 
 # Security
 bandit==1.7.6

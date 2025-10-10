@@ -19,18 +19,6 @@ setup(
     package_data={"app": ["py.typed"]},
     python_requires=">=3.12",
     install_requires=install_requires,
-    extras_require={
-        "dev": [
-            "black>=23.0.0",
-            "isort>=5.12.0",
-            "flake8>=6.0.0",
-            "mypy>=1.0.0",
-            "pytest>=7.0.0",
-            "pytest-cov>=4.0.0",
-            "pytest-asyncio>=0.20.0",
-            "pre-commit>=3.0.0",
-        ],
-    },
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Information Technology",
@@ -42,9 +30,4 @@ setup(
         "Topic :: Office/Business",
         "Topic :: System :: Systems Administration",
     ],
-    entry_points={
-        "console_scripts": [
-            "itbase=app.main:main",
-        ],
-    },
 )

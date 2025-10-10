@@ -1,0 +1,442 @@
+openapi: 3.0.3
+info:
+  title: "ITBase - Assets API"
+  description: "API для управления ИТ-активами. Включает в себя как эндпоинты, возвращающие HTML для веб-интерфейса, так и эндпоинты для обработки данных форм."
+  version: "1.0.0"
+servers:
+  - url: http://localhost:8000
+    description: Локальный сервер для разработки
+
+tags:
+  - name: Assets
+    description: Операции с ИТ-активами (устройствами)
+
+paths:
+  /assets-list:
+    get:
+      tags:
+        - Assets
+      summary: Получить страницу со списком активов (HTML)
+      description: Отображает отфильтрованный, отсортированный и пагинированный список активов в виде HTML-страницы.
+      operationId: read_assets_assets_list_get
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы для пагинации.
+          required: false
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: page_size
+          in: query
+          description: Количество элементов на странице.
+          required: false
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: search
+          in: query
+          description: Строка для поиска по инвентарному/серийному номеру или MAC-адресу.
+          required: false
+          schema:
+            type: string
+        - name: asset_type_id
+          in: query
+          description: ID типа актива для фильтрации.
+          required: false
+          schema:
+            type: integer
+        - name: status_id
+          in: query
+          description: ID статуса для фильтрации.
+          required: false
+          schema:
+            type: integer
+        - name: department_id
+          in: query
+          description: ID отдела для фильтрации.
+          required: false
+          schema:
+            type: integer
+        - name: location_id
+          in: query
+          description: ID местоположения для фильтрации.
+          required: false
+          schema:
+            type: integer
+        - name: manufacturer_id
+          in: query
+          description: ID производителя для фильтрации.
+          required: false
+          schema:
+            type: integer
+        - name: sort_by
+          in: query
+          description: Поле для сортировки.
+          required: false
+          schema:
+            type: string
+            enum: [inventory_number, asset_type, device_model, status, location, updated_at]
+        - name: sort_order
+          in: query
+          description: Порядок сортировки.
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+      responses:
+        '200':
+          description: Успешный ответ. Возвращает HTML-страницу со списком активов.
+          content:
+            text/html:
+              schema:
+                type: string
+        '500':
+          description: Внутренняя ошибка сервера (например, ошибка БД).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+
+  /dashboard:
+    get:
+      tags:
+        - Assets
+      summary: Получить страницу дашборда (HTML)
+      description: Отображает дашборд с основной статистикой по активам.
+      operationId: dashboard_dashboard_get
+      responses:
+        '200':
+          description: Успешный ответ. Возвращает HTML-страницу дашборда.
+          content:
+            text/html:
+              schema:
+                type: string
+        '500':
+          description: Внутренняя ошибка сервера (например, ошибка БД).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+
+  /export/csv:
+    get:
+      tags:
+        - Assets
+      summary: Экспорт активов в CSV
+      description: Экспортирует отфильтрованный список активов в CSV файл. Принимает те же параметры фильтрации, что и список активов.
+      operationId: export_assets_csv_export_csv_get
+      parameters:
+        - $ref: '#/components/parameters/SearchParam'
+        - $ref: '#/components/parameters/AssetTypeIdParam'
+        - $ref: '#/components/parameters/StatusIdParam'
+        - $ref: '#/components/parameters/DepartmentIdParam'
+        - $ref: '#/components/parameters/LocationIdParam'
+        - $ref: '#/components/parameters/ManufacturerIdParam'
+      responses:
+        '200':
+          description: Успешный экспорт.
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Disposition:
+              description: Предлагает скачать файл с именем 'assets_YYYYMMDD_HHMMSS.csv'.
+              schema:
+                type: string
+        '303':
+          description: Ошибка при экспорте, редирект на страницу списка активов с flash-сообщением.
+
+  /add:
+    get:
+      tags:
+        - Assets
+      summary: Получить форму добавления актива (HTML)
+      description: Отображает HTML-форму для создания нового актива.
+      operationId: add_asset_form_add_get
+      responses:
+        '200':
+          description: Успешный ответ. Возвращает HTML-страницу с формой.
+          content:
+            text/html:
+              schema:
+                type: string
+        '500':
+          description: Ошибка при загрузке данных для формы (справочников).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+
+  /create:
+    post:
+      tags:
+        - Assets
+      summary: Создать новый актив
+      description: Обрабатывает данные из формы добавления нового актива.
+      operationId: create_asset_create_post
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetCreateForm'
+      responses:
+        '303':
+          description: Успешное создание или ошибка валидации. Редирект на список активов (в случае успеха) или обратно на форму добавления (в случае ошибки). Flash-сообщение в сессии содержит детали.
+
+  /edit/{device_id}:
+    get:
+      tags:
+        - Assets
+      summary: Получить форму редактирования актива (HTML)
+      description: Отображает HTML-форму для редактирования существующего актива.
+      operationId: edit_asset_edit__device_id__get
+      parameters:
+        - name: device_id
+          in: path
+          required: true
+          description: ID актива для редактирования.
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Успешный ответ. Возвращает HTML-страницу с формой.
+          content:
+            text/html:
+              schema:
+                type: string
+        '404':
+          description: Актив не найден.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+        '500':
+          description: Ошибка при загрузке данных для формы.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+
+  /update/{device_id}:
+    post:
+      tags:
+        - Assets
+      summary: Обновить существующий актив
+      description: Обрабатывает данные из формы редактирования актива.
+      operationId: update_asset_update__device_id__post
+      parameters:
+        - name: device_id
+          in: path
+          required: true
+          description: ID актива для обновления.
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetUpdateForm'
+      responses:
+        '303':
+          description: Успешное обновление или ошибка. Редирект на список активов (успех) или на форму редактирования (ошибка). Flash-сообщение в сессии содержит детали.
+
+  /delete/{device_id}:
+    post:
+      tags:
+        - Assets
+      summary: Удалить актив
+      description: Обрабатывает удаление одного актива.
+      operationId: delete_asset_delete__device_id__post
+      parameters:
+        - name: device_id
+          in: path
+          required: true
+          description: ID актива для удаления.
+          schema:
+            type: integer
+      responses:
+        '303':
+          description: Редирект на страницу списка активов с flash-сообщением о результате операции.
+
+  /assets/bulk-delete:
+    post:
+      tags:
+        - Assets
+      summary: Массовое удаление активов
+      description: Обрабатывает удаление нескольких активов по их ID.
+      operationId: bulk_delete_assets_assets_bulk_delete_post
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                device_ids:
+                  type: array
+                  items:
+                    type: integer
+                  description: Список ID активов для удаления.
+              required:
+                - device_ids
+      responses:
+        '303':
+          description: Редирект на предыдущую страницу с flash-сообщением о результате.
+
+  /assets/bulk-update:
+    post:
+      tags:
+        - Assets
+      summary: Массовое обновление активов
+      description: Обрабатывает массовое обновление статуса, отдела или местоположения для выбранных активов.
+      operationId: bulk_update_assets_assets_bulk_update_post
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                device_ids_json:
+                  type: string
+                  format: json
+                  description: JSON-строка со списком ID активов для обновления.
+                status_id:
+                  type: integer
+                  description: Новый ID статуса.
+                department_id:
+                  type: integer
+                  description: Новый ID отдела.
+                location_id:
+                  type: integer
+                  description: Новый ID местоположения.
+              required:
+                - device_ids_json
+      responses:
+        '303':
+          description: Редирект на предыдущую страницу с flash-сообщением о результате.
+
+components:
+  schemas:
+    AssetCreateForm:
+      type: object
+      properties:
+        serial_number:
+          type: string
+          description: Серийный номер.
+        mac_address:
+          type: string
+          description: MAC-адрес.
+          nullable: true
+        asset_type_id:
+          type: integer
+          description: ID типа актива.
+        device_model_id:
+          type: integer
+          description: ID модели устройства.
+        status_id:
+          type: integer
+          description: ID статуса.
+        department_id:
+          type: integer
+          description: ID отдела.
+          nullable: true
+        location_id:
+          type: integer
+          description: ID местоположения.
+          nullable: true
+        employee_id:
+          type: integer
+          description: ID сотрудника.
+          nullable: true
+        purchase_date:
+          type: string
+          format: date
+          description: Дата покупки.
+          nullable: true
+        warranty_end_date:
+          type: string
+          format: date
+          description: Дата окончания гарантии.
+          nullable: true
+        tag_ids:
+          type: array
+          items:
+            type: integer
+          description: Список ID тегов.
+          nullable: true
+      required:
+        - serial_number
+        - asset_type_id
+        - device_model_id
+        - status_id
+
+    AssetUpdateForm:
+      allOf:
+        - $ref: '#/components/schemas/AssetCreateForm'
+        - type: object
+          properties:
+            inventory_number:
+              type: string
+              description: Инвентарный номер (не редактируется через форму, но является частью модели).
+              readOnly: true
+
+    ErrorDetail:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Описание ошибки.
+
+  parameters:
+    SearchParam:
+      name: search
+      in: query
+      description: Строка для поиска.
+      required: false
+      schema:
+        type: string
+    AssetTypeIdParam:
+      name: asset_type_id
+      in: query
+      description: ID типа актива.
+      required: false
+      schema:
+        type: integer
+    StatusIdParam:
+      name: status_id
+      in: query
+      description: ID статуса.
+      required: false
+      schema:
+        type: integer
+    DepartmentIdParam:
+      name: department_id
+      in: query
+      description: ID отдела.
+      required: false
+      schema:
+        type: integer
+    LocationIdParam:
+      name: location_id
+      in: query
+      description: ID местоположения.
+      required: false
+      schema:
+        type: integer
+    ManufacturerIdParam:
+      name: manufacturer_id
+      in: query
+      description: ID производителя.
+      required: false
+      schema:
+        type: integer

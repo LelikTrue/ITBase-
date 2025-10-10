@@ -1,5 +1,6 @@
 __pycache__/
 *.pyc
+*.py[cod]
 *.pyo
 *.pyd
 .Python
@@ -9,6 +10,15 @@ venv/
 
 .vscode/
 .idea/
+
+# mypy
+.mypy_cache/
+
+# pytest
+.pytest_cache/
+.coverage
+coverage.xml
+.nfs*
 
 .env
 .env.prod
@@ -31,3 +41,7 @@ Thumbs.db
 
 # Gemini
 sync_config.jsonc
+
+# Gemini/Windsurf project-specific instructions
+GEMINI.md
+.windsurf/

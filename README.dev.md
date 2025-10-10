@@ -52,14 +52,14 @@ make -f Makefile.dev run     # Запуск сервера
 
 ### Работа с базой данных
 ```bash
-# Применить миграции
-venv\Scripts\python -m alembic upgrade head
+# Применить миграции (рекомендуемый способ)
+python run_dev.py --migrate
 
 # Создать новую миграцию
-venv\Scripts\python -m alembic revision --autogenerate -m "описание"
+python -m alembic revision --autogenerate -m "описание"
 
 # Откатить миграцию
-venv\Scripts\python -m alembic downgrade -1
+python -m alembic downgrade -1
 ```
 
 ### Тестирование и качество кода
