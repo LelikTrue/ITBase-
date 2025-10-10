@@ -65,8 +65,8 @@ services:
       retries: 3
 
   # Сервис бэкенд-приложения (FastAPI)
-  backend:
-    build:
+  backend: # <--- Добавьте 2 пробела здесь
+    build: # <--- и для всех последующих строк этого сервиса
       context: .
       dockerfile: Dockerfile
       args:
