@@ -1,14 +1,25 @@
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import relationship
+# Path: app/models/location.py
 
-from .base import Base, BaseMixin
+from typing import TYPE_CHECKING, Optional, List
+from sqlalchemy import Integer, String, UniqueConstraint
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 
-class Location(Base, BaseMixin):
-    __tablename__ = "Location"
+from ..db.database import Base
+from .base import BaseMixin
+
+if TYPE_CHECKING:
+    from .device import Device
+
+class Location(BaseMixin, Base):
+    __tablename__ = 'locations'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True) # <--- ДОБАВЬ unique=True
+    # Добавим поле description для консистентности
+    description: Mapped[Optional[str]] = mapped_column(String(500))
     
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), unique=True, index=True, nullable=False)
-    description = Column(String(500))
-    
-    # Relationships
-    devices_at_location = relationship("Device", back_populates="location")
+    devices: Mapped[List["Device"]] = relationship("Device", back_populates="location")
+
+    __table_args__ = (
+        UniqueConstraint('name', name='uq_locations_name'), # <--- ДОБАВЬ ЭТО
+    )

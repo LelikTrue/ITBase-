@@ -1,18 +1,45 @@
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import relationship
+# Path: app/models/employee.py
 
-from .base import Base, BaseMixin
+from typing import TYPE_CHECKING, Optional, List
 
-class Employee(Base, BaseMixin):
-    __tablename__ = "Employee"
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.orm import relationship, Mapped, mapped_column
+
+from ..db.database import Base
+from .base import BaseMixin
+
+if TYPE_CHECKING:
+    from .department import Department
+    from .device import Device
+
+
+class Employee(BaseMixin, Base):
+    __tablename__ = 'employees'
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
     
-    id = Column(Integer, primary_key=True, index=True)
-    first_name = Column(String(255), nullable=False)
-    last_name = Column(String(255), nullable=False)
-    patronymic = Column(String(255))
-    employee_id = Column(String(255), unique=True)
-    email = Column(String(255), unique=True, index=True)
-    phone_number = Column(String(255))
+    # --- > НОВЫЕ ДЕТАЛИЗИРОВАННЫЕ ПОЛЯ < ---
+    last_name: Mapped[str] = mapped_column(String(50), nullable=False, comment="Фамилия")
+    first_name: Mapped[str] = mapped_column(String(50), nullable=False, comment="Имя")
+    patronymic: Mapped[Optional[str]] = mapped_column(String(50), comment="Отчество")
     
-    # Relationships
-    assigned_devices = relationship("Device", back_populates="employee")
+    employee_id: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False, comment="Табельный номер")
+    email: Mapped[Optional[str]] = mapped_column(String(255), unique=True, index=True)
+    phone_number: Mapped[Optional[str]] = mapped_column(String(20))
+    position: Mapped[Optional[str]] = mapped_column(String(255), comment="Должность")
+
+    # Внешний ключ
+    department_id: Mapped[Optional[int]] = mapped_column(ForeignKey('departments.id'))
+
+    # Связи
+    department: Mapped[Optional["Department"]] = relationship(back_populates="employees")
+    devices: Mapped[List["Device"]] = relationship(back_populates="employee")
+
+    @property
+    def full_name(self) -> str:
+        """Возвращает полное имя сотрудника."""
+        parts = [self.last_name, self.first_name, self.patronymic]
+        return " ".join(part for part in parts if part)
+
+    def __repr__(self):
+        return f"<Employee(id={self.id}, full_name='{self.full_name}')>"

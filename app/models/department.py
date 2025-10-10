@@ -1,14 +1,30 @@
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import relationship
+# Path: app/models/department.py
 
-from .base import Base, BaseMixin
+from typing import TYPE_CHECKING, Optional, List
 
-class Department(Base, BaseMixin):
-    __tablename__ = "Department"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), unique=True, index=True, nullable=False)
-    description = Column(String(500))
-    
-    # Relationships
-    devices_in_department = relationship("Device", back_populates="department")
+from sqlalchemy import String, UniqueConstraint # <--- ИЗМЕНЕНИЕ
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from ..db.database import Base
+from .base import BaseMixin
+
+if TYPE_CHECKING:
+    from .device import Device
+    from .employee import Employee
+
+
+class Department(BaseMixin, Base):
+    __tablename__ = 'departments'
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
+    description: Mapped[Optional[str]] = mapped_column(String(500))
+
+    devices: Mapped[List["Device"]] = relationship(back_populates="department")
+    employees: Mapped[List["Employee"]] = relationship(back_populates="department")
+
+    # --- ДОБАВЬ ЭТОТ БЛОК ---
+    __table_args__ = (
+        UniqueConstraint('name', name='uq_departments_name'),
+    )
+    # -----------------------

@@ -1,11 +1,32 @@
-from datetime import datetime # Still needed for type hints if not using func.now()
-from sqlalchemy import Column, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql import func # Import func
+# Path: app/models/base.py
+ 
+from datetime import datetime, timezone
+from sqlalchemy import DateTime, func, text
+from sqlalchemy.orm import declared_attr, Mapped, mapped_column
 
-Base = declarative_base()
+# Мы больше не создаем здесь Base. Мы импортируем его из единственного источника.
+from ..db.database import Base
+
 
 class BaseMixin:
-    """Базовый класс для всех моделей с общими полями."""
-    created_at = Column(DateTime, server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
+    """
+    Базовый класс-примесь (mixin) для всех моделей с общими полями created_at и updated_at.
+    """
+    # Если ты хочешь, чтобы имя таблицы генерировалось автоматически (например, Device -> devices),
+    # можно добавить это сюда. Если ты указываешь __tablename__ в каждой модели, это не нужно.
+    # @declared_attr
+    # def __tablename__(cls):
+    #     return cls.__name__.lower() + "s"
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=text("TIMEZONE('utc', now())"),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=text("TIMEZONE('utc', now())"),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )

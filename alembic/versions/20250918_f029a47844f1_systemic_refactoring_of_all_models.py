@@ -1,18 +1,18 @@
-"""Initial migration from scratch
+"""Systemic Refactoring of All Models
 
-Revision ID: f435cc528891
+Revision ID: f029a47844f1
 Revises: 
-Create Date: 2025-07-13 08:20:49.873483
+Create Date: 2025-09-18 14:14:48.570879
 
 """
 from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-
+from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'f435cc528891'
+revision: str = 'f029a47844f1'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -33,52 +33,44 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_ActionLog_id'), 'ActionLog', ['id'], unique=False)
-    op.create_table('AssetType',
+    op.create_table('assettypes',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=255), nullable=False),
-    sa.Column('description', sa.String(length=500), nullable=True),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_AssetType_id'), 'AssetType', ['id'], unique=False)
-    op.create_index(op.f('ix_AssetType_name'), 'AssetType', ['name'], unique=True)
-    op.create_table('Department',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('name', sa.String(length=255), nullable=False),
-    sa.Column('description', sa.String(length=500), nullable=True),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_Department_id'), 'Department', ['id'], unique=False)
-    op.create_index(op.f('ix_Department_name'), 'Department', ['name'], unique=True)
-    op.create_table('DeviceStatus',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('name', sa.String(length=255), nullable=False),
-    sa.Column('description', sa.String(length=500), nullable=True),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_DeviceStatus_id'), 'DeviceStatus', ['id'], unique=False)
-    op.create_index(op.f('ix_DeviceStatus_name'), 'DeviceStatus', ['name'], unique=True)
-    op.create_table('Employee',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('first_name', sa.String(length=255), nullable=False),
-    sa.Column('last_name', sa.String(length=255), nullable=False),
-    sa.Column('patronymic', sa.String(length=255), nullable=True),
-    sa.Column('employee_id', sa.String(length=255), nullable=True),
-    sa.Column('email', sa.String(length=255), nullable=True),
-    sa.Column('phone_number', sa.String(length=255), nullable=True),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('employee_id')
+    sa.UniqueConstraint('name')
     )
-    op.create_index(op.f('ix_Employee_email'), 'Employee', ['email'], unique=True)
-    op.create_index(op.f('ix_Employee_id'), 'Employee', ['id'], unique=False)
-    op.create_table('Location',
+    op.create_index(op.f('ix_assettypes_id'), 'assettypes', ['id'], unique=False)
+    op.create_table('departments',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=255), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name')
+    )
+    op.create_index(op.f('ix_departments_id'), 'departments', ['id'], unique=False)
+    op.create_table('devicestatuses',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=255), nullable=False),
+    sa.Column('description', sa.String(length=500), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name')
+    )
+    op.create_index(op.f('ix_devicestatuses_id'), 'devicestatuses', ['id'], unique=False)
+    op.create_table('locations',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=255), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name')
+    )
+    op.create_index(op.f('ix_locations_id'), 'locations', ['id'], unique=False)
+    op.create_table('manufacturers',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('description', sa.String(length=500), nullable=True),
@@ -86,34 +78,30 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_Location_id'), 'Location', ['id'], unique=False)
-    op.create_index(op.f('ix_Location_name'), 'Location', ['name'], unique=True)
-    op.create_table('Manufacturer',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('name', sa.String(length=255), nullable=False),
-    sa.Column('description', sa.String(length=500), nullable=True),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_Manufacturer_id'), 'Manufacturer', ['id'], unique=False)
-    op.create_index(op.f('ix_Manufacturer_name'), 'Manufacturer', ['name'], unique=True)
-    op.create_table('DeviceModel',
+    op.create_index(op.f('ix_manufacturers_id'), 'manufacturers', ['id'], unique=False)
+    op.create_index(op.f('ix_manufacturers_name'), 'manufacturers', ['name'], unique=True)
+    op.create_table('devicemodels',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('manufacturer_id', sa.Integer(), nullable=False),
-    sa.Column('asset_type_id', sa.Integer(), nullable=False),
-    sa.Column('description', sa.String(length=500), nullable=True),
-    sa.Column('specification', sa.JSON(), nullable=True),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['asset_type_id'], ['AssetType.id'], ),
-    sa.ForeignKeyConstraint(['manufacturer_id'], ['Manufacturer.id'], ),
+    sa.ForeignKeyConstraint(['manufacturer_id'], ['manufacturers.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_DeviceModel_id'), 'DeviceModel', ['id'], unique=False)
-    op.create_index(op.f('ix_DeviceModel_name'), 'DeviceModel', ['name'], unique=True)
-    op.create_table('Device',
+    op.create_index(op.f('ix_devicemodels_id'), 'devicemodels', ['id'], unique=False)
+    op.create_table('employees',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=255), nullable=False),
+    sa.Column('position', sa.String(length=255), nullable=True),
+    sa.Column('department_id', sa.Integer(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['department_id'], ['departments.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_employees_id'), 'employees', ['id'], unique=False)
+    op.create_table('devices',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('inventory_number', sa.String(length=255), nullable=False),
     sa.Column('serial_number', sa.String(length=255), nullable=True),
@@ -135,58 +123,80 @@ def upgrade() -> None:
     sa.Column('employee_id', sa.Integer(), nullable=True),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['asset_type_id'], ['AssetType.id'], ),
-    sa.ForeignKeyConstraint(['department_id'], ['Department.id'], ),
-    sa.ForeignKeyConstraint(['device_model_id'], ['DeviceModel.id'], ),
-    sa.ForeignKeyConstraint(['employee_id'], ['Employee.id'], ),
-    sa.ForeignKeyConstraint(['location_id'], ['Location.id'], ),
-    sa.ForeignKeyConstraint(['status_id'], ['DeviceStatus.id'], ),
+    sa.ForeignKeyConstraint(['asset_type_id'], ['assettypes.id'], ),
+    sa.ForeignKeyConstraint(['department_id'], ['departments.id'], ),
+    sa.ForeignKeyConstraint(['device_model_id'], ['devicemodels.id'], ),
+    sa.ForeignKeyConstraint(['employee_id'], ['employees.id'], ),
+    sa.ForeignKeyConstraint(['location_id'], ['locations.id'], ),
+    sa.ForeignKeyConstraint(['status_id'], ['devicestatuses.id'], ),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('inventory_number')
+    sa.UniqueConstraint('inventory_number'),
+    sa.UniqueConstraint('mac_address'),
+    sa.UniqueConstraint('serial_number')
     )
-    op.create_index(op.f('ix_Device_id'), 'Device', ['id'], unique=False)
-    op.create_table('Attachment',
+    op.create_index(op.f('ix_devices_id'), 'devices', ['id'], unique=False)
+    op.create_table('attachments',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('device_id', sa.Integer(), nullable=False),
-    sa.Column('filename', sa.String(length=255), nullable=False),
+    sa.Column('file_name', sa.String(length=255), nullable=False),
     sa.Column('file_path', sa.String(length=500), nullable=False),
-    sa.Column('file_type', sa.String(length=100), nullable=True),
+    sa.Column('device_id', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['device_id'], ['Device.id'], ),
+    sa.ForeignKeyConstraint(['device_id'], ['devices.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_Attachment_id'), 'Attachment', ['id'], unique=False)
+    op.create_index(op.f('ix_attachments_id'), 'attachments', ['id'], unique=False)
+    op.create_table('network_settings',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('device_id', sa.Integer(), nullable=False),
+    sa.Column('ip_address', sa.String(length=15), nullable=True),
+    sa.Column('mac_address', sa.String(length=17), nullable=True),
+    sa.Column('is_online', sa.Boolean(), nullable=True),
+    sa.Column('connection_type', sa.Enum('access', 'trunk', name='connection_type_enum'), nullable=True),
+    sa.Column('vlan_id', sa.Integer(), nullable=True),
+    sa.Column('vlans', postgresql.ARRAY(sa.Integer()), nullable=True),
+    sa.Column('native_vlan', sa.Integer(), nullable=True),
+    sa.Column('is_tagged', sa.Boolean(), nullable=True),
+    sa.Column('vlan_description', sa.String(length=255), nullable=True),
+    sa.Column('switch_id', sa.Integer(), nullable=True),
+    sa.Column('switch_port', sa.String(length=50), nullable=True),
+    sa.Column('location_note', sa.String(length=255), nullable=True),
+    sa.Column('firewall_profile', sa.String(length=255), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['device_id'], ['devices.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['switch_id'], ['devices.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('device_id'),
+    sa.UniqueConstraint('mac_address')
+    )
+    op.create_index(op.f('ix_network_settings_id'), 'network_settings', ['id'], unique=False)
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_index(op.f('ix_Attachment_id'), table_name='Attachment')
-    op.drop_table('Attachment')
-    op.drop_index(op.f('ix_Device_id'), table_name='Device')
-    op.drop_table('Device')
-    op.drop_index(op.f('ix_DeviceModel_name'), table_name='DeviceModel')
-    op.drop_index(op.f('ix_DeviceModel_id'), table_name='DeviceModel')
-    op.drop_table('DeviceModel')
-    op.drop_index(op.f('ix_Manufacturer_name'), table_name='Manufacturer')
-    op.drop_index(op.f('ix_Manufacturer_id'), table_name='Manufacturer')
-    op.drop_table('Manufacturer')
-    op.drop_index(op.f('ix_Location_name'), table_name='Location')
-    op.drop_index(op.f('ix_Location_id'), table_name='Location')
-    op.drop_table('Location')
-    op.drop_index(op.f('ix_Employee_id'), table_name='Employee')
-    op.drop_index(op.f('ix_Employee_email'), table_name='Employee')
-    op.drop_table('Employee')
-    op.drop_index(op.f('ix_DeviceStatus_name'), table_name='DeviceStatus')
-    op.drop_index(op.f('ix_DeviceStatus_id'), table_name='DeviceStatus')
-    op.drop_table('DeviceStatus')
-    op.drop_index(op.f('ix_Department_name'), table_name='Department')
-    op.drop_index(op.f('ix_Department_id'), table_name='Department')
-    op.drop_table('Department')
-    op.drop_index(op.f('ix_AssetType_name'), table_name='AssetType')
-    op.drop_index(op.f('ix_AssetType_id'), table_name='AssetType')
-    op.drop_table('AssetType')
+    op.drop_index(op.f('ix_network_settings_id'), table_name='network_settings')
+    op.drop_table('network_settings')
+    op.drop_index(op.f('ix_attachments_id'), table_name='attachments')
+    op.drop_table('attachments')
+    op.drop_index(op.f('ix_devices_id'), table_name='devices')
+    op.drop_table('devices')
+    op.drop_index(op.f('ix_employees_id'), table_name='employees')
+    op.drop_table('employees')
+    op.drop_index(op.f('ix_devicemodels_id'), table_name='devicemodels')
+    op.drop_table('devicemodels')
+    op.drop_index(op.f('ix_manufacturers_name'), table_name='manufacturers')
+    op.drop_index(op.f('ix_manufacturers_id'), table_name='manufacturers')
+    op.drop_table('manufacturers')
+    op.drop_index(op.f('ix_locations_id'), table_name='locations')
+    op.drop_table('locations')
+    op.drop_index(op.f('ix_devicestatuses_id'), table_name='devicestatuses')
+    op.drop_table('devicestatuses')
+    op.drop_index(op.f('ix_departments_id'), table_name='departments')
+    op.drop_table('departments')
+    op.drop_index(op.f('ix_assettypes_id'), table_name='assettypes')
+    op.drop_table('assettypes')
     op.drop_index(op.f('ix_ActionLog_id'), table_name='ActionLog')
     op.drop_table('ActionLog')
     # ### end Alembic commands ###

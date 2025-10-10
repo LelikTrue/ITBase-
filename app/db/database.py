@@ -1,45 +1,30 @@
-# app/db/database.py
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker # Keep sessionmaker for synchronous Session
-import os
-from dotenv import load_dotenv # Убедитесь, что этот импорт есть
+# Path: app/db/database.py
 
-# Загружаем переменные окружения, если скрипт запускается напрямую (вне Docker Compose)
-load_dotenv()
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker, declarative_base
+from app.config import settings  # <-- Импортируем из нашего нового конфига
 
-# Получаем настройки подключения из переменных окружения
-DB_HOST = os.getenv("DB_HOST")
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_PORT = os.getenv("DB_PORT", "5432")
+# Создаем асинхронный движок, используя готовый URL
+async_engine = create_async_engine(settings.DATABASE_URL_ASYNC)
 
-# Проверяем наличие всех необходимых переменных
-if not all([DB_HOST, DB_NAME, DB_USER, DB_PASSWORD]):
-    raise ValueError(
-        "One or more database environment variables (DB_HOST, DB_NAME, DB_USER, DB_PASSWORD) are not set!"
-        " Please check your .env file and docker-compose.yml"
-    )
-
-# Формируем строку подключения
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-
-# Выводим строку подключения для отладки (не забудьте удалить в продакшене)
-print(f"DATABASE_URL: {DATABASE_URL}")
-
-# Создаем синхронный движок с настройкой кодировки
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"options": "-c client_encoding=utf8"}
+# Фабрика для асинхронных сессий
+AsyncSessionLocal = sessionmaker(
+    bind=async_engine, class_=AsyncSession, autocommit=False, autoflush=False, expire_on_commit=False
 )
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Ваша базовая модель, которую используют все остальные модели
 Base = declarative_base()
 
-def get_db(): # Функция остается синхронной
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close() # Синхронное закрытие сессии
+# Асинхронная зависимость для получения сессии БД в эндпоинтах
+async def get_db() -> AsyncSession:
+    """
+    Зависимость для получения сессии БД.
+    В тестах эта функция будет подменена, чтобы использовать тестовую сессию.
+    В реальном приложении она создает новую сессию для каждого запроса.
+    """
+    session = AsyncSessionLocal()
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        finally:
+            await session.close()

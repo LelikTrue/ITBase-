@@ -1,19 +1,40 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, JSON
-from sqlalchemy.orm import relationship
+# Path: app/models/device_model.py
 
-from .base import Base, BaseMixin
+from typing import TYPE_CHECKING, Optional, List
 
-class DeviceModel(Base, BaseMixin):
-    __tablename__ = "DeviceModel"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), unique=True, index=True, nullable=False)
-    manufacturer_id = Column(Integer, ForeignKey("Manufacturer.id"), nullable=False)
-    asset_type_id = Column(Integer, ForeignKey("AssetType.id"), nullable=False)
-    description = Column(String(500))
-    specification = Column(JSON)
-    
-    # Relationships
-    manufacturer = relationship("Manufacturer", back_populates="device_models")
-    devices = relationship("Device", back_populates="device_model")
-    asset_type = relationship("AssetType", back_populates="device_models")
+from sqlalchemy import String, ForeignKey, UniqueConstraint # <--- ДОБАВЬ UniqueConstraint
+from sqlalchemy.orm import relationship, Mapped, mapped_column
+
+from ..db.database import Base
+from .base import BaseMixin
+
+if TYPE_CHECKING:
+    from .manufacturer import Manufacturer
+    from .asset_type import AssetType
+    from .device import Device
+
+
+class DeviceModel(BaseMixin, Base):
+    __tablename__ = 'devicemodels'
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(String(500))
+
+    # --- > РЕШЕНИЕ ПРОБЛЕМЫ: НЕДОСТАЮЩИЕ ВНЕШНИЕ КЛЮЧИ < ---
+    manufacturer_id: Mapped[int] = mapped_column(ForeignKey('manufacturers.id'), nullable=False)
+    asset_type_id: Mapped[int] = mapped_column(ForeignKey('assettypes.id'), nullable=False)
+
+    # --- > ЧИСТЫЕ СВЯЗИ (RELATIONSHIPS) < ---
+    manufacturer: Mapped["Manufacturer"] = relationship(back_populates="device_models")
+    asset_type: Mapped["AssetType"] = relationship(back_populates="device_models")
+    devices: Mapped[List["Device"]] = relationship(back_populates="device_model")
+
+    # --- НАЧАЛО ИЗМЕНЕНИЙ ---
+    __table_args__ = (
+        UniqueConstraint('name', 'manufacturer_id', name='uq_devicemodel_name_manufacturer'),
+    )
+    # --- КОНЕЦ ИЗМЕНЕНИЙ ---
+
+    def __repr__(self):
+        return f"<DeviceModel(id={self.id}, name='{self.name}')>"
