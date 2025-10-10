@@ -65,26 +65,28 @@
         </div>
     </div>
 
-    <script>
-        document.querySelector('form').addEventListener('submit', function(e) {
-            const form = e.target;
-            const inputs = form.querySelectorAll('input, select');
-            inputs.forEach(input => {
-                if (input.value === '' || input.value === null) {
-                    input.removeAttribute('name');
-                }
+<script>
+    // Скрипт для удаления пустых полей из GET-запроса формы
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterForm = document.querySelector('form');
+        if (filterForm) {
+            filterForm.addEventListener('submit', function(e) {
+                const inputs = filterForm.querySelectorAll('input, select');
+                inputs.forEach(input => {
+                    if (!input.value) {
+                        input.name = ''; // Убираем имя, чтобы поле не отправилось
+                    }
+                });
             });
-        });
-    </script>
-            </form>
-        </div>
-    </div>
+        }
+    });
+</script>
 
     <!-- Таблица логов -->
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Записи логов</h5>
-            <span class="badge bg-secondary">Всего: {{ logs|length }}</span>
+            <span class="badge bg-secondary">Всего: {{ total_logs or logs|length }}</span>
         </div>
         <div class="table-responsive">
             <table class="table table-hover mb-0">
@@ -130,10 +132,21 @@
                                     </button>
                                     <div class="collapse" id="details-{{ log.id }}">
                                         <div class="card card-body mt-2">
-                                            {% if log.action_type == 'update' and log.details and log.details.diff is defined %}
-                                                {{ log.details|format_diff|safe }}
-                                            {% elif log.action_type == 'create' %}
-                                                {{ log.details|format_create_data|safe }}
+                                            {% if log.action_type == 'update' and log.details.get('diff') %}
+                                                <ul class="list-unstyled mb-0">
+                                                {% for field, values in log.details.get('diff').items() %}
+                                                    <li>
+                                                        <strong>{{ field }}:</strong>
+                                                        <span class="text-danger text-decoration-line-through">{{ values.old or 'пусто' }}</span>
+                                                        <i class="bi bi-arrow-right"></i>
+                                                        <span class="text-success">{{ values.new or 'пусто' }}</span>
+                                                    </li>
+                                                {% endfor %}
+                                                </ul>
+                                            {% elif log.action_type == 'create' and log.details %}
+                                                <pre class="mb-0">{{ log.details|to_pretty_json }}</pre>
+                                            {% elif log.action_type == 'delete' and log.details %}
+                                                <pre class="mb-0">{{ log.details|to_pretty_json }}</pre>
                                             {% else %}
                                                 <pre class="mb-0">{{ log.details|to_pretty_json }}</pre>
                                             {% endif %}
@@ -160,6 +173,9 @@
                 </tbody>
             </table>
         </div>
+        <!-- Пагинация -->
+        {% include 'pagination.html' %}
+
     </div>
 </div>
 
@@ -209,7 +225,7 @@
         confirmDeleteBtn.addEventListener('click', function() {
             if (currentLogId) {
                 // Отправляем DELETE-запрос на API
-                fetch(`/api/audit/api/logs/${currentLogId}`, {
+                fetch(`/api/audit-logs/${currentLogId}`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',

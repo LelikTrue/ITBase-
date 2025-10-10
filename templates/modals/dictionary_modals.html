@@ -33,6 +33,23 @@
               required
             />
           </div>
+          <!-- === НАЧАЛО ИЗМЕНЕНИЙ === -->
+          <div class="mb-3">
+            <label for="assetTypePrefix" class="form-label"
+              >Префикс <span class="text-danger">*</span></label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="assetTypePrefix"
+              name="prefix"
+              required
+              maxlength="10"
+              placeholder="Напр. PC, MONI, PRNT"
+            />
+            <div class="form-text">Короткий код для инвентарных номеров (до 10 символов).</div>
+          </div>
+          <!-- === КОНЕЦ ИЗМЕНЕНИЙ === -->
           <div class="mb-3">
             <label for="assetTypeDescription" class="form-label"
               >Описание</label

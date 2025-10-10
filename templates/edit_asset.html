@@ -17,6 +17,8 @@
     </div>
     {% endif %}
     <div class="card">
+        {# !# УДАЛЯЕМ ЭТУ СТРОКУ #! #}
+
         <div class="card-header">
             <h2 class="mb-0">Редактировать актив #{{ device.id }}</h2>
         </div>
@@ -139,6 +141,22 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <div class="mb-3">
+                            <label for="tag_ids" class="form-label">Теги (свойства)</label>
+                            <select multiple class="form-select" id="tag_ids" name="tag_ids" size="5">
+                                {% for tag in all_tags %}
+                                    {# !# ИСПРАВЛЕНИЕ: Проверяем по списку, который пришел из Python #! #}
+                                    <option value="{{ tag.id }}" {% if tag.id in existing_tag_ids %}selected{% endif %}>
+                                        {{ tag.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                Для выбора/снятия нескольких тегов зажмите Ctrl (Windows) или Cmd (Mac).
+                            </div>
+                        </div>
+
 
                         <!-- Местоположение (опционально) -->
                         <div class="mb-4">
@@ -272,12 +290,12 @@
         </div>
     </div>
 </div>
-<!-- Подключаем модальные окна справочников -->
-{% include "modals/dictionary_modals.html" %}
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
+<!-- Подключаем модальные окна справочников -->
+{% include "modals/dictionary_modals.html" %}
 <script src="{{ url_for('static', path='/js/dictionary_modals.js') }}"></script>
 <script>
     // Функция для безопасного предварительного выбора радиокнопки в группе
@@ -297,31 +315,32 @@
 
     // Функция для переключения видимости опциональных полей
     function toggleOptionalFields(sectionId, checkbox) {
-        const section = document.getElementById(sectionId);
-        const checkboxElement = document.getElementById(checkbox);
-        
-        if (checkboxElement.checked) {
-            section.style.display = 'block';
+        const sectionEl = document.getElementById(sectionId);
+        const checkboxEl = document.getElementById(checkbox);
+        const inputs = sectionEl.querySelectorAll('input, select, textarea');
+
+        if (checkboxEl.checked) {
+            sectionEl.style.display = 'block';
+            inputs.forEach(input => input.disabled = false);
         } else {
-            section.style.display = 'none';
+            sectionEl.style.display = 'none';
+            inputs.forEach(input => input.disabled = true);
         }
     }
 
-    // Инициализация опциональных секций
-    const optionalSections = [
-        { id: 'networkSection', checkboxId: 'toggleNetwork' },
-        { id: 'financialSection', checkboxId: 'toggleFinancial' },
-        { id: 'locationSection', checkboxId: 'toggleLocation' }
-    ];
-
     // Назначение обработчиков событий
     document.addEventListener('DOMContentLoaded', function() {
-        // Применение для поля 'source'
-        // Удалены некорректные вызовы preselectRadio для select и number полей
-
+        const optionalSections = [
+            { id: 'networkSection', checkboxId: 'toggleNetwork' },
+            { id: 'financialSection', checkboxId: 'toggleFinancial' },
+            { id: 'locationSection', checkboxId: 'toggleLocation' }
+        ];
+        
         optionalSections.forEach(section => {
             const checkbox = document.getElementById(section.checkboxId);
             if (checkbox) {
+                // Инициализация состояния при загрузке
+                toggleOptionalFields(section.id, section.checkboxId);
                 checkbox.addEventListener('change', () => {
                     toggleOptionalFields(section.id, section.checkboxId);
                 });

@@ -18,10 +18,13 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
     />
+    <!-- 1. Локальный Tom Select CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', path='css/vendor/tom-select.bootstrap5.css') }}">
+
     <!-- Custom CSS -->
     <link
       rel="stylesheet"
-      href="{{ url_for('static', path='styles.css') }}"
+      href="{{ url_for('static', path='css/styles.css') }}"
     />
     {% block head_extra %}{% endblock %}
   </head>
@@ -98,7 +101,34 @@
     </nav>
 
     <main class="container py-4">
-      {# Место для flash сообщений - будет добавлено позже #}
+        {# --- НАЧАЛО НОВОГО БЛОКА ДЛЯ FLASH-СООБЩЕНИЙ --- #}
+        {% with messages = get_flashed_messages(request) %}
+            {% if messages %}
+                {% for message in messages %}
+                    {# Проверяем, является ли сообщение словарем (для ошибок валидации) #}
+                    {% if message.category == 'validation' and message.message.errors %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <h4 class="alert-heading">Ошибка валидации!</h4>
+                            <p>Пожалуйста, исправьте следующие ошибки:</p>
+                            <ul class="mb-0">
+                                {% for field, error_msg in message.message.errors.items() %}
+                                    <li><strong>{{ field }}:</strong> {{ error_msg }}</li>
+                                {% endfor %}
+                            </ul>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% else %}
+                        {# Обычное текстовое сообщение #}
+                        <div class="alert alert-{{ message.category or 'info' }} alert-dismissible fade show" role="alert">
+                            {{ message.message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        {# --- КОНЕЦ НОВОГО БЛОКА --- #}
+
       {% block content %}{% endblock %}
     </main>
 
@@ -135,6 +165,9 @@
         });
       });
     </script>
+
+    <!-- 2. Локальный Tom Select JS (ВАЖНО: перед блоком scripts) -->
+    <script src="{{ url_for('static', path='js/vendor/tom-select.complete.min.js') }}"></script>
 
     {% block scripts %}{% endblock %}
   </body>

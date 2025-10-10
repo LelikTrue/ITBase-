@@ -1,0 +1,51 @@
+{# templates/includes/form_helpers.html #}
+
+{% macro form_field(name, label, value='', type='text', required=False, errors={}) %}
+<div class="mb-3">
+    <label for="{{ name }}" class="form-label">
+        {{ label }}
+        {% if required %}<span class="text-danger">*</span>{% endif %}
+    </label>
+    <input 
+        type="{{ type }}" 
+        class="form-control {% if name in errors %}is-invalid{% endif %}" 
+        id="{{ name }}" 
+        name="{{ name }}" 
+        value="{{ value | e }}"
+        {% if required %}required{% endif %}
+    >
+    {% if name in errors %}
+        <div class="invalid-feedback">
+            {{ errors[name] }}
+        </div>
+    {% endif %}
+</div>
+{% endmacro %}
+
+
+{% macro select_field(name, label, options, selected_id=None, required=False, errors={}, option_text_field='name') %}
+<div class="mb-3">
+    <label for="{{ name }}" class="form-label">
+        {{ label }}
+        {% if required %}<span class="text-danger">*</span>{% endif %}
+    </label>
+    <select 
+        class="form-select {% if name in errors %}is-invalid{% endif %}" 
+        id="{{ name }}" 
+        name="{{ name }}"
+        {% if required %}required{% endif %}
+    >
+        <option value="">-- Выберите --</option>
+        {% for option in options %}
+            <option value="{{ option.id }}" {% if option.id == selected_id %}selected{% endif %}>
+                {{ option[option_text_field] }}
+            </option>
+        {% endfor %}
+    </select>
+    {% if name in errors %}
+        <div class="invalid-feedback">
+            {{ errors[name] }}
+        </div>
+    {% endif %}
+</div>
+{% endmacro %}

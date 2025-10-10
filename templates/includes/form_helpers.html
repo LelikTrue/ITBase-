@@ -1,0 +1,79 @@
+{# SPDX-License-Identifier: MIT #}
+{#
+    Оригинальные макросы для генерации форм Bootstrap 5.
+    Авторский код проекта ITBase.
+#}
+
+{#
+Макрос для рендеринга стандартного поля формы (input).
+
+Параметры:
+- name: Имя поля (атрибуты name и id).
+- label: Текст для <label>.
+- type: Тип поля (text, number, date и т.д.).
+- value: Текущее значение поля.
+- errors: Словарь с ошибками валидации.
+- required: Добавляет атрибут required.
+- kwargs: Дополнительные атрибуты для тега <input>.
+- attrs: Словарь с дополнительными атрибутами для тега.
+#}
+{% macro form_field(name, label, type='text', value='', errors={}, required=False, attrs={}) %}
+    <div class="mb-3">
+        <label for="{{ name }}" class="form-label">{{ label }}</label>
+        <input
+            type="{{ type }}"
+            class="form-control {% if errors.get(name) %}is-invalid{% endif %}"
+            id="{{ name }}"
+            name="{{ name }}"
+            value="{{ value or '' }}"
+            {% if required %}required{% endif %}
+            {% for key, val in attrs.items() %}{{ key }}="{{ val }}"{% endfor %}
+        >
+        {% if errors.get(name) %}
+            <div class="invalid-feedback">
+                {{ errors[name] }}
+            </div>
+        {% endif %}
+    </div>
+{% endmacro %}
+
+
+{#
+Макрос для рендеринга выпадающего списка (select).
+
+Параметры:
+- name: Имя поля.
+- label: Текст для <label>.
+- options: Список объектов (например, модели SQLAlchemy) для <option>.
+- selected_id: ID элемента, который должен быть выбран.
+- errors: Словарь с ошибками валидации.
+- required: Добавляет атрибут required.
+- placeholder: Текст для пустого первого <option>.
+- option_text_field: Имя атрибута в объектах из `options` для отображения текста.
+- attrs: Словарь с дополнительными атрибутами для тега.
+#}
+{% macro select_field(name, label, options, selected_id='', errors={}, required=False, placeholder='Выберите...', option_text_field='name', attrs={}) %}
+    <div class="mb-3">
+        <label for="{{ name }}" class="form-label">{{ label }}</label>
+        <select
+            class="form-select {% if errors.get(name) %}is-invalid{% endif %}"
+            id="{{ name }}"
+            name="{{ name }}"
+            {% if required %}required{% endif %}
+            {% for key, val in attrs.items() %}{{ key }}="{{ val }}"{% endfor %}
+        >
+            <option value="" {% if not selected_id %}selected{% endif %} disabled>{{ placeholder }}</option>
+            {% for option in options %}
+                <option value="{{ option.id }}" {% if option.id == selected_id %}selected{% endif %}>
+                    {# !# ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ: Используем нотацию с квадратными скобками #}
+                    {{ option[option_text_field] }}
+                </option>
+            {% endfor %}
+        </select>
+        {% if errors.get(name) %}
+            <div class="invalid-feedback">
+                {{ errors[name] }}
+            </div>
+        {% endif %}
+    </div>
+{% endmacro %}

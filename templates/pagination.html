@@ -1,0 +1,55 @@
+{% if total_pages and total_pages > 1 %}
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center mt-4 mb-0">
+
+        {# Кнопка "Назад" #}
+        <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+            {% set prev_page_params = query_params.copy() %}
+            {% set _ = prev_page_params.update({'page': page - 1}) %}
+            <a class="page-link" href="{{ request.url_for(endpoint_name) }}?{{ prev_page_params|urlencode if page > 1 else '' }}" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+
+        {# Логика отображения номеров страниц #}
+        {% set window = 2 %} {# Количество страниц до и после текущей #}
+        {% for p in range(1, total_pages + 1) %}
+            {% set is_first = (p == 1) %}
+            {% set is_last = (p == total_pages) %}
+            {% set in_window = (p >= page - window) and (p <= page + window) %}
+
+            {% if is_first or is_last or in_window %}
+                {# Если есть разрыв между первой страницей и окном #}
+                {% if loop.first and p > 1 and not (p == 2) %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+
+                <li class="page-item {% if p == page %}active{% endif %}">
+                    {% set page_params = query_params.copy() %}
+                    {% set _ = page_params.update({'page': p}) %}
+                    <a class="page-link" href="{{ request.url_for(endpoint_name) }}?{{ page_params|urlencode }}">{{ p }}</a>
+                </li>
+
+                {# Если есть разрыв между окном и последней страницей #}
+                {% if loop.last and p < total_pages and not (p == total_pages - 1) %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% elif loop.index == page + window + 2 %}
+                 <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% elif loop.index == page - window - 1 %}
+                 <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+
+        {# Кнопка "Вперед" #}
+        <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+            {% set next_page_params = query_params.copy() %}
+            {% set _ = next_page_params.update({'page': page + 1}) %}
+            <a class="page-link" href="{{ request.url_for(endpoint_name) }}?{{ next_page_params|urlencode if page < total_pages else '' }}" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+
+    </ul>
+</nav>
+{% endif %}
