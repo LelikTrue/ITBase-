@@ -5,16 +5,17 @@ Revises: 4631d721d198
 Create Date: 2025-09-21 08:58:53.620531
 
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
+
+import sqlalchemy as sa
 
 from alembic import op
-import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = '96fd1a49c9fb'
-down_revision: Union[str, None] = '4631d721d198'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = '4631d721d198'
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -27,22 +28,22 @@ def upgrade() -> None:
     # Мы генерируем временный префикс из первых 3 букв имени + ID, чтобы он был уникальным.
     # Например: "Ноутбук" (id=1) -> "НОУ1"
     # Ты сможешь потом поменять их на нормальные через админку.
-    op.execute("UPDATE assettypes SET prefix = UPPER(SUBSTRING(name FROM 1 FOR 3)) || id::text")
+    op.execute('UPDATE assettypes SET prefix = UPPER(SUBSTRING(name FROM 1 FOR 3)) || id::text')
 
     # Шаг 3: Теперь, когда все строки заполнены, мы можем сделать колонку ОБЯЗАТЕЛЬНОЙ.
     op.alter_column('assettypes', 'prefix', nullable=False)
-    
+
     # Шаг 4: Добавляем ограничение уникальности.
     op.create_unique_constraint('uq_assettypes_prefix', 'assettypes', ['prefix'])
-    
+
     # ### КОНЕЦ НАШИХ ПРАВОК ###
 
 
 def downgrade() -> None:
     # ### НАЧАЛО НАШИХ ПРАВОК ###
-    
+
     # Откат происходит в обратном порядке
     op.drop_constraint('uq_assettypes_prefix', 'assettypes', type_='unique')
     op.drop_column('assettypes', 'prefix')
-    
+
     # ### КОНЕЦ НАШИХ ПРАВОК ###

@@ -2,7 +2,6 @@
 
 ```text
 ITBase-/
-├── .coverage
 ├── .editorconfig
 ├── .env
 ├── .env.example
@@ -22,7 +21,6 @@ ITBase-/
 ├── README.dev.md
 ├── README.md
 ├── alembic.ini
-├── coverage.xml
 ├── docker-compose.ci.yml
 ├── docker-compose.dev.yml
 ├── docker-compose.override.yml
@@ -34,6 +32,7 @@ ITBase-/
 ├── pyproject.toml
 ├── requirements.txt
 ├── run_dev.py
+├── seed_devices.py
 ├── setup.cfg
 ├── setup.py
 ├── setup.sh
@@ -42,6 +41,15 @@ ITBase-/
 ├── .github/
 │   ├── workflows/
 │   │   ├── ci.yml
+├── .ruff_cache/
+│   ├── .gitignore
+│   ├── CACHEDIR.TAG
+│   ├── 0.4.6/
+│   │   ├── 1419905895779637155
+│   │   ├── 14229674816857766651
+│   │   ├── 16494944767045333593
+│   │   ├── 17737439243072041033
+│   │   ├── 8100419989590883968
 ├── .windsurf/
 │   ├── rules/
 │   │   ├── rules-agent.md
@@ -68,6 +76,9 @@ ITBase-/
 │   │   ├── 20250923_9abbc70e6178_add_unique_constraint_to_locations.py
 │   │   ├── 20250923_ef2aae8cb837_create_manufacturerservice_and_add_.py
 │   │   ├── 20250923_f405d01a666c_add_unique_constraint_to_device_models.py
+│   │   ├── 20250925_f54c7505ea53_add_indexes_to_action_log_table.py
+│   │   ├── 20250926_88b1196ca226_add_supplier_relationship_to_device_.py
+│   │   ├── 20251011_413e5e7e7c66_feat_consolidate_all_pending_model_.py
 ├── app/
 │   ├── __init__.py
 │   ├── config.py
@@ -132,12 +143,6 @@ ITBase-/
 │   │   ├── helpers.py
 ├── initdb/
 │   ├── 01-init.sh
-├── itbase.egg-info/
-│   ├── PKG-INFO
-│   ├── SOURCES.txt
-│   ├── dependency_links.txt
-│   ├── requires.txt
-│   ├── top_level.txt
 ├── requirements/
 │   ├── base.txt
 │   ├── dev.txt

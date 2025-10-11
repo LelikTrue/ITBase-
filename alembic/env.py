@@ -4,8 +4,8 @@ import os
 import sys
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config, pool
+
 from alembic import context
 
 # 1. Добавляем корень проекта в пути, чтобы Alembic мог найти 'app'
@@ -19,20 +19,6 @@ from app.db.database import Base
 # Явно импортируем КАЖДЫЙ МОДУЛЬ с моделями.
 # Это гарантирует, что все классы-модели "зарегистрируются" в Base.metadata
 # до того, как Alembic начнет свою работу. Это самый надежный способ.
-from app.models import (
-    action_log,
-    asset_type,
-    attachment,
-    base,
-    department,
-    device,
-    device_model,
-    device_status,
-    employee,
-    location,
-    manufacturer,
-    network,
-)
 
 # Получаем конфигурацию Alembic
 config = context.config
@@ -43,7 +29,7 @@ if config.config_file_name is not None:
 
 # 3. Устанавливаем URL из нашего центрального конфига и указываем на метаданные моделей
 # Alembic для своей работы использует СИНХРОННЫЙ драйвер.
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL_SYNC)
+config.set_main_option('sqlalchemy.url', settings.DATABASE_URL_SYNC)
 target_metadata = Base.metadata
 
 
@@ -56,12 +42,12 @@ def run_migrations_offline() -> None:
     Calls to context.execute() here emit the given string to the
     script output.
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = config.get_main_option('sqlalchemy.url')
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
+        dialect_opts={'paramstyle': 'named'},
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -74,7 +60,7 @@ def run_migrations_online() -> None:
     """
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
+        prefix='sqlalchemy.',
         poolclass=pool.NullPool,
     )
     with connectable.connect() as connection:
