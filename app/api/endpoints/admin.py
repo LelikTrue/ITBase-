@@ -18,7 +18,7 @@ from app.models import (
 
 # Инициализация
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/admin", tags=["admin"])
+router = APIRouter(tags=["admin"])
 
 @router.get("/dictionaries", response_class=HTMLResponse)
 async def dictionaries_dashboard(request: Request, db: AsyncSession = Depends(get_db)):
