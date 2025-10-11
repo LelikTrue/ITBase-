@@ -6,7 +6,21 @@ import secrets
 import yaml
 from typing import Any, Dict
 
-import pretty_errors  # Оставляем. Это наш единственный инструмент.
+# Условный импорт для разработки.
+# pretty_errors будет импортирован только если APP_MODE=dev.
+if os.getenv("APP_MODE") == "dev":
+    try:
+        import pretty_errors
+        pretty_errors.configure(
+            separator_character='*',
+            line_number_first=True,
+            display_locals=True,
+            filename_display=pretty_errors.FILENAME_EXTENDED,
+        )
+        print("INFO:     pretty_errors is enabled for development.")
+    except ImportError:
+        print("WARNING:  'pretty_errors' is not installed, skipping.")
+
 from fastapi import Depends, FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
