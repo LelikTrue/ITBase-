@@ -1,5 +1,6 @@
 # app/services/device_service.py
 
+import logging
 import asyncio
 from datetime import datetime
 from typing import List
@@ -13,6 +14,9 @@ from app.models import (
 )
 from .exceptions import DeviceNotFoundException, DuplicateDeviceError, NotFoundError
 from app.services.audit_log_service import log_action
+
+# Инициализация логгера для этого модуля
+logger = logging.getLogger(__name__)
 
 class DeviceService:
     """Сервис для бизнес-логики, связанной с активами/устройствами."""
