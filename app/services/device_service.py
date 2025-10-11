@@ -240,6 +240,8 @@ class DeviceService:
             total_devices_stmt = select(func.count(Device.id))
 
             # Статистика по типам устройств
+            # ОКОНЧАТЕЛЬНОЕ ИСПРАВЛЕНИЕ: Считаем первичный ключ связанной таблицы (Device.id).
+            # Это самый надежный способ подсчета для OUTER JOIN, устойчивый к любым данным.
             types_stmt = (
                 select(AssetType.name, func.count(Device.id).label('count'))
                 .outerjoin(Device, Device.asset_type_id == AssetType.id)
