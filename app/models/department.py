@@ -1,8 +1,8 @@
 # Path: app/models/department.py
 
-from typing import TYPE_CHECKING, Optional, List
+from typing import TYPE_CHECKING
 
-from sqlalchemy import String, UniqueConstraint # <--- ИЗМЕНЕНИЕ
+from sqlalchemy import String, UniqueConstraint  # <--- ИЗМЕНЕНИЕ
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..db.database import Base
@@ -18,10 +18,10 @@ class Department(BaseMixin, Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
-    description: Mapped[Optional[str]] = mapped_column(String(500))
+    description: Mapped[str | None] = mapped_column(String(500))
 
-    devices: Mapped[List["Device"]] = relationship(back_populates="department")
-    employees: Mapped[List["Employee"]] = relationship(back_populates="department")
+    devices: Mapped[list['Device']] = relationship(back_populates='department')
+    employees: Mapped[list['Employee']] = relationship(back_populates='department')
 
     # --- ДОБАВЬ ЭТОТ БЛОК ---
     __table_args__ = (

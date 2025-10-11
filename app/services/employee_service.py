@@ -1,12 +1,14 @@
-from sqlalchemy import select, func, or_
+
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Optional
 
 from app.models import Device, Employee
 from app.schemas.dictionary import EmployeeCreate, EmployeeUpdate
 from app.services.audit_log_service import log_action
+
 from .base_dictionary_service import BaseDictionaryService
 from .exceptions import DeletionError, DuplicateError
+
 
 class EmployeeService(BaseDictionaryService):
     """
@@ -17,7 +19,7 @@ class EmployeeService(BaseDictionaryService):
     def __init__(self):
         super().__init__(
             model=Employee,
-            entity_name_russian="Сотрудник"
+            entity_name_russian='Сотрудник'
         )
 
     async def get_all(self, db: AsyncSession) -> list[Employee]:
@@ -26,7 +28,7 @@ class EmployeeService(BaseDictionaryService):
         result = await db.execute(stmt)
         return result.scalars().all()
 
-    async def _check_duplicates(self, db: AsyncSession, employee_id: Optional[str], email: Optional[str], item_id: Optional[int] = None):
+    async def _check_duplicates(self, db: AsyncSession, employee_id: str | None, email: str | None, item_id: int | None = None):
         """Проверяет дубликаты по табельному номеру ИЛИ email."""
         if not employee_id and not email:
             return
@@ -61,9 +63,9 @@ class EmployeeService(BaseDictionaryService):
             await db.flush()
 
             await log_action(
-                db=db, user_id=user_id, action_type="create",
+                db=db, user_id=user_id, action_type='create',
                 entity_type=self.entity_name_for_log, entity_id=new_item.id,
-                details={"full_name": f"{new_item.last_name} {new_item.first_name}"}
+                details={'full_name': f'{new_item.last_name} {new_item.first_name}'}
             )
             await db.commit()
             await db.refresh(new_item)
@@ -72,7 +74,7 @@ class EmployeeService(BaseDictionaryService):
             await db.rollback()
             raise
 
-    async def update(self, db: AsyncSession, item_id: int, data: EmployeeUpdate, user_id: int) -> Optional[Employee]:
+    async def update(self, db: AsyncSession, item_id: int, data: EmployeeUpdate, user_id: int) -> Employee | None:
         """Обновляет данные сотрудника."""
         await self._check_duplicates(db, data.employee_id, data.email, item_id)
 
@@ -82,9 +84,9 @@ class EmployeeService(BaseDictionaryService):
 
         try:
             old_values = {
-                "last_name": db_item.last_name, "first_name": db_item.first_name,
-                "patronymic": db_item.patronymic, "employee_id": db_item.employee_id,
-                "email": db_item.email, "phone_number": db_item.phone_number
+                'last_name': db_item.last_name, 'first_name': db_item.first_name,
+                'patronymic': db_item.patronymic, 'employee_id': db_item.employee_id,
+                'email': db_item.email, 'phone_number': db_item.phone_number
             }
 
             update_data = data.model_dump(exclude_unset=True)
@@ -92,15 +94,15 @@ class EmployeeService(BaseDictionaryService):
                 setattr(db_item, key, value)
 
             new_values = {
-                "last_name": db_item.last_name, "first_name": db_item.first_name,
-                "patronymic": db_item.patronymic, "employee_id": db_item.employee_id,
-                "email": db_item.email, "phone_number": db_item.phone_number
+                'last_name': db_item.last_name, 'first_name': db_item.first_name,
+                'patronymic': db_item.patronymic, 'employee_id': db_item.employee_id,
+                'email': db_item.email, 'phone_number': db_item.phone_number
             }
 
             await log_action(
-                db=db, user_id=user_id, action_type="update",
+                db=db, user_id=user_id, action_type='update',
                 entity_type=self.entity_name_for_log, entity_id=db_item.id,
-                details={"old": old_values, "new": new_values}
+                details={'old': old_values, 'new': new_values}
             )
             await db.commit()
             await db.refresh(db_item)
@@ -109,7 +111,7 @@ class EmployeeService(BaseDictionaryService):
             await db.rollback()
             raise
 
-    async def delete(self, db: AsyncSession, item_id: int, user_id: int) -> Optional[Employee]:
+    async def delete(self, db: AsyncSession, item_id: int, user_id: int) -> Employee | None:
         """Удаляет сотрудника, если он не привязан к активам."""
         db_item = await db.get(self.model, item_id)
         if not db_item:
@@ -122,12 +124,12 @@ class EmployeeService(BaseDictionaryService):
             raise DeletionError(f"Нельзя удалить сотрудника '{db_item.last_name}'. За ним числится {devices_count} устройств.")
 
         try:
-            employee_name = f"{db_item.last_name} {db_item.first_name}"
+            employee_name = f'{db_item.last_name} {db_item.first_name}'
             await db.delete(db_item)
             await log_action(
-                db=db, user_id=user_id, action_type="delete",
+                db=db, user_id=user_id, action_type='delete',
                 entity_type=self.entity_name_for_log, entity_id=item_id,
-                details={"name": employee_name}
+                details={'name': employee_name}
             )
             await db.commit()
             return db_item

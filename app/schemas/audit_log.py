@@ -1,13 +1,15 @@
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict
 
+
 class ActionLogBase(BaseModel):
-    user_id: Optional[int] = None
+    user_id: int | None = None
     action_type: str
     entity_type: str
     entity_id: int
-    details: Dict[str, Any] = {}
+    details: dict[str, Any] = {}
 
 class ActionLogCreate(ActionLogBase):
     pass
@@ -15,5 +17,5 @@ class ActionLogCreate(ActionLogBase):
 class ActionLog(ActionLogBase):
     id: int
     timestamp: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)

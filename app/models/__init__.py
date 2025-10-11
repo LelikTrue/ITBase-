@@ -1,40 +1,38 @@
 # Path: app/models/__init__.py
 
 # Этот файл реэкспортирует все модели, делая их доступными для Alembic.
-
-# Импортируем Base и BaseMixin из их правильных мест
-from ..db.database import Base
-from .base import BaseMixin
-
+# Импортируем Base из центрального места, чтобы все модели могли его использовать.
+from ..db.database import Base  # Alembic использует этот Base для автогенерации
+from .action_log import ActionLog
 # А теперь импортируем все конкретные модели
 from .asset_type import AssetType
+from .attachment import Attachment
+from .base import BaseMixin
 from .department import Department
+from .device import Device
 from .device_model import DeviceModel
 from .device_status import DeviceStatus
 from .employee import Employee
 from .location import Location
 from .manufacturer import Manufacturer
-from .attachment import Attachment
-from .device import Device
 from .network import NetworkSettings
-from .action_log import ActionLog
-from .tag import Tag
 from .supplier import Supplier
+from .tag import Tag
 
 __all__ = [
-    "Base",
-    "BaseMixin",
-    "AssetType",
-    "Department",
-    "DeviceModel",
-    "DeviceStatus",
-    "Employee",
-    "Location",
-    "Manufacturer",
-    "Attachment",
-    "Device",
-    "NetworkSettings",
-    "ActionLog",
-    "Tag",
-    "Supplier",  # <-- И ЭТА СТРОКА СЮДА
+    'Base',
+    'BaseMixin',
+    'AssetType',
+    'Department',
+    'DeviceModel',
+    'DeviceStatus',
+    'Employee',
+    'Location',
+    'Manufacturer',
+    'Attachment',
+    'Device',
+    'NetworkSettings',
+    'ActionLog',
+    'Tag',
+    'Supplier',  # <-- И ЭТА СТРОКА СЮДА
 ]

@@ -1,13 +1,15 @@
-from sqlalchemy.ext.asyncio import AsyncSession
+
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import select, func, or_
-from typing import Optional
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import AssetType, Device
 from app.schemas.dictionary import AssetTypeCreate, AssetTypeUpdate
 from app.services.audit_log_service import log_action
+
 from .base_dictionary_service import BaseDictionaryService
-from .exceptions import DuplicateError, DeletionError
+from .exceptions import DeletionError, DuplicateError
+
 
 class AssetTypeService(BaseDictionaryService):
     """
@@ -17,20 +19,20 @@ class AssetTypeService(BaseDictionaryService):
     """
     def __init__(self):
         super().__init__(
-            model=AssetType, 
-            entity_name_russian="Тип актива"
+            model=AssetType,
+            entity_name_russian='Тип актива'
         )
 
     # Метод get_all() теперь наследуется от BaseDictionaryService и его здесь нет.
 
-    async def _check_duplicates(self, db: AsyncSession, name: str, prefix: str, item_id: Optional[int] = None):
+    async def _check_duplicates(self, db: AsyncSession, name: str, prefix: str, item_id: int | None = None):
         """Проверяет дубликаты по имени ИЛИ префиксу."""
         stmt = select(AssetType).where(
             or_(AssetType.name == name, AssetType.prefix == prefix)
         )
         if item_id:
             stmt = stmt.where(AssetType.id != item_id)
-        
+
         result = await db.execute(stmt)
         existing_item = result.scalars().first()
 
@@ -56,11 +58,11 @@ class AssetTypeService(BaseDictionaryService):
             await db.flush()
 
             await log_action(
-                db=db, user_id=user_id, action_type="create",
+                db=db, user_id=user_id, action_type='create',
                 entity_type=self.entity_name_for_log, entity_id=new_item.id,
-                details={"name": new_item.name, "prefix": new_item.prefix}
+                details={'name': new_item.name, 'prefix': new_item.prefix}
             )
-            
+
             await db.commit()
             await db.refresh(new_item)
             return new_item
@@ -68,7 +70,7 @@ class AssetTypeService(BaseDictionaryService):
             await db.rollback()
             raise
 
-    async def update(self, db: AsyncSession, item_id: int, data: AssetTypeUpdate, user_id: int) -> Optional[AssetType]:
+    async def update(self, db: AsyncSession, item_id: int, data: AssetTypeUpdate, user_id: int) -> AssetType | None:
         """Обновляет тип актива с проверкой на дубликаты."""
         name = data.name.strip()
         prefix = data.prefix.strip().upper()
@@ -79,18 +81,18 @@ class AssetTypeService(BaseDictionaryService):
             return None
 
         try:
-            old_values = {"name": db_item.name, "prefix": db_item.prefix, "description": db_item.description}
-            
+            old_values = {'name': db_item.name, 'prefix': db_item.prefix, 'description': db_item.description}
+
             db_item.name = name
             db_item.prefix = prefix
             db_item.description = data.description.strip() if data.description else None
-            
-            new_values = {"name": db_item.name, "prefix": db_item.prefix, "description": db_item.description}
+
+            new_values = {'name': db_item.name, 'prefix': db_item.prefix, 'description': db_item.description}
 
             await log_action(
-                db=db, user_id=user_id, action_type="update",
+                db=db, user_id=user_id, action_type='update',
                 entity_type=self.entity_name_for_log, entity_id=db_item.id,
-                details={"old": old_values, "new": new_values}
+                details={'old': old_values, 'new': new_values}
             )
             await db.commit()
             await db.refresh(db_item)
@@ -99,7 +101,7 @@ class AssetTypeService(BaseDictionaryService):
             await db.rollback()
             raise
 
-    async def delete(self, db: AsyncSession, item_id: int, user_id: int) -> Optional[AssetType]:
+    async def delete(self, db: AsyncSession, item_id: int, user_id: int) -> AssetType | None:
         """Удаляет тип актива, проверяя зависимости в таблице Device."""
         db_item = await db.get(AssetType, item_id)
         if not db_item:
@@ -107,18 +109,18 @@ class AssetTypeService(BaseDictionaryService):
 
         devices_count_stmt = select(func.count(Device.id)).where(Device.asset_type_id == item_id)
         devices_count = await db.scalar(devices_count_stmt)
-        
+
         if devices_count > 0:
             raise DeletionError(f"Нельзя удалить тип актива '{db_item.name}', так как он используется в {devices_count} устройствах.")
 
         try:
             item_name = db_item.name
             await db.delete(db_item)
-            
+
             await log_action(
-                db=db, user_id=user_id, action_type="delete",
+                db=db, user_id=user_id, action_type='delete',
                 entity_type=self.entity_name_for_log, entity_id=item_id,
-                details={"name": item_name}
+                details={'name': item_name}
             )
             await db.commit()
             return db_item

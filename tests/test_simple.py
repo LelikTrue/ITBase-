@@ -15,7 +15,7 @@ async def test_single_endpoint_with_db_access(async_client: AsyncClient):
     Цель: доказать, что наша конфигурация фикстур (conftest.py) работает правильно.
     """
     # Предполагается, что роутер health.py подключен с префиксом /api/health
-    response = await async_client.get("/api/health/ready")
-    
+    response = await async_client.get('/api/health/ready')
+
     assert response.status_code == 200
-    assert response.json() == {"db_status": "ok"}
+    assert response.json() == {'db_status': 'ok'}

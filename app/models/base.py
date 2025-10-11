@@ -1,11 +1,11 @@
 # Path: app/models/base.py
- 
-from datetime import datetime, timezone
-from sqlalchemy import DateTime, func, text
-from sqlalchemy.orm import declared_attr, Mapped, mapped_column
+
+from datetime import UTC, datetime
+
+from sqlalchemy import DateTime, text
+from sqlalchemy.orm import Mapped, mapped_column
 
 # Мы больше не создаем здесь Base. Мы импортируем его из единственного источника.
-from ..db.database import Base
 
 
 class BaseMixin:
@@ -21,12 +21,12 @@ class BaseMixin:
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=text("TIMEZONE('utc', now())"),
-        default=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(UTC),
         nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=text("TIMEZONE('utc', now())"),
-        onupdate=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(UTC),
         nullable=False
     )

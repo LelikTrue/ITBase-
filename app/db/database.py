@@ -1,30 +1,40 @@
-# Path: app/db/database.py
+from collections.abc import AsyncGenerator
 
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker, declarative_base
-from app.config import settings  # <-- Импортируем из нашего нового конфига
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-# Создаем асинхронный движок, используя готовый URL
-async_engine = create_async_engine(settings.DATABASE_URL_ASYNC)
+from app.config import settings
 
-# Фабрика для асинхронных сессий
-AsyncSessionLocal = sessionmaker(
-    bind=async_engine, class_=AsyncSession, autocommit=False, autoflush=False, expire_on_commit=False
+class Base(DeclarativeBase):
+    pass
+
+
+# Создание асинхронного движка SQLAlchemy
+async_engine = create_async_engine(
+    settings.DATABASE_URL_ASYNC,
+    echo=False,
+    future=True
 )
 
-# Ваша базовая модель, которую используют все остальные модели
-Base = declarative_base()
+# Создание фабрики сессий
+# sessionmaker теперь возвращает фабрику AsyncSession
+AsyncSessionFactory = sessionmaker(
+    bind=async_engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autoflush=False,
+    autocommit=False,
+)
 
-# Асинхронная зависимость для получения сессии БД в эндпоинтах
-async def get_db() -> AsyncSession:
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
-    Зависимость для получения сессии БД.
-    В тестах эта функция будет подменена, чтобы использовать тестовую сессию.
-    В реальном приложении она создает новую сессию для каждого запроса.
+    Функция зависимости для получения сессии базы данных.
     """
-    session = AsyncSessionLocal()
-    async with AsyncSessionLocal() as session:
+    async with AsyncSessionFactory() as session:
         try:
             yield session
+        except Exception:
+            await session.rollback()
+            raise
         finally:
             await session.close()
