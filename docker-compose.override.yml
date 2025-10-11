@@ -1,94 +1,18 @@
+# docker-compose.override.yml
+# Настройки для локальной разработки.
+# Этот файл автоматически подхватывается Docker Compose и расширяет/переопределяет
+# настройки из базового docker-compose.yml.
+
 version: '3.8'
 
-# Переменные окружения для UID/GID (можно переопределить в .env)
-x-user: &user
-  user: "${UID:-1000}:${GID:-1000}"
+# Определяем якорь для пользователя, который будет запускать сервис.
+# Это решает проблему с правами доступа к файлам, созданным в контейнере.
+x-backend-user: &backend-user "${UID:-1000}:${GID:-1000}"
 
 services:
   backend:
-    build:
-      context: .
-      args:
-        USER_ID: ${UID:-1000}
-        GROUP_ID: ${GID:-1000}
-        APP_MODE: dev
+    user: *backend-user
     volumes:
+      # Синхронизируем текущую директорию с рабочей директорией в контейнере
+      # для мгновенного отражения изменений в коде.
       - .:/app
-      # Исключаем кэш Python из volume
-      - /app/__pycache__
-      - /app/.pytest_cache
-    environment:
-      - APP_MODE=dev
-      - ENVIRONMENT=development
-      - DEBUG=True
-      - PYTHONDONTWRITEBYTECODE=1
-      - PYTHONUNBUFFERED=1
-      - PYTHONFAULTHANDLER=1
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app
-    ports:
-      - "${APP_PORT:-8000}:8000"
-    user: *user
-    depends_on:
-      db:
-        condition: service_healthy
-    # Для разработки можно временно отключить healthcheck
-    healthcheck:
-      disable: true
-    # Для разработки включаем интерактивную оболочку
-    stdin_open: true
-    tty: true
-    # Для отладки
-    cap_add:
-      - SYS_PTRACE
-    security_opt:
-      - seccomp:unconfined
-    # Для Linux: убедитесь, что права на volume корректны
-    tmpfs:
-      - /tmp
-
-  db:
-    environment:
-      - POSTGRES_HOST_AUTH_METHOD=trust
-    # Для разработки можно увеличить логи
-    command: postgres -c log_statement=all -c log_destination=stderr
-    ports:
-      - "${DB_PORT:-5432}:5432"
-    # Для разработки можно временно отключить healthcheck
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-  # Дополнительные сервисы для разработки
-  # mailhog:
-  #   image: mailhog/mailhog:latest
-  #   container_name: itbase-mailhog
-  #   ports:
-  #     - "8025:8025" # Web UI
-  #     - "1025:1025" # SMTP
-  #   networks:
-  #     - itbase-network
-
-  # redis:
-  #   image: redis:7-alpine
-  #   container_name: itbase-redis
-  #   command: redis-server --appendonly yes
-  #   volumes:
-  #     - redis_data:/data
-  #   ports:
-  #     - "6379:6379"
-  #   networks:
-  #     - itbase-network
-  #   healthcheck:
-  #     test: ["CMD", "redis-cli", "ping"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-
-# volumes:
-#   redis_data:
-#     name: ${COMPOSE_PROJECT_NAME:-itbase}_redis_data
-    # Для продакшена раскомментируйте:
-    # user: "${DB_UID:-1000}:${DB_GID:-1000}"
