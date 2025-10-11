@@ -3,15 +3,15 @@
 # Для разработки используйте docker-compose.override.yml
 # Для продакшена используйте docker-compose.prod.yml
 
+---
+
 version: '3.8'
 
 # Общие переменные окружения (можно переопределить в .env)
-x-env: &env
-  env_file: .env
-  environment:
-    - PYTHONUNBUFFERED=1
-    - PYTHONDONTWRITEBYTECODE=1
-    - TZ=Europe/Moscow
+x-python-env: &python-env
+  PYTHONUNBUFFERED: 1
+  PYTHONDONTWRITEBYTECODE: 1
+  TZ: "Europe/Moscow"
 
 services:
   # Сервис базы данных PostgreSQL
@@ -19,12 +19,7 @@ services:
     image: postgres:16-alpine
     container_name: itbase-db
     restart: unless-stopped
-    env_file: .env
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-itbase}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      PGDATA: /var/lib/postgresql/data/pgdata
+    env_file: .env # Единственный источник переменных для БД.
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./initdb:/docker-entrypoint-initdb.d
@@ -38,7 +33,7 @@ services:
       start_period: 10s
     networks:
       - itbase-network
-    logging:
+    logging: &logging
       driver: json-file
       options:
         max-size: "10m"
@@ -77,9 +72,9 @@ services:
       - "${APP_PORT:-8000}:8000"
     env_file: .env
     environment:
-      <<: *env
-      - APP_MODE=${APP_MODE:-dev}
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-itbase}
+      <<: *python-env # Слияние общих переменных
+      APP_MODE: ${APP_MODE:-dev}
+      DATABASE_URL: "postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-itbase}"
     depends_on:
       db:
         condition: service_healthy
@@ -91,20 +86,7 @@ services:
       start_period: 10s
     networks:
       - itbase-network
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    # Ограничения ресурсов (можно раскомментировать при необходимости)
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: '1'
-    #       memory: 2G
-    #     reservations:
-    #       cpus: '0.5'
-    #       memory: 512M
+    logging: *logging
 
 # Определение томов для постоянного хранения данных
 volumes:
