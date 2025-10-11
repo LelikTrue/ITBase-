@@ -249,15 +249,14 @@ class DeviceService:
                 .group_by(DeviceStatus.id, DeviceStatus.name).order_by(DeviceStatus.name)
             )
 
-            # Выполняем запросы параллельно и безопасно
-            results = await asyncio.gather(
-                db.execute(total_devices_stmt),
-                db.execute(types_stmt),
-                db.execute(statuses_stmt)
-            )
-            total_devices = results[0].scalar_one()
-            device_types_list = [{'name': name, 'count': count} for name, count in results[1].all()]
-            device_statuses_list = [{'name': name, 'count': count} for name, count in results[2].all()]
+            # Выполняем запросы последовательно, чтобы избежать ошибки конкурентного доступа к сессии
+            total_devices_res = await db.execute(total_devices_stmt)
+            types_res = await db.execute(types_stmt)
+            statuses_res = await db.execute(statuses_stmt)
+
+            total_devices = total_devices_res.scalar_one()
+            device_types_list = [{'name': name, 'count': count} for name, count in types_res.all()]
+            device_statuses_list = [{'name': name, 'count': count} for name, count in statuses_res.all()]
             
             return {
                 "device_types_count": device_types_list,
