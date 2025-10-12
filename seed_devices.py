@@ -11,7 +11,7 @@ sys.path.insert(0, str(project_root))
 from faker import Faker
 from sqlalchemy import select
 
-from app.db.database import AsyncSessionLocal
+from app.db.database import AsyncSessionFactory
 from app.models import Department, DeviceModel, DeviceStatus, Employee, Location
 from app.schemas.asset import AssetCreate
 from app.services.device_service import DeviceService
@@ -25,65 +25,65 @@ async def seed_devices():
     print('--- 🏁 Начало генерации тестовых активов ---')
 
     faker = Faker('ru_RU')
-    device_service = DeviceService()
 
-    async with AsyncSessionLocal() as db:
-        # --- 1. Загружаем все справочники из БД ---
-        print('📦 Загрузка справочников из базы данных...')
+    # --- 1. Загружаем все справочники из БД в одной сессии ---
+    print('📦 Загрузка справочников из базы данных...')
+    async with AsyncSessionFactory() as db_for_refs:
+        device_models = (await db_for_refs.execute(select(DeviceModel))).scalars().all()
+        statuses = (await db_for_refs.execute(select(DeviceStatus))).scalars().all()
+        departments = (await db_for_refs.execute(select(Department))).scalars().all()
+        locations = (await db_for_refs.execute(select(Location))).scalars().all()
+        employees = (await db_for_refs.execute(select(Employee))).scalars().all()
 
-        device_models = (await db.execute(select(DeviceModel))).scalars().all()
-        statuses = (await db.execute(select(DeviceStatus))).scalars().all()
-        departments = (await db.execute(select(Department))).scalars().all()
-        locations = (await db.execute(select(Location))).scalars().all()
-        employees = (await db.execute(select(Employee))).scalars().all()
+    # Проверка, что справочники не пустые. Если они пустые, нужно сначала запустить init_data.py
+    if not all([device_models, statuses, departments, locations, employees]):
+        print('\n❌ ОШИБКА: Один или несколько справочников пусты.')
+        print("👉 Пожалуйста, сначала запустите скрипт 'python init_data.py' для заполнения базовых данных.")
+        return
 
-        # Проверка, что справочники не пустые. Если они пустые, нужно сначала запустить init_data.py
-        if not all([device_models, statuses, departments, locations, employees]):
-            print('\n❌ ОШИБКА: Один или несколько справочников пусты.')
-            print("👉 Пожалуйста, сначала запустите скрипт 'python init_data.py' для заполнения базовых данных.")
-            return
+    print(f'✅ Справочники успешно загружены. Начинаем создание {NUMBER_OF_DEVICES} активов...')
 
-        print(f'✅ Справочники успешно загружены. Начинаем создание {NUMBER_OF_DEVICES} активов...')
+    # --- 2. Цикл создания активов ---
+    # Внутри цикла мы будем создавать новую сессию для КАЖДОГО актива.
+    # Это гарантирует, что каждая операция создания является атомарной.
+    for i in range(NUMBER_OF_DEVICES):
+        try:
+            # Выбираем случайную модель и связанный с ней тип актива
+            selected_model = random.choice(device_models)
 
-        # --- 2. Цикл создания активов ---
-        for i in range(NUMBER_OF_DEVICES):
-            try:
-                # Выбираем случайную модель и связанный с ней тип актива
-                selected_model = random.choice(device_models)
+            # Собираем данные для схемы AssetCreate
+            # ...
+            # Выбираем случайные связанные сущности, позволяя им быть None
+            selected_department = random.choice(departments + [None])
+            selected_employee = random.choice(employees + [None])
 
-                # Собираем данные для схемы AssetCreate
-                # ...
-                # Выбираем случайные связанные сущности, позволяя им быть None
-                selected_department = random.choice(departments + [None])
-                selected_employee = random.choice(employees + [None])
+            asset_data = {
+                'serial_number': faker.ean(length=13),
+                'mac_address': faker.mac_address() if random.random() > 0.5 else None,
+                'notes': f'Тестовый актив №{i+1}. {faker.sentence(nb_words=10)}',
+                'asset_type_id': selected_model.asset_type_id,
+                'device_model_id': selected_model.id,
+                'status_id': random.choice(statuses).id,
+                # Теперь мы безопасно получаем .id или оставляем None
+                'department_id': selected_department.id if selected_department else None,
+                'location_id': random.choice(locations).id,
+                'employee_id': selected_employee.id if selected_employee else None,
+                'tag_ids': [],
+            }
 
-                asset_data = {
-                    'serial_number': faker.ean(length=13),
-                    'mac_address': faker.mac_address() if random.random() > 0.5 else None,
-                    'notes': f'Тестовый актив №{i+1}. {faker.sentence(nb_words=10)}',
-                    'asset_type_id': selected_model.asset_type_id,
-                    'device_model_id': selected_model.id,
-                    'status_id': random.choice(statuses).id,
-                    # Теперь мы безопасно получаем .id или оставляем None
-                    'department_id': selected_department.id if selected_department else None,
-                    'location_id': random.choice(locations).id,
-                    'employee_id': selected_employee.id if selected_employee else None,
-                    'tag_ids': [],
-                }
+            asset_to_create = AssetCreate(**asset_data)
 
-                asset_to_create = AssetCreate(**asset_data)
-
-                # Используем наш сервис для создания актива.
-                # Он сам сгенерирует инвентарный номер и создаст запись в логе аудита.
+            # Создаем новую сессию и сервис для одной операции
+            async with AsyncSessionFactory() as db:
+                device_service = DeviceService()
                 new_device = await device_service.create_device(db, asset_to_create, user_id=ADMIN_USER_ID)
-
                 print(f'  -> Создан актив: {new_device.inventory_number} (ID: {new_device.id})')
 
-            except Exception as e:
-                print(f'🔥 Произошла ошибка при создании актива №{i+1}: {e}')
-                # Мы не прерываем цикл, чтобы скрипт попытался создать остальные активы
+        except Exception as e:
+            print(f'🔥 Произошла ошибка при создании актива №{i+1}: {e}')
+            # Мы не прерываем цикл, чтобы скрипт попытался создать остальные активы
 
-        print(f'\n--- 🎉 Успешно обработано {NUMBER_OF_DEVICES} активов! ---')
+    print(f'\n--- 🎉 Успешно обработано {NUMBER_OF_DEVICES} активов! ---')
 
 
 if __name__ == '__main__':

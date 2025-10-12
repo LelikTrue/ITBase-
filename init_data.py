@@ -16,7 +16,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import initial_data_storage
-from app.db.database import AsyncSessionLocal, Base, async_engine
+from app.db.database import AsyncSessionFactory, Base, async_engine
 from app.models import (
     AssetType,
     Department,
@@ -59,8 +59,7 @@ async def create_tables():
 async def main():
     """Основная функция для инициализации данных."""
     await create_tables()
-
-    async with AsyncSessionLocal() as db:
+    async with AsyncSessionFactory() as db:
         print('\n--- 🏁 Начало заполнения справочников ---')
 
         # --- Простые справочники ---
