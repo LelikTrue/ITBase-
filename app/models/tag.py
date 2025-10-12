@@ -10,14 +10,13 @@ if TYPE_CHECKING:
     from .device import Device
 
 class Tag(BaseMixin, Base):
-    """Модель для тегов (свойств), описывающих актив. Например: 'Видео', 'PoE'."""
     __tablename__ = 'tags'
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    # Простое текстовое поле для категории. Позволит в будущем добавлять новые.
+    category: Mapped[str | None] = mapped_column(String(50))
 
-    # Определяем связь с Device через ассоциативную таблицу,
-    # которую мы создадим в модели Device.
     devices: Mapped[list['Device']] = relationship(
         secondary='device_tags',
         back_populates='tags'

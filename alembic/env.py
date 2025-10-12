@@ -19,6 +19,7 @@ from app.db.database import Base
 # Явно импортируем КАЖДЫЙ МОДУЛЬ с моделями.
 # Это гарантирует, что все классы-модели "зарегистрируются" в Base.metadata
 # до того, как Alembic начнет свою работу. Это самый надежный способ.
+from app.models import *  # noqa: F401, F403
 
 # Получаем конфигурацию Alembic
 config = context.config
