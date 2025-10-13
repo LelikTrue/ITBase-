@@ -31,7 +31,8 @@ FROM base AS dev
 # Устанавливаем зависимости разработки
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements/dev.txt
+    pip install --no-cache-dir -r requirements/dev.txt && \
+    pip install --no-cache-dir pytest pytest-cov
 
 # Копируем исходный код
 WORKDIR /app
