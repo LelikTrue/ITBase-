@@ -37,7 +37,6 @@ class DeviceService:
         pass
 
     # Методы чтения данных остаются почти без изменений,
-    # но мы добавим загрузку тегов, чтобы они были доступны в ответах.
     async def get_device_with_relations(self, db: AsyncSession, device_id: int) -> Device | None:
         """Загружает актив со всеми связанными сущностями, включая теги."""
         stmt = select(Device).options(
@@ -47,7 +46,7 @@ class DeviceService:
             selectinload(Device.department),
             selectinload(Device.location),
             selectinload(Device.employee),
-            selectinload(Device.tags) #!# ДОБАВИЛИ ЗАГРУЗКУ ТЕГОВ
+            selectinload(Device.tags)
         ).where(Device.id == device_id)
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
@@ -60,7 +59,7 @@ class DeviceService:
         sort_by: str | None = None,
         sort_order: str = 'asc', **filters
     ):
-        """Получает устройства с фильтрацией, пагинацией и тегами."""
+        """ Получает устройства с фильтрацией, пагинацией и тегами."""
         query = select(Device).options(
             selectinload(Device.asset_type),
             selectinload(Device.device_model).options(
@@ -150,7 +149,6 @@ class DeviceService:
         locations_res = await db.execute(select(Location).order_by(Location.name))
         employees_res = await db.execute(select(Employee).order_by(Employee.last_name))
         manufacturers_res = await db.execute(select(Manufacturer).order_by(Manufacturer.name))
-        # Добавляем поставщиков, как и просили
         suppliers_res = await db.execute(select(Supplier).order_by(Supplier.name))
 
         return {

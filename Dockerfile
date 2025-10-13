@@ -56,6 +56,7 @@ FROM base AS prod
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
+    coreutils \
     && rm -rf /var/lib/apt/lists/*
 
 # Копируем зависимости из стадии deps
