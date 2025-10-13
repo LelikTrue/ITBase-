@@ -45,3 +45,4 @@ sync_config.jsonc
 # Gemini/Windsurf project-specific instructions
 GEMINI.md
 .windsurf/
+generate_structure.py

@@ -13,7 +13,6 @@ ITBase-/
 ├── Dockerfile
 ├── Dockerfile.prod
 ├── Dockerfile.test
-├── GEMINI.md
 ├── LICENSE
 ├── Makefile
 ├── Makefile.dev
