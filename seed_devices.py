@@ -12,7 +12,7 @@ from faker import Faker
 from sqlalchemy import select
 
 from app.db.database import AsyncSessionFactory
-from app.models import Department, DeviceModel, DeviceStatus, Employee, Location
+from app.models import Department, DeviceModel, DeviceStatus, Employee, Location, Tag
 from app.schemas.asset import AssetCreate
 from app.services.device_service import DeviceService
 
@@ -34,6 +34,7 @@ async def seed_devices():
         departments = (await db_for_refs.execute(select(Department))).scalars().all()
         locations = (await db_for_refs.execute(select(Location))).scalars().all()
         employees = (await db_for_refs.execute(select(Employee))).scalars().all()
+        tags = (await db_for_refs.execute(select(Tag))).scalars().all()
 
     # Проверка, что справочники не пустые. Если они пустые, нужно сначала запустить init_data.py
     if not all([device_models, statuses, departments, locations, employees]):
@@ -43,19 +44,28 @@ async def seed_devices():
 
     print(f'✅ Справочники успешно загружены. Начинаем создание {NUMBER_OF_DEVICES} активов...')
 
-    # --- 2. Цикл создания активов ---
-    # Внутри цикла мы будем создавать новую сессию для КАЖДОГО актива.
-    # Это гарантирует, что каждая операция создания является атомарной.
+    # --- 2. Цикл создания активов ---    
+    successful_creations = 0
+    failed_creations = 0
+
+    print("Процесс создания: ", end="", flush=True)
+
     for i in range(NUMBER_OF_DEVICES):
         try:
             # Выбираем случайную модель и связанный с ней тип актива
             selected_model = random.choice(device_models)
+            selected_status = random.choice(statuses)
 
             # Собираем данные для схемы AssetCreate
             # ...
             # Выбираем случайные связанные сущности, позволяя им быть None
             selected_department = random.choice(departments + [None])
             selected_employee = random.choice(employees + [None])
+            selected_tags = []
+            if tags:
+                num_tags = random.randint(0, 3)
+                if num_tags > 0:
+                    selected_tags = random.sample(tags, num_tags)
 
             asset_data = {
                 'serial_number': faker.ean(length=13),
@@ -63,12 +73,12 @@ async def seed_devices():
                 'notes': f'Тестовый актив №{i+1}. {faker.sentence(nb_words=10)}',
                 'asset_type_id': selected_model.asset_type_id,
                 'device_model_id': selected_model.id,
-                'status_id': random.choice(statuses).id,
+                'status_id': selected_status.id,
                 # Теперь мы безопасно получаем .id или оставляем None
                 'department_id': selected_department.id if selected_department else None,
                 'location_id': random.choice(locations).id,
                 'employee_id': selected_employee.id if selected_employee else None,
-                'tag_ids': [],
+                'tag_ids': [tag.id for tag in selected_tags],
             }
 
             asset_to_create = AssetCreate(**asset_data)
@@ -76,14 +86,19 @@ async def seed_devices():
             # Создаем новую сессию и сервис для одной операции
             async with AsyncSessionFactory() as db:
                 device_service = DeviceService()
-                new_device = await device_service.create_device(db, asset_to_create, user_id=ADMIN_USER_ID)
-                print(f'  -> Создан актив: {new_device.inventory_number} (ID: {new_device.id})')
+                await device_service.create_device(db, asset_to_create, user_id=ADMIN_USER_ID)
+                print(".", end="", flush=True)
+                successful_creations += 1
 
         except Exception as e:
-            print(f'🔥 Произошла ошибка при создании актива №{i+1}: {e}')
-            # Мы не прерываем цикл, чтобы скрипт попытался создать остальные активы
+            print("F", end="", flush=True)
+            failed_creations += 1
 
-    print(f'\n--- 🎉 Успешно обработано {NUMBER_OF_DEVICES} активов! ---')
+    print("\n\n--- 📊 Результаты генерации ---")
+    print(f"  - ✅ Успешно создано: {successful_creations}")
+    print(f"  - ❌ Не удалось создать: {failed_creations}")
+    print(f"  - 🔢 Всего обработано: {NUMBER_OF_DEVICES}")
+    print("--- 🎉 Работа скрипта завершена! ---")
 
 
 if __name__ == '__main__':

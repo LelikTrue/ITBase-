@@ -25,6 +25,7 @@ from app.models import (
     Employee,
     Location,
     Manufacturer,
+    Tag,
 )
 
 
@@ -69,6 +70,7 @@ async def main():
         await _seed_data(db, Department, initial_data_storage.DEPARTMENTS, index_elements=['name'])
         await _seed_data(db, Location, initial_data_storage.LOCATIONS, index_elements=['name'])
         await _seed_data(db, Employee, initial_data_storage.EMPLOYEES, index_elements=['employee_id'])
+        await _seed_data(db, Tag, initial_data_storage.TAGS, index_elements=['name'])
 
         # --- Сложный справочник (DeviceModel) ---
         # Сначала нужно получить ID уже созданных производителей и типов

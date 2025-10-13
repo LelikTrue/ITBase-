@@ -81,3 +81,25 @@ def get_device_models(manufacturers_map: dict, asset_types_map: dict) -> list[di
         {'name': 'UltraSharp U2419H', 'manufacturer_id': manufacturers_map.get('Dell'), 'asset_type_id': asset_types_map.get('Монитор')},
         {'name': 'LaserJet Pro M404n', 'manufacturer_id': manufacturers_map.get('HP'), 'asset_type_id': asset_types_map.get('Принтер')},
     ]
+
+TAGS = [
+    # Категория: Состояние (state) -> для красного цвета в UI
+    {'name': 'Критически важный', 'category': 'state'},
+    {'name': 'Требует проверки', 'category': 'state'},
+    {'name': 'К списанию', 'category': 'state'},
+
+    # Категория: Сеть (network) -> для зеленого цвета в UI
+    {'name': 'VPN-доступ', 'category': 'network'},
+    {'name': 'Статический IP', 'category': 'network'},
+    {'name': 'PoE', 'category': 'network'},
+
+    # Категория: Администрирование (admin) -> для фиолетового цвета в UI
+    {'name': 'Мониторинг', 'category': 'admin'},
+    {'name': 'Авто-бэкап', 'category': 'admin'},
+    {'name': 'VIP-пользователь', 'category': 'admin'},
+
+    # Категория: Характеристики (hardware) -> для синего цвета в UI
+    {'name': 'SSD', 'category': 'hardware'},
+    {'name': 'Высокая производительность', 'category': 'hardware'},
+    {'name': 'Низкая производительность', 'category': 'hardware'},
+]
