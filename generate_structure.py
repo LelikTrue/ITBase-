@@ -17,6 +17,11 @@ IGNORED_DIRS = {
     'build',
     '__MACOSX__',
     'itbase.egg-info',
+    'node_modules',
+    '.mypy_cache',   # для mypy
+    '.ruff_cache',  # для ruff
+    '.github',
+    '.windsurf',
 }
 
 # Файлы, которые нужно игнорировать

@@ -2,7 +2,7 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, Form, HTTPException, status  # <-- ИЗМЕНЕНИЕ
+from fastapi import APIRouter, Depends, Form, HTTPException, status
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,7 +21,7 @@ from app.schemas.dictionary import (
     EmployeeResponse,
     EmployeeUpdate,
 )
-from app.services.asset_type_service import AssetTypeService  # <--- ДОБАВЬ ЭТОТ ИМПОРТ
+from app.services.asset_type_service import AssetTypeService
 from app.services.department_service import DepartmentService
 
 # --- Новые импорты ---
@@ -29,8 +29,10 @@ from app.services.device_model_service import DeviceModelService
 from app.services.device_status_service import DeviceStatusService
 from app.services.employee_service import EmployeeService
 from app.services.exceptions import DeletionError, DuplicateError, NotFoundError
-from app.services.location_service import LocationService  # <--- ДОБАВЬ ИМПОРТ
+from app.services.location_service import LocationService
 from app.services.manufacturer_service import ManufacturerService
+from app.schemas.tag import TagCreate, TagResponse, TagUpdate
+from app.services.tag_service import TagService
 
 # Настройка логирования
 logger = logging.getLogger(__name__)
@@ -40,12 +42,13 @@ router = APIRouter(prefix='/api/dictionaries', tags=['dictionaries'])
 
 # --- Создаем экземпляры сервисов ---
 asset_type_service = AssetTypeService()
-device_status_service = DeviceStatusService() # <--- ДОБАВЬ ЭТУ СТРОКУ
-manufacturer_service = ManufacturerService() # <--- ДОБАВЬ
-department_service = DepartmentService() # <--- ДОБАВЬ
-location_service = LocationService() # <--- ДОБАВЬ ЭТУ СТРОКУ
+device_status_service = DeviceStatusService()
+manufacturer_service = ManufacturerService()
+department_service = DepartmentService()
+location_service = LocationService()
 device_model_service = DeviceModelService()
 employee_service = EmployeeService()
+tag_service = TagService()
 
 
 # === Эндпоинты для типов активов (AssetType) ===
@@ -63,12 +66,10 @@ async def get_asset_types(db: AsyncSession = Depends(get_db)):
 
 @router.post('/asset-types', response_model=AssetTypeResponse, status_code=status.HTTP_201_CREATED) # <--- ИЗМЕНЕНИЕ
 async def create_asset_type(
-    # --- ИЗМЕНЕНИЯ ---
-    db: AsyncSession = Depends(get_db),
+        db: AsyncSession = Depends(get_db),
     name: str = Form(...),
     prefix: str = Form(...),
     description: str | None = Form(None)
-    # -----------------
 ):
     """Создать новый тип актива"""
     try:
@@ -91,7 +92,7 @@ async def update_asset_type(
     asset_type_id: int,
     db: AsyncSession = Depends(get_db),
     name: str = Form(...),
-    prefix: str = Form(...), # <--- ДОБАВЛЕНО
+    prefix: str = Form(...),
     description: str | None = Form(None)
 ):
     """Обновить тип актива"""
@@ -149,13 +150,11 @@ async def get_device_model(model_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.post('/device-models', response_model=DeviceModelResponse, status_code=status.HTTP_201_CREATED)
 async def create_device_model(
-    # --- НАЧАЛО ИЗМЕНЕНИЙ ---
     db: AsyncSession = Depends(get_db),
     name: str = Form(...),
     manufacturer_id: int = Form(...),
     asset_type_id: int = Form(...),
     description: str | None = Form(None)
-    # --- КОНЕЦ ИЗМЕНЕНИЙ ---
 ):
     """Создать новую модель устройства"""
     try:
@@ -566,4 +565,68 @@ async def delete_employee(employee_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except Exception as e:
         logger.error(f'Error deleting employee: {e}', exc_info=True)
+        raise HTTPException(status_code=500, detail='Внутренняя ошибка сервера.')
+
+# === Эндпоинты для Тегов (Tags) ===
+
+@router.get('/tags', response_model=list[TagResponse])
+async def get_tags(db: AsyncSession = Depends(get_db)):
+    """Получить список всех тегов"""
+    try:
+        items = await tag_service.get_all(db)
+        return items
+    except Exception as e:
+        logger.error(f'Error getting tags: {e}', exc_info=True)
+        raise HTTPException(status_code=500, detail='Ошибка при получении списка тегов.')
+
+@router.post('/tags', response_model=TagResponse, status_code=status.HTTP_201_CREATED)
+async def create_tag(
+    db: AsyncSession = Depends(get_db),
+    name: str = Form(...),
+    description: str | None = Form(None)
+):
+    """Создать новый тег"""
+    try:
+        tag_data = TagCreate(name=name, description=description)
+        user_id = 1 # TODO: Заменить на реального пользователя
+        return await tag_service.create(db, tag_data, user_id)
+    except DuplicateError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except Exception as e:
+        logger.error(f'Error creating tag: {e}', exc_info=True)
+        raise HTTPException(status_code=500, detail='Внутренняя ошибка сервера при создании тега.')
+
+@router.put('/tags/{tag_id}', response_model=TagResponse)
+async def update_tag(
+    tag_id: int,
+    db: AsyncSession = Depends(get_db),
+    name: str = Form(...),
+    description: str | None = Form(None)
+):
+    """Обновить тег"""
+    try:
+        tag_data = TagUpdate(name=name, description=description)
+        user_id = 1 # TODO: Заменить на реального пользователя
+        updated_item = await tag_service.update(db, tag_id, tag_data, user_id)
+        if updated_item is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Тег не найден.')
+        return updated_item
+    except DuplicateError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except Exception as e:
+        logger.error(f'Error updating tag: {e}', exc_info=True)
+        raise HTTPException(status_code=500, detail='Внутренняя ошибка сервера при обновлении тега.')
+
+@router.delete('/tags/{tag_id}', status_code=status.HTTP_204_NO_CONTENT)
+async def delete_tag(tag_id: int, db: AsyncSession = Depends(get_db)):
+    """Удалить тег"""
+    try:
+        user_id = 1 # TODO: Заменить на реального пользователя
+        deleted_item = await tag_service.delete(db, tag_id, user_id)
+        if deleted_item is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Тег не найден.')
+    except DeletionError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except Exception as e:
+        logger.error(f'Error deleting tag: {e}', exc_info=True)
         raise HTTPException(status_code=500, detail='Внутренняя ошибка сервера.')

@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Управление тегами{% endblock %}
+
+{% block head_extra %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', path='css/dictionary_page.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('read_assets') }}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('dictionaries_dashboard') }}">Администрирование</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+        </ol>
+    </nav>
+
+    <!-- Заголовок и кнопка "Добавить" -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-tags text-primary me-2"></i>
+            {{ title }}
+        </h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editModal" data-id="" data-name="" data-description="">
+            <i class="bi bi-plus-circle"></i> Добавить тег
+        </button>
+    </div>
+
+    <!-- Таблица с тегами -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Название</th>
+                            <th scope="col">Описание</th>
+                            <th scope="col" class="text-end">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-table-body">
+                        {% for item in items %}
+                        <tr id="item-row-{{ item.id }}">
+                            <td>{{ item.id }}</td>
+                            <td class="item-name">{{ item.name }}</td>
+                            <td class="item-description">{{ item.description or '' }}</td>
+                            <td class="text-end">
+                                <button class="btn btn-outline-secondary btn-sm"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editModal"
+                                        data-id="{{ item.id }}"
+                                        data-name="{{ item.name }}"
+                                        data-description="{{ item.description or '' }}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteModal"
+                                        data-id="{{ item.id }}"
+                                        data-name="{{ item.name }}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для редактирования/создания -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalLabel">Редактировать тег</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="edit-id" name="id">
+                    <div class="mb-3">
+                        <label for="edit-name" class="form-label">Название <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="edit-name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-description" class="form-label">Описание</label>
+                        <textarea class="form-control" id="edit-description" name="description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="saveButton">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для подтверждения удаления -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">Подтверждение удаления</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Вы уверены, что хотите удалить эту запись? Это действие необратимо.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteButton">Удалить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const apiEndpoint = '/api/dictionaries/tags';
+    const editModalEl = document.getElementById('editModal');
+    const deleteModalEl = document.getElementById('deleteModal');
+    const editForm = document.getElementById('editForm');
+    const saveButton = document.getElementById('saveButton');
+    const confirmDeleteButton = document.getElementById('confirmDeleteButton');
+
+    // --- Логика открытия модального окна редактирования/создания ---
+    editModalEl.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const id = button.getAttribute('data-id');
+        const name = button.getAttribute('data-name');
+        const description = button.getAttribute('data-description');
+
+        const modalTitle = editModalEl.querySelector('.modal-title');
+        const idInput = editModalEl.querySelector('#edit-id');
+        const nameInput = editModalEl.querySelector('#edit-name');
+        const descriptionInput = editModalEl.querySelector('#edit-description');
+
+        idInput.value = id;
+        nameInput.value = name || '';
+        descriptionInput.value = description || '';
+
+        if (id) {
+            modalTitle.textContent = `Редактировать тег #${id}`;
+        } else {
+            modalTitle.textContent = 'Создать новый тег';
+        }
+    });
+
+    // --- Логика сохранения (создание/обновление) ---
+    saveButton.addEventListener('click', async function () {
+        if (!editForm.checkValidity()) {
+            editForm.reportValidity();
+            return;
+        }
+
+        const id = document.getElementById('edit-id').value;
+        const formData = new FormData(editForm);
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `${apiEndpoint}/${id}` : apiEndpoint;
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Ошибка сохранения');
+            }
+            
+            // Успех -> перезагружаем страницу
+            window.location.reload();
+
+        } catch (error) {
+            alert(`Ошибка: ${error.message}`);
+        }
+    });
+
+    // --- Логика открытия модального окна удаления ---
+    deleteModalEl.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const id = button.getAttribute('data-id');
+        const name = button.getAttribute('data-name');
+        
+        const modalBody = deleteModalEl.querySelector('.modal-body');
+        modalBody.textContent = `Вы уверены, что хотите удалить тег "${name}"?`;
+        
+        confirmDeleteButton.dataset.id = id;
+    });
+
+    // --- Логика подтверждения удаления ---
+    confirmDeleteButton.addEventListener('click', async function () {
+        const id = this.dataset.id;
+        if (!id) return;
+
+        try {
+            const response = await fetch(`${apiEndpoint}/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (response.status === 204) {
+                // Успешное удаление
+                window.location.reload();
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Ошибка удаления');
+            }
+        } catch (error) {
+            alert(`Ошибка: ${error.message}`);
+        }
+    });
+});
+</script>
+{% endblock %}

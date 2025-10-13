@@ -7,6 +7,7 @@ ITBase-/
 ├── .env.example
 ├── .gitignore
 ├── .pre-commit-config.yaml
+├── 01_initial_database_seeding.md
 ├── ADMIN_USAGE_GUIDE.md
 ├── CONTRIBUTING.md
 ├── Dockerfile
@@ -17,7 +18,6 @@ ITBase-/
 ├── Makefile
 ├── Makefile.dev
 ├── PROBLEM_SOLUTION.md
-├── PROJECT_STRUCTURE.md
 ├── README.dev.md
 ├── README.md
 ├── alembic.ini
@@ -38,21 +38,6 @@ ITBase-/
 ├── setup.sh
 ├── test_db_connection.py
 ├── test_pretty_errors.py
-├── .github/
-│   ├── workflows/
-│   │   ├── ci.yml
-├── .ruff_cache/
-│   ├── .gitignore
-│   ├── CACHEDIR.TAG
-│   ├── 0.4.6/
-│   │   ├── 1419905895779637155
-│   │   ├── 14229674816857766651
-│   │   ├── 16494944767045333593
-│   │   ├── 17737439243072041033
-│   │   ├── 8100419989590883968
-├── .windsurf/
-│   ├── rules/
-│   │   ├── rules-agent.md
 ├── alembic/
 │   ├── README
 │   ├── env.py
@@ -79,6 +64,7 @@ ITBase-/
 │   │   ├── 20250925_f54c7505ea53_add_indexes_to_action_log_table.py
 │   │   ├── 20250926_88b1196ca226_add_supplier_relationship_to_device_.py
 │   │   ├── 20251011_413e5e7e7c66_feat_consolidate_all_pending_model_.py
+│   │   ├── 20251012_7a9c8d6b5e4f_add_category_field_to_tags.py
 ├── app/
 │   ├── __init__.py
 │   ├── config.py
@@ -141,6 +127,8 @@ ITBase-/
 │   ├── utils/
 │   │   ├── __init__.py
 │   │   ├── helpers.py
+├── docs/
+│   ├── 01_initial_database_seeding.md
 ├── initdb/
 │   ├── 01-init.sh
 ├── requirements/
@@ -178,6 +166,7 @@ ITBase-/
 │   │   ├── dictionaries_dashboard.html
 │   │   ├── locations.html
 │   │   ├── manufacturers.html
+│   │   ├── tags.html
 │   ├── includes/
 │   │   ├── form_helpers.html
 │   ├── modals/
