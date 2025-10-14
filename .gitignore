@@ -46,3 +46,7 @@ sync_config.jsonc
 GEMINI.md
 .windsurf/
 generate_structure.py
+
+# Ignore Continue extension files
+.continue/
+

@@ -41,3 +41,6 @@ bandit==1.7.6
 # Pre-commit hooks
 pre-commit-hooks==4.5.0
 debugpy==1.8.1
+
+structlog
+aiologger
