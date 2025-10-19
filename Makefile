@@ -65,6 +65,11 @@ migration:
 	echo "${YELLOW}📝 Создание файла миграции...${RESET}"; \
 	docker compose $(COMPOSE_FILE) exec $(APP_SERVICE_NAME) alembic revision --autogenerate -m "$$MSG"
 
+## seed-devices: Наполнить БД демо-активами (устройствами)
+seed-devices:
+	@echo "${YELLOW}🌱 Наполнение базы данных демо-активами...${RESET}"
+	docker compose $(COMPOSE_FILE) exec $(APP_SERVICE_NAME) python seed_devices.py
+
 # --- Инструменты разработки ---
 
 ## shell: Открыть интерактивную сессию (bash) внутри контейнера приложения
