@@ -49,6 +49,8 @@ class Device(BaseMixin, Base):
     __tablename__ = 'devices'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    # !# ИЗМЕНЕНИЕ: Добавляем поле для названия актива
+    name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     inventory_number: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     # Серийные и MAC-адреса должны быть уникальными, если они указаны
     serial_number: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)

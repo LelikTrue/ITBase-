@@ -44,7 +44,8 @@ class BaseFormModel(BaseModel):
 
 # --- Базовые поля для Актива ---
 class AssetBase(BaseModel):
-    # inventory_number: str = Field(max_length=255) # <--- УДАЛЕНО!
+    # !# ИЗМЕНЕНИЕ 1: Добавляем поле name
+    name: str = Field(max_length=255)
     serial_number: str | None = Field(None, max_length=255)
     mac_address: str | None = Field(None, max_length=255)
     ip_address: str | None = Field(None, max_length=255)
@@ -78,6 +79,8 @@ class AssetUpdate(BaseFormModel):
     """
     Схема для обновления актива. Все поля опциональны.
     """
+    # !# ИЗМЕНЕНИЕ 2: Добавляем опциональное поле name
+    name: str | None = Field(None, max_length=255)
     inventory_number: str | None = Field(None, max_length=255) # В обновлении он может быть, но только для чтения
     serial_number: str | None = Field(None, max_length=255)
     mac_address: str | None = Field(None, max_length=255)
