@@ -1,87 +1,52 @@
-# Переменные окружения для UID/GID (можно переопределить в .env)
-x-user: &user
-  user: "${UID:-1000}:${GID:-1000}"
+# docker-compose.prod.yml
 
 services:
   backend:
     build:
       context: .
       dockerfile: Dockerfile.prod
-      args:
-        USER_ID: ${UID:-1000}
-        GROUP_ID: ${GID:-1000}
     restart: unless-stopped
-    environment:
-      - ENVIRONMENT=production
-      - DEBUG=False
-      - APP_MODE=prod
-      - LOG_LEVEL=info
-    ports:
-      - "8000:8000"
-    user: *user
+    env_file:
+      - .env.prod
     depends_on:
       db:
         condition: service_healthy
-    env_file: .env
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    # Ограничения ресурсов
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
+      redis:
+        condition: service_healthy
+    ports:
+      - "8001:8000" # Используем порт 8001, чтобы не конфликтовать с dev (8002)
 
   db:
     image: postgres:16-alpine
     restart: unless-stopped
-    env_file: .env
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./initdb:/docker-entrypoint-initdb.d
+      - postgres_data_prod:/var/lib/postgresql/data
+    env_file:
+      - .env.prod
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    # Ограничения ресурсов
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 4G
-        reservations:
-          cpus: '0.5'
-          memory: 1G
+    ports:
+      - "5433:5432" # Используем порт 5433, чтобы не конфликтовать с dev (5432)
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data_prod:/data
+    env_file:
+      - .env.prod
+    command: redis-server --save 60 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 volumes:
-  postgres_data:
-    name: ${COMPOSE_PROJECT_NAME:-itbase}_postgres_data
-
-networks:
-  default:
-    driver: bridge
-    name: ${COMPOSE_PROJECT_NAME:-itbase}_network
+  postgres_data_prod:
+  redis_data_prod:

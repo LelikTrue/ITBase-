@@ -1,3 +1,5 @@
+# requirements/base.txt
+
 # Core dependencies
 fastapi==0.115.12
 uvicorn[standard]==0.29.0

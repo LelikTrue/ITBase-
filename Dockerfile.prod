@@ -1,104 +1,67 @@
-# ===== БИЛДЕР =====
-FROM python:3.12.3-slim-bookworm as builder
+# Dockerfile.prod
 
-# Устанавливаем системные зависимости для сборки
-RUN --mount=type=cache,target=/var/cache/apt \
-    apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+# =====================================================================
+# Стадия 1: builder – Установка всех зависимостей
+# =====================================================================
+FROM python:3.12.3-slim-bookworm AS builder
+
+# Устанавливаем системные переменные
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/opt/venv/bin:$PATH"
+
+# Устанавливаем системные зависимости, необходимые для сборки python-пакетов
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential libpq-dev && rm -rf /var/lib/apt/lists/*
 
 # Создаем виртуальное окружение
 RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
 
-# Устанавливаем зависимости с кешированием
-WORKDIR /build
-COPY requirements.txt .
+# Копируем файлы зависимостей
+COPY requirements/ ./requirements/
 
-# Используем кеш pip и устанавливаем зависимости
+# Устанавливаем все зависимости одной командой с использованием кеша pip
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r requirements/prod.txt
 
-# ===== ФИНАЛЬНЫЙ ОБРАЗ =====
-FROM python:3.12.3-slim-bookworm
 
-# Метаданные образа
-LABEL maintainer="ITBase Team <itbase@example.com>" \
-      description="ITBase Production Image" \
-      version="1.0.0"
+# =====================================================================
+# Стадия 2: prod – Финальный, легковесный образ
+# =====================================================================
+FROM python:3.12.3-slim-bookworm AS prod
 
-# Устанавливаем только runtime зависимости
-RUN --mount=type=cache,target=/var/cache/apt \
-    apt-get update && apt-get install -y --no-install-recommends \
-    libpq5 \
-    && rm -rf /var/lib/apt/lists/*
+# Устанавливаем системные переменные
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/opt/venv/bin:$PATH"
 
-# Копируем виртуальное окружение из builder
+# Устанавливаем только runtime-зависимости (libpq5 для psycopg, curl для healthcheck)
+RUN apt-get update && apt-get install -y --no-install-recommends libpq5 curl && rm -rf /var/lib/apt/lists/*
+
+# Копируем виртуальное окружение из стадии builder
 COPY --from=builder /opt/venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
 
-# Создаем непривилегированного пользователя
-ARG USER_ID=1000
-ARG GROUP_ID=1000
+# Создаем непривилегированного пользователя для безопасности
+RUN groupadd -r appuser && useradd -r -g appuser appuser
 
-RUN groupadd -r -g "${GROUP_ID}" appuser \
-    && useradd -r -u "${USER_ID}" -g appuser -d /app -s /bin/false appuser \
-    && mkdir -p /app/static /app/media /app/logs \
-    && chown -R appuser:appuser /app \
-    && chmod -R 755 /app
-
-# Рабочая директория
 WORKDIR /app
 
-# Копируем только необходимые файлы
-COPY --chown=appuser:appuser app app
-COPY --chown=appuser:appuser static static
-COPY --chown=appuser:appuser alembic alembic
+# Копируем код приложения
+COPY --chown=appuser:appuser app ./app
+COPY --chown=appuser:appuser alembic ./alembic
 COPY --chown=appuser:appuser alembic.ini .
-COPY --chown=appuser:appuser .env.example .
+COPY --chown=appuser:appuser openapi-assets.yaml .
+COPY --chown=appuser:appuser static ./static
 
-# Устанавливаем корректные права
-RUN chown -R appuser:appuser /app/static /app/media /app/logs \
-    && chmod -R 755 /app/static /app/media /app/logs
-
-# Настройка окружения
-ENV PYTHONPATH=/app \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONFAULTHANDLER=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PYTHONHASHSEED=random \
-    PYTHONDONTWRITEBYTECODE=1
-
-# Очистка кеша Python
-RUN find /usr/local -type f -name '*.py[co]' -delete \
-    && find /usr/local -type d -name '__pycache__' -exec rm -rf {} + \
-    && find /opt/venv -type f -name '*.py[co]' -delete \
-    && find /opt/venv -type d -name '__pycache__' -exec rm -rf {} +
-
-# Переключаемся на непривилегированного пользователя
+# Переключаемся на нашего пользователя
 USER appuser
 
-# Открываем порт
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+# Healthcheck, который теперь будет работать
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+  CMD curl -f http://localhost:8000/health || exit 1
 
-# Основная команда
-CMD ["gunicorn", "app.main:app", \
-    "-k", "uvicorn.workers.UvicornWorker", \
-    "--bind", "0.0.0.0:8000", \
-    "--workers", "$(( $(nproc) * 2 + 1 ))", \
-    "--worker-connections", "1000", \
-    "--timeout", "60", \
-    "--keep-alive", "5", \
-    "--access-logfile", "-", \
-    "--error-logfile", "-", \
-    "--log-level", "info", \
-    "--worker-tmp-dir", "/dev/shm", \
-    "--preload"]
+# Команда для запуска сервера в продакшене через gunicorn
+# Используем UvicornWorker, который автоматически подхватит uvloop
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-w", "4", "-b", "0.0.0.0:8000", "app.main:app"]
