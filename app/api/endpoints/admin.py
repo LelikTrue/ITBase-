@@ -20,7 +20,7 @@ from app.models import (
     Employee,
     Location,
     Manufacturer,
-    Tag, 
+    Tag,
 )
 from app.services.tag_service import TagService
 from app.templating import templates
@@ -32,42 +32,38 @@ router = APIRouter(tags=['admin'])
 tag_service = TagService()
 
 @router.get('/dictionaries', response_class=HTMLResponse)
-async def dictionaries_dashboard(request: Request, db: AsyncSession = Depends(get_db)): # noqa: E501
+async def dictionaries_dashboard(request: Request, db: AsyncSession = Depends(get_db)):
     """Главная страница управления справочниками"""
     try:
-        # Асинхронно получаем статистику и последние записи
-        stats_queries = [
-            db.scalar(select(func.count(AssetType.id))),
-            db.scalar(select(func.count(DeviceModel.id))),
-            db.scalar(select(func.count(DeviceStatus.id))),
-            db.scalar(select(func.count(Manufacturer.id))),
-            db.scalar(select(func.count(Department.id))),
-            db.scalar(select(func.count(Location.id))),
-            db.scalar(select(func.count(Employee.id))),
-            db.scalar(select(func.count(Device.id))),
-            db.scalar(select(func.count(Tag.id))),
+        # --- ИСПРАВЛЕНИЕ: Выполняем запросы последовательно, без asyncio.gather ---
+
+        # 1. Получаем статистику
+        stats_results = [
+            await db.scalar(select(func.count(AssetType.id))),
+            await db.scalar(select(func.count(DeviceModel.id))),
+            await db.scalar(select(func.count(DeviceStatus.id))),
+            await db.scalar(select(func.count(Manufacturer.id))),
+            await db.scalar(select(func.count(Department.id))),
+            await db.scalar(select(func.count(Location.id))),
+            await db.scalar(select(func.count(Employee.id))),
+            await db.scalar(select(func.count(Device.id))),
+            await db.scalar(select(func.count(Tag.id))),
         ]
-
-        recent_items_queries = [
-            db.execute(select(AssetType).order_by(AssetType.id.desc()).limit(3)),
-            db.execute(select(DeviceModel).order_by(DeviceModel.id.desc()).limit(3)),
-            db.execute(select(DeviceStatus).order_by(DeviceStatus.id.desc()).limit(3)),
-        ]
-
-        results = await asyncio.gather(*stats_queries, *recent_items_queries)
-
-        stats_results = results[:9]
-        recent_items_results = results[9:]
 
         stats = dict(zip([
             'asset_types', 'device_models', 'device_statuses', 'manufacturers',
             'departments', 'locations', 'employees', 'devices', 'tags'
         ], stats_results, strict=False))
 
+        # 2. Получаем последние записи
+        asset_types_res = await db.execute(select(AssetType).order_by(AssetType.id.desc()).limit(3))
+        device_models_res = await db.execute(select(DeviceModel).order_by(DeviceModel.id.desc()).limit(3))
+        device_statuses_res = await db.execute(select(DeviceStatus).order_by(DeviceStatus.id.desc()).limit(3))
+
         recent_items = {
-            'asset_types': recent_items_results[0].scalars().all(),
-            'device_models': recent_items_results[1].scalars().all(),
-            'device_statuses': recent_items_results[2].scalars().all(),
+            'asset_types': asset_types_res.scalars().all(),
+            'device_models': device_models_res.scalars().all(),
+            'device_statuses': device_statuses_res.scalars().all(),
         }
 
         return templates.TemplateResponse('admin/dictionaries_dashboard.html', {
@@ -86,7 +82,7 @@ async def manage_dictionary(
     dictionary_type: str,
     db: AsyncSession = Depends(get_db)
 ):
-    """Страница управления конкретн��м справочником"""
+    """Страница управления конкретным справочником"""
     try:
         # Маппинг типов справочников
         dictionary_mapping = {
@@ -156,11 +152,11 @@ async def manage_dictionary(
             items_result = await db.execute(stmt)
             items = items_result.scalars().all()
 
-            # Получаем списки для выпадающих списков
-            manufacturers_res, asset_types_res = await asyncio.gather(
-                db.execute(select(Manufacturer).order_by(Manufacturer.name)),
-                db.execute(select(AssetType).order_by(AssetType.name))
-            )
+            # --- ИСПРАВЛЕНИЕ: Убираем asyncio.gather и здесь ---
+            # Получаем списки для выпадающих списков последовательно
+            manufacturers_res = await db.execute(select(Manufacturer).order_by(Manufacturer.name))
+            asset_types_res = await db.execute(select(AssetType).order_by(AssetType.name))
+
             manufacturers = manufacturers_res.scalars().all()
             asset_types = asset_types_res.scalars().all()
             extra_data = {'manufacturers': manufacturers, 'asset_types': asset_types}

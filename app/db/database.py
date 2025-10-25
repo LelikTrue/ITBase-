@@ -1,3 +1,4 @@
+# app/db/database.py
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -13,7 +14,12 @@ class Base(DeclarativeBase):
 async_engine = create_async_engine(
     settings.DATABASE_URL_ASYNC,
     echo=False,
-    future=True
+    future=True,
+    pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=10,
+    pool_timeout=10,
+    connect_args={"timeout": 10},
 )
 
 # Создание фабрики сессий

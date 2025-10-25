@@ -15,7 +15,7 @@ python setup_dev.py
 ### 2. Настройка базы данных
 Отредактируйте файл `.env` и укажите настройки вашей PostgreSQL:
 ```env
-DB_HOST=10.20.30.40  # или localhost
+DB_HOST=localhost
 DB_NAME=it_asset_db
 DB_USER=it_user_db
 DB_PASSWORD=it_pass2011

@@ -1,44 +1,31 @@
-
-from fastapi import APIRouter, Depends, HTTPException
+# app/api/endpoints/health.py
+from fastapi import APIRouter, HTTPException
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.db.database import get_db
+from app.db.database import AsyncSessionFactory
 
 router = APIRouter()
 
-
-# Этот эндпоинт оставляем как есть, он для примера.
+# Простая проверка (не трогаем)
 @router.get('/health', tags=['health'])
 async def health_check() -> dict[str, str]:
     """Простая проверка, что API жив."""
     return {'status': 'ok'}
 
-
-# ИЗМЕНЯЕМ ЭТОТ ЭНДПОИНТ
+# ИСПРАВЛЕННЫЙ /ready — без Depends(get_db)
 @router.get('/ready', response_model=dict[str, str], tags=['health'])
-async def readiness_check(db: AsyncSession = Depends(get_db)) -> dict[str, str]:
+async def readiness_check() -> dict[str, str]:
+    """Проверка подключения к БД."""
     try:
-        # Выполняем простой запрос, чтобы убедиться, что соединение работает
-        await db.execute(text('SELECT 1'))
-        db_status = 'ok'
-        status_code = 200
-    except Exception:
-        db_status = 'error'
-        status_code = 503  # Service Unavailable
+        async with AsyncSessionFactory() as db:
+            await db.execute(text('SELECT 1'))
+        return {'db_status': 'ok'}
+    except Exception as e:
+        raise HTTPException(
+            status_code=503,
+            detail={'db_status': 'error', 'error': str(e)}
+        )
 
-    response_data = {'db_status': db_status}
-
-    if status_code != 200:
-        raise HTTPException(status_code=status_code, detail=response_data)
-
-    return response_data
-
-
-# Этот эндпоинт можно удалить или оставить, он в тестах не участвует
+# Можно оставить
 @router.get('/startup', tags=['health'])
 async def startup_check() -> dict[str, str]:
-    """
-    Проверка успешного запуска сервиса.
-    """
     return {'status': 'started'}
