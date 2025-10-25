@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Загружаем состояние из localStorage или устанавливаем значения по умолчанию
     let columnVisibility = JSON.parse(localStorage.getItem(storageKey)) || {
         'ID': true,
-        'Инвентарный №': true,
+        'Название актива': true,
         'Модель': true,
         'Производитель': true,
         'Тип': true,
@@ -198,8 +198,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <input class="form-check-input" type="checkbox" id="selectAllCheckbox" title="Выбрать все на странице">
                             </th>
                             {{ sortable_header('id', 'ID', filters.sort_by, filters.sort_order, query_params) }}
-                            {{ sortable_header('inventory_number', 'Инвентарный №', filters.sort_by, filters.sort_order, query_params) }}
-                            {{ sortable_header('device_model', 'Модель', filters.sort_by, filters.sort_order, query_params) }}
+                            {{ sortable_header('name', 'Название актива', filters.sort_by, filters.sort_order, query_params) }}
+                            {{ sortable_header('device_model', 'Модель', filters.sort_by, filters.sort_order, query_params) }} 
                             <th scope="col">Производитель</th>
                             {{ sortable_header('asset_type', 'Тип', filters.sort_by, filters.sort_order, query_params) }}
                             {{ sortable_header('status', 'Статус', filters.sort_by, filters.sort_order, query_params) }}
@@ -227,7 +227,9 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <input class="form-check-input device-checkbox" type="checkbox" name="device_ids" value="{{ device.id }}" form="bulk-action-form">
                             </td>
                             <th scope="row">{{ device.id }}</th>
-                            <td>{{ device.inventory_number or '-' }}</td>
+                            <td>
+                                <a href="{{ request.url_for('edit_asset', device_id=device.id) }}">{{ device.name }}</a>
+                            </td>
                             <td>{{ device.device_model.name if device.device_model else '-' }}</td>
                             <td>{{ device.device_model.manufacturer.name if device.device_model and device.device_model.manufacturer else '-' }}</td>
                             <td>{{ device.asset_type.name if device.asset_type else '-' }}</td>

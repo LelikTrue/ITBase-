@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from datetime import datetime
+from datetime import date, datetime #!# Добавляем импорт date
 
 from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.exc import SQLAlchemyError
@@ -28,6 +28,15 @@ from .exceptions import DeviceNotFoundException, NotFoundError
 
 # Инициализация логгера для этого модуля
 logger = logging.getLogger(__name__)
+
+
+#!# ИЗМЕНЕНИЕ: Добавляем вспомогательную функцию для сериализации
+def _serialize_value(value):
+    """Преобразует значения, несовместимые с JSON, в строки."""
+    if isinstance(value, (datetime, date)):
+        return value.isoformat()
+    return value
+
 
 class DeviceService:
     """Сервис для бизнес-логики, связанной с активами/устройствами."""
@@ -79,6 +88,8 @@ class DeviceService:
             search_term = f"%{filters['search']}%"
             query = query.filter(
                 or_(
+                    # !# ИЗМЕНЕНИЕ 1: Добавляем поиск по названию актива
+                    Device.name.ilike(search_term),
                     Device.inventory_number.ilike(search_term),
                     Device.serial_number.ilike(search_term),
                     Device.mac_address.ilike(search_term)
@@ -104,6 +115,8 @@ class DeviceService:
 
         # --- Сортировка ---
         sortable_columns = {
+            # !# ИЗМЕНЕНИЕ 2: Добавляем сортировку по названию актива
+            'name': Device.name,
             'inventory_number': Device.inventory_number,
             'asset_type': AssetType.name,
             'device_model': DeviceModel.name,
@@ -140,8 +153,6 @@ class DeviceService:
 
     async def get_all_dictionaries_for_form(self, db: AsyncSession) -> dict:
         """Асинхронно загружает все справочники, необходимые для форм."""
-        # !# ИСПРАВЛЕНИЕ: Выполняем запросы ПОСЛЕДОВАТЕЛЬНО, чтобы избежать конфликта сессий.
-        # Это надежный и безопасный способ для работы с одной сессией.
         asset_types_res = await db.execute(select(AssetType).order_by(AssetType.name))
         device_models_res = await db.execute(select(DeviceModel).order_by(DeviceModel.name))
         device_statuses_res = await db.execute(select(DeviceStatus).order_by(DeviceStatus.name))
@@ -183,48 +194,51 @@ class DeviceService:
         if not db_device:
             raise DeviceNotFoundException(f'Устройство с id={device_id} не найдено.')
 
-        # 1. Создаем Pydantic-схему из SQLAlchemy-объекта для получения "снимка" старых данных.
         old_data_schema = AssetUpdate.model_validate(db_device, from_attributes=True)
-        # Добавляем ID текущих тегов в старую схему
         old_data_schema.tag_ids = [tag.id for tag in db_device.tags]
 
-        # 2. Конвертируем старую и новую схемы в словари для сравнения. `exclude_unset=True` важен.
         old_data_dict = old_data_schema.model_dump()
         new_data_dict = update_data.model_dump(exclude_unset=True)
 
-        # 3. Вычисляем разницу (diff) с помощью словарного включения.
+        #!# ИЗМЕНЕНИЕ: Улучшенная и исправленная логика создания diff
         diff = {}
-        for key, value in new_data_dict.items():
-            # Сравниваем списки тегов отдельно
+        for key, new_value in new_data_dict.items():
+            old_value = old_data_dict.get(key)
+
+            # 1. Сначала обрабатываем особый случай с тегами (сравнение списков)
             if key == 'tag_ids':
-                if sorted(old_data_dict.get(key, [])) != sorted(value or []):
-                    diff[key] = {'old': old_data_dict.get(key, []), 'new': value or []}
-            elif old_data_dict.get(key) != value:
-                diff[key] = {'old': old_data_dict.get(key), 'new': value}
+                # Приводим к множествам для корректного сравнения неупорядоченных id
+                if set(old_value or []) != set(new_value or []):
+                    diff[key] = {
+                        'old': old_value or [],
+                        'new': new_value or []
+                    }
+            # 2. Затем обрабатываем все остальные поля
+            elif old_value != new_value:
+                # Сравниваем напрямую. Python умеет сравнивать даты, строки, числа.
+                # Только после того, как нашли различие, сериализуем значения для лога.
+                diff[key] = {
+                    'old': _serialize_value(old_value),
+                    'new': _serialize_value(new_value)
+                }
 
         if not diff:
             return db_device # Если изменений нет, ничего не делаем
 
         try:
-            #!# 1. Работа с тегами (если они были переданы)
             if update_data.tag_ids is not None:
-                # Находим новые объекты тегов
                 new_tags = []
                 if update_data.tag_ids:
                     tag_stmt = select(Tag).where(Tag.id.in_(update_data.tag_ids))
                     new_tags = (await db.execute(tag_stmt)).scalars().all()
-
-                # Заменяем список тегов у объекта
                 db_device.tags = new_tags
 
-            # Обновляем остальные поля
             update_dict_simple_fields = {k: v for k, v in new_data_dict.items() if k != 'tag_ids'}
             for key, value in update_dict_simple_fields.items():
                 setattr(db_device, key, value)
 
             db.add(db_device)
 
-            # TODO: Добавить изменения тегов в details для log_action
             await log_action(
                 db=db,
                 user_id=user_id,
@@ -239,32 +253,23 @@ class DeviceService:
             await db.rollback()
             raise e
 
-        # Возвращаем обновленный объект со всеми связями
         return await self.get_device_with_relations(db, db_device.id)
 
     async def get_dashboard_stats(self, db: AsyncSession) -> dict:
         """Собирает статистику для дашборда."""
         try:
-            # Общее количество активов
             total_devices_stmt = select(func.count(Device.id))
-
-            # Статистика по типам устройств
-            # ОКОНЧАТЕЛЬНОЕ ИСПРАВЛЕНИЕ: Считаем первичный ключ связанной таблицы (Device.id).
-            # Это самый надежный способ подсчета для OUTER JOIN, устойчивый к любым данным.
             types_stmt = (
                 select(AssetType.name, func.count(Device.id).label('count'))
                 .outerjoin(Device, Device.asset_type_id == AssetType.id)
                 .group_by(AssetType.id, AssetType.name).order_by(AssetType.name)
             )
-
-            # Статистика по статусам устройств
             statuses_stmt = (
                 select(DeviceStatus.name, func.count(Device.id).label('count'))
                 .outerjoin(Device, Device.status_id == DeviceStatus.id)
                 .group_by(DeviceStatus.id, DeviceStatus.name).order_by(DeviceStatus.name)
             )
 
-            # Выполняем запросы последовательно, чтобы избежать ошибки конкурентного доступа к сессии
             total_devices_res = await db.execute(total_devices_stmt)
             types_res = await db.execute(types_stmt)
             statuses_res = await db.execute(statuses_stmt)
@@ -279,58 +284,43 @@ class DeviceService:
                 'total_devices': total_devices,
             }
         except SQLAlchemyError as e:
-            # Используем стандартный логгер вместо print
             logger.error(f'Database error in get_dashboard_stats: {e}', exc_info=True)
             raise e
 
     async def create_device(self, db: AsyncSession, asset_data: AssetCreate, user_id: int) -> Device:
-        """Создает новый актив, проверяет на уникальность и логирует действие."""
-        """
-        Создает новый актив, генерирует инвентарный номер и связывает теги.
-        """
+        """Создает новый актив, генерирует инвентарный номер и связывает теги."""
         try:
-            #!# 1. Генерация инвентарного номера (формат PREFIX-YYYYMMDD-NNN)
-            # 1.1. Получаем префикс из связанного типа актива
             asset_type = await db.get(AssetType, asset_data.asset_type_id)
             if not asset_type:
                 raise NotFoundError(f'Тип актива с id={asset_data.asset_type_id} не найден.')
             prefix = asset_type.prefix
 
-            # 1.2. Формируем префикс для поиска за сегодняшний день
             date_str = datetime.utcnow().strftime('%Y%m%d')
             search_prefix = f'{prefix}-{date_str}-'
 
-            # 1.3. Находим последний номер за сегодня
             last_device_stmt = select(Device.inventory_number).where(
                 Device.inventory_number.like(f'{search_prefix}%')
             ).order_by(Device.inventory_number.desc()).limit(1)
 
             last_inv_number = (await db.execute(last_device_stmt)).scalar_one_or_none()
 
-            # 1.4. Вычисляем следующий номер
             if last_inv_number:
                 last_seq = int(last_inv_number.split('-')[-1])
                 new_seq = last_seq + 1
             else:
                 new_seq = 1
 
-            # 1.5. Собираем финальный инвентарный номер
             inventory_number = f'{search_prefix}{new_seq:03d}'
 
-            #!# 2. Работа с тегами
             tags = []
             if asset_data.tag_ids:
                 tag_stmt = select(Tag).where(Tag.id.in_(asset_data.tag_ids))
                 tags = (await db.execute(tag_stmt)).scalars().all()
 
-            #!# 3. Создание объекта Device
-            # Сначала берем данные из схемы
             device_dict = asset_data.model_dump(exclude={'tag_ids'})
-            # Добавляем наш сгенерированный номер
             device_dict['inventory_number'] = inventory_number
 
             device = Device(**device_dict)
-            # Присваиваем связанные объекты тегов
             device.tags = tags
 
             db.add(device)
@@ -339,14 +329,14 @@ class DeviceService:
             await log_action(
                 db=db, user_id=user_id, action_type='create',
                 entity_type='Device', entity_id=device.id,
-                details={'inventory_number': device.inventory_number}
+                # !# ИЗМЕНЕНИЕ 3: Добавляем name в лог создания
+                details={'inventory_number': device.inventory_number, 'name': device.name}
             )
 
             await db.commit()
 
         except SQLAlchemyError as e:
             await db.rollback()
-            # Можно добавить логирование ошибки здесь
             raise e
 
         return await self.get_device_with_relations(db, device.id)
@@ -356,42 +346,37 @@ class DeviceService:
         Массово удаляет устройства по списку ID и логирует каждое действие.
         Всегда возвращает кортеж (deleted_count, errors).
         """
-        errors = [] # Инициализируем пустой список для ошибок
+        errors = []
         if not device_ids:
-            return 0, errors # --- ИСПРАВЛЕНИЕ 1 ---
+            return 0, errors
 
-        # Для логирования нам нужно получить информацию об удаляемых объектах ДО их удаления
         stmt_select = select(Device).options(selectinload(Device.device_model)).where(Device.id.in_(device_ids))
         result = await db.execute(stmt_select)
         devices_to_delete = result.scalars().all()
 
         if not devices_to_delete:
-            return 0, errors # --- ИСПРАВЛЕНИЕ 2 ---
+            return 0, errors
 
-        # Собираем реальные ID, которые будем удалять (на случай если какие-то не найдены)
         actual_device_ids = [d.id for d in devices_to_delete]
 
         try:
-            # 1. Логируем каждое удаление
             for device in devices_to_delete:
                 await log_action(
                     db=db, user_id=user_id, action_type='delete', entity_type='Device',
                     entity_id=device.id,
-                    details={'inventory_number': device.inventory_number, 'name': device.device_model.name if device.device_model else 'N/A'}
+                # !# ИЗМЕНЕНИЕ 4: Исправляем логирование, добавляем device.name
+                details={'inventory_number': device.inventory_number, 'name': device.name}
                 )
 
-            # 2. Выполняем массовое удаление
             stmt_delete = delete(Device).where(Device.id.in_(actual_device_ids))
             delete_result = await db.execute(stmt_delete)
 
-            # 3. Коммитим транзакцию
             await db.commit()
 
-            return delete_result.rowcount, errors # --- ИСПРАВЛЕНИЕ 3 ---
+            return delete_result.rowcount, errors
         except SQLAlchemyError as e:
             await db.rollback()
-            # В случае ошибки возвращаем 0 удаленных и текст ошибки
-            return 0, [str(e)] # --- ИСПРАВЛЕНИЕ 4 ---
+            return 0, [str(e)]
 
 
     async def bulk_update_devices(self, db: AsyncSession, device_ids: list[int], update_data: dict, user_id: int) -> int:
@@ -401,7 +386,6 @@ class DeviceService:
         if not device_ids or not update_data:
             return 0
 
-        # 1. Получаем старые значения для логирования ДО обновления
         stmt_select = (
             select(Device)
             .options(
@@ -415,19 +399,16 @@ class DeviceService:
         if not old_devices:
             return 0
 
-        # 2. Асинхронно загружаем новые связанные объекты, только если они есть в update_data
         tasks = {
             'status': db.get(DeviceStatus, update_data['status_id']) if 'status_id' in update_data else None,
             'department': db.get(Department, update_data['department_id']) if 'department_id' in update_data else None,
             'location': db.get(Location, update_data['location_id']) if 'location_id' in update_data else None,
         }
-        # Фильтруем None, чтобы не выполнять лишние await
         valid_tasks = {k: v for k, v in tasks.items() if v is not None}
         results = await asyncio.gather(*valid_tasks.values())
         new_related_models = dict(zip(valid_tasks.keys(), results, strict=False))
 
         try:
-            # 3. Генерируем diff и логируем для каждого устройства
             for device in old_devices:
                 diff = {}
                 if 'status' in new_related_models and device.status_id != new_related_models['status'].id:
@@ -446,14 +427,12 @@ class DeviceService:
                         'new': new_related_models['location'].name
                     }
 
-                # Если были изменения, логируем их
                 if diff:
                     await log_action(
                         db=db, user_id=user_id, action_type='update', entity_type='Device',
                         entity_id=device.id, details={'diff': diff, 'source': 'bulk_update'},
                     )
 
-            # 4. Выполняем массовое обновление одним запросом
             stmt_update = update(Device).where(Device.id.in_(device_ids)).values(**update_data)
             update_result = await db.execute(stmt_update)
             await db.commit()
@@ -474,20 +453,18 @@ class DeviceService:
             raise DeviceNotFoundException(f'Устройство с id={device_id} не найдено.')
 
         try:
-            # 2. Добавляем запись в лог (в сессию)
             await log_action(
                 db=db,
                 user_id=user_id,
                 action_type='delete',
                 entity_type='Device',
                 entity_id=device.id,
-                details={'inventory_number': device.inventory_number, 'name': device.device_model.name if device.device_model else 'N/A'}
+                # !# ИЗМЕНЕНИЕ 5: Исправляем логирование и здесь
+                details={'inventory_number': device.inventory_number, 'name': device.name}
             )
 
-            # 3. Помечаем объект на удаление
             await db.delete(device)
 
-            # 4. Коммитим транзакцию (удаление + лог)
             await db.commit()
         except SQLAlchemyError as e:
             await db.rollback()

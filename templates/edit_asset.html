@@ -45,10 +45,16 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <!-- Основные обязательные поля -->
+                                <!-- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем поле "Название актива" -->
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Название актива <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="name" name="name" value="{{ device.name }}" required>
+                                </div>
+                                <!-- КОНЕЦ ИЗМЕНЕНИЯ -->
                                 <div class="mb-3">
                                     <label for="inventory_number" class="form-label">Инвентарный номер <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="inventory_number" name="inventory_number" 
-                                           value="{{ device.inventory_number if device.inventory_number is not none else '' }}" required>
+                                           value="{{ device.inventory_number if device.inventory_number is not none else '' }}" readonly>
                                 </div>
 
                                 <div class="mb-3">
