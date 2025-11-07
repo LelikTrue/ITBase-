@@ -100,7 +100,7 @@
       </div>
     </nav>
 
-    <main class="container py-4">
+    <main class="{% block main_container_class %}container{% endblock %} py-4">
         {# --- НАЧАЛО НОВОГО БЛОКА ДЛЯ FLASH-СООБЩЕНИЙ --- #}
         {% with messages = get_flashed_messages(request) %}
             {% if messages %}

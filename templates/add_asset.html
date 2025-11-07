@@ -10,143 +10,148 @@
     </div>
 
     <form action="{{ url_for('create_asset') }}" method="post" novalidate>
-        <!-- ИЗМЕНЕНИЕ 2: Упрощаем навигацию, оставляем только две вкладки -->
         <ul class="nav nav-tabs" id="assetTab" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="main-tab" data-bs-toggle="tab" data-bs-target="#main-tab-pane" type="button" role="tab" aria-controls="main-tab-pane" aria-selected="true">Основная информация</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="financial-tab" data-bs-toggle="tab" data-bs-target="#financial-tab-pane" type="button" role="tab" aria-controls="financial-tab-pane" aria-selected="false">Финансы</button>
+                <button class="nav-link" id="financial-tab" data-bs-toggle="tab" data-bs-target="#financial-tab-pane" type="button" role="tab" aria-controls="financial-tab-pane" aria-selected="false">Финансы и эксплуатация</button>
             </li>
         </ul>
 
-        <!-- Содержимое вкладок -->
         <div class="tab-content" id="assetTabContent">
-            <!-- Вкладка "Основная информация" (теперь содержит поля из "Классификации") -->
+            <!-- Вкладка "Основная информация" -->
             <div class="tab-pane fade show active" id="main-tab-pane" role="tabpanel" aria-labelledby="main-tab" tabindex="0">
                 <div class="row mt-3">
-                    <!-- Поля из бывшей вкладки "Основное" -->
-                    <div class="col-md-6 mb-3">
-                        <label for="name" class="form-label">Название актива <span class="text-danger">*</span></label>
-                        <input type="text" id="name" name="name" class="form-control" value="{{ asset.name if asset else '' }}" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        {# ИЗМЕНЕНИЕ 1: Добавляем обертку input-group и кнопку "+" #}
-                        <label for="status_id" class="form-label">Статус <span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <select id="status_id" name="status_id" class="form-select" required>
-                                <option value="">Выберите статус...</option>
-                                {% for status in device_statuses %}
-                                    <option value="{{ status.id }}" {% if asset and asset.status_id and asset.status_id|string == status.id|string %}selected{% endif %}>{{ status.name }}</option>
-                                {% endfor %}
-                            </select>
-                            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#deviceStatusModal" title="Добавить новый статус">
-                                <i class="bi bi-plus-lg"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        {# ИЗМЕНЕНИЕ 1: Добавляем обертку input-group и кнопку "+" #}
-                        <label for="location_id" class="form-label">Расположение <span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <select id="location_id" name="location_id" class="form-select" required>
-                                <option value="">Выберите расположение...</option>
-                                {% for location in locations %}
-                                    <option value="{{ location.id }}" {% if asset and asset.location_id and asset.location_id|string == location.id|string %}selected{% endif %}>{{ location.name }}</option>
-                                {% endfor %}
-                            </select>
-                            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#locationModal" title="Добавить новое расположение">
-                                <i class="bi bi-plus-lg"></i>
-                            </button>
-                        </div>
-                    </div>
-                     <div class="col-md-6 mb-3">
-                        {# ИЗМЕНЕНИЕ 1: Добавляем обертку input-group и кнопку "+" #}
-                        <label for="department_id" class="form-label">Отдел <span class="text-danger">*</span></label> (принадлежность к отделу или подразделению)</label>
-                        <div class="input-group">
-                            <select id="department_id" name="department_id" class="form-select">
-                                <option value="">Выберите отдел...</option>
-                                {% for department in departments %}
-                                    <option value="{{ department.id }}" {% if asset and asset.department_id and asset.department_id|string == department.id|string %}selected{% endif %}>{{ department.name }}</option>
-                                {% endfor %}
-                            </select>
-                            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#departmentModal" title="Добавить новый отдел">
-                                <i class="bi bi-plus-lg"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- ИЗМЕНЕНИЕ 2: Сюда перенесены поля из бывшей вкладки "Классификация" -->
-                    <hr class="my-3"> <!-- Разделитель для наглядности -->
-
-                    <div class="col-md-6 mb-3">
-                        {# ИЗМЕНЕНИЕ 1: Добавляем обертку input-group и кнопку "+" #}
-                        <label for="asset_type_id" class="form-label">Тип актива <span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <select id="asset_type_id" name="asset_type_id" class="form-select" required>
-                                 <option value="">Выберите тип...</option>
-                                {% for asset_type in asset_types %}
-                                    <option value="{{ asset_type.id }}" {% if asset and asset.asset_type_id and asset.asset_type_id|string == asset_type.id|string %}selected{% endif %}>{{ asset_type.name }}</option>
-                                {% endfor %}
-                            </select>
-                            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#assetTypeModal" title="Добавить новый тип актива">
-                                <i class="bi bi-plus-lg"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- ИЗМЕНЕНИЕ 1: ЗАМЕНА ТЕКСТОВОГО ПОЛЯ НА ВЫПАДАЮЩИЙ СПИСОК ДЛЯ МОДЕЛИ -->
-                    <div class="col-md-6 mb-3">
-                        {# ИЗМЕНЕНИЕ 1: Добавляем обертку input-group и кнопку "+" #}
-                        <label for="device_model_id" class="form-label">Модель <span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <select id="device_model_id" name="device_model_id" class="form-select" required>
-                                <option value="">Выберите модель...</option>
-                                {% for model in device_models %}
-                                    <option value="{{ model.id }}" {% if asset and asset.device_model_id and asset.device_model_id|string == model.id|string %}selected{% endif %}>{{ model.name }} ({{ model.manufacturer.name }})</option>
-                                {% endfor %}
-                            </select>
-                            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#deviceModelModal" title="Добавить новую модель">
-                                <i class="bi bi-plus-lg"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label for="serial_number" class="form-label">Серийный номер</label>
-                        <input type="text" id="serial_number" name="serial_number" class="form-control" value="{{ asset.serial_number if asset else '' }}">
-                    </div>
+                    <!-- Левая колонка -->
                     <div class="col-md-6">
-                        <label for="tag-select" class="form-label">Теги</label>
-                        <select id="tag-select" name="tag_ids" multiple>
-                            <!-- TomSelect сам будет управлять этим полем -->
-                        </select>
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Название актива <span class="text-danger">*</span></label>
+                            <input type="text" id="name" name="name" class="form-control" value="{{ asset.name if asset else '' }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="asset_type_id" class="form-label">Тип актива <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <select id="asset_type_id" name="asset_type_id" class="form-select" required>
+                                     <option value="">Выберите тип...</option>
+                                    {% for asset_type in asset_types %}<option value="{{ asset_type.id }}">{{ asset_type.name }}</option>{% endfor %}
+                                </select>
+                                <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#asset-typesModal" title="Добавить новый тип актива"><i class="bi bi-plus-lg"></i></button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="device_model_id" class="form-label">Модель <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <select id="device_model_id" name="device_model_id" class="form-select" required>
+                                    <option value="">Выберите модель...</option>
+                                    {% for model in device_models %}<option value="{{ model.id }}">{{ model.name }} ({{ model.manufacturer.name }})</option>{% endfor %}
+                                </select>
+                                <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#device-modelsModal" title="Добавить новую модель"><i class="bi bi-plus-lg"></i></button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="serial_number" class="form-label">Серийный номер</label>
+                            <input type="text" id="serial_number" name="serial_number" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="mac_address" class="form-label">MAC-адрес</label>
+                            <input type="text" id="mac_address" name="mac_address" class="form-control" placeholder="XX:XX:XX:XX:XX:XX">
+                        </div>
+                        <div class="mb-3">
+                            <label for="ip_address" class="form-label">IP-адрес</label>
+                            <input type="text" id="ip_address" name="ip_address" class="form-control" placeholder="192.168.1.100">
+                        </div>
+                    </div>
+                    <!-- Правая колонка -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="status_id" class="form-label">Статус <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <select id="status_id" name="status_id" class="form-select" required>
+                                    <option value="">Выберите статус...</option>
+                                    {% for status in device_statuses %}<option value="{{ status.id }}">{{ status.name }}</option>{% endfor %}
+                                </select>
+                                <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#device-statusesModal" title="Добавить новый статус"><i class="bi bi-plus-lg"></i></button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="location_id" class="form-label">Расположение <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <select id="location_id" name="location_id" class="form-select" required>
+                                    <option value="">Выберите расположение...</option>
+                                    {% for location in locations %}<option value="{{ location.id }}">{{ location.name }}</option>{% endfor %}
+                                </select>
+                                <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#locationsModal" title="Добавить новое расположение"><i class="bi bi-plus-lg"></i></button>
+                            </div>
+                        </div>
+                         <div class="mb-3">
+                            <label for="department_id" class="form-label">Отдел</label>
+                            <div class="input-group">
+                                <select id="department_id" name="department_id" class="form-select">
+                                    <option value="">Не назначен</option>
+                                    {% for department in departments %}<option value="{{ department.id }}">{{ department.name }}</option>{% endfor %}
+                                </select>
+                                <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#departmentsModal" title="Добавить новый отдел"><i class="bi bi-plus-lg"></i></button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tag-select" class="form-label">Теги</label>
+                            <select id="tag-select" name="tag_ids" multiple></select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Примечания</label>
+                            <textarea id="notes" name="notes" class="form-control" rows="4"></textarea>
+                        </div>
                     </div>
                 </div>
             </div>
-            <!-- Вкладка "Финансы" -->
+            <!-- Вкладка "Финансы и эксплуатация" -->
             <div class="tab-pane fade" id="financial-tab-pane" role="tabpanel" aria-labelledby="financial-tab" tabindex="0">
                 <div class="row mt-3">
-                    <div class="col-md-6 mb-3">
-                        <label for="supplier_id" class="form-label">Поставщик</label>
-                        <select id="supplier_id" name="supplier_id" class="form-select">
-                            <option value="">Выберите поставщика...</option>
-                            {% for supplier in suppliers %}
-                                <option value="{{ supplier.id }}" {% if asset and asset.supplier_id and asset.supplier_id|string == supplier.id|string %}selected{% endif %}>{{ supplier.name }}</option>
-                            {% endfor %}
-                        </select>
+                    <!-- Левая колонка -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="supplier_id" class="form-label">Поставщик</label>
+                            <div class="input-group">
+                                <select id="supplier_id" name="supplier_id" class="form-select">
+                                    <option value="">Выберите поставщика...</option>
+                                    {% for supplier in suppliers %}<option value="{{ supplier.id }}">{{ supplier.name }}</option>{% endfor %}
+                                </select>
+                                <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#suppliersModal" title="Добавить нового поставщика"><i class="bi bi-plus-lg"></i></button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="source" class="form-label">Источник</label>
+                            <select id="source" name="source" class="form-select">
+                                <option value="purchase" selected>Покупка</option>
+                                <option value="lease">Аренда</option>
+                                <option value="gift">Дар</option>
+                                <option value="internal">Внутреннее перемещение</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="price" class="form-label">Цена</label>
+                            <input type="number" step="0.01" min="0" id="price" name="price" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="purchase_date" class="form-label">Дата покупки/получения</label>
+                            <input type="date" id="purchase_date" name="purchase_date" class="form-control">
+                        </div>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="price" class="form-label">Цена</label>
-                        <input type="number" step="0.01" id="price" name="price" class="form-control" value="{{ asset.price if asset else '' }}">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="purchase_date" class="form-label">Дата покупки</label>
-                        <input type="date" id="purchase_date" name="purchase_date" class="form-control" value="{{ asset.purchase_date if asset else '' }}">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="warranty_end_date" class="form-label">Окончание гарантии</label>
-                        <input type="date" id="warranty_end_date" name="warranty_end_date" class="form-control" value="{{ asset.warranty_end_date if asset else '' }}">
+                    <!-- Правая колонка -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="warranty_end_date" class="form-label">Окончание гарантии</label>
+                            <input type="date" id="warranty_end_date" name="warranty_end_date" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="expected_lifespan_years" class="form-label">Ожидаемый срок службы (лет)</label>
+                            <input type="number" min="0" id="expected_lifespan_years" name="expected_lifespan_years" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="current_wear_percentage" class="form-label">Процент износа</label>
+                            <input type="number" min="0" max="100" id="current_wear_percentage" name="current_wear_percentage" class="form-control" placeholder="Например, 10 для 10%">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -158,16 +163,10 @@
     </form>
 </div>
 
-{# ИЗМЕНЕНИЕ 2: Подключаем модальные окна справочников в конце блока content #}
 {% include "modals/dictionary_modals.html" %}
-
 {% endblock %}
 
 {% block scripts %}
-    {# Подключаем скрипт для TomSelect #}
     <script src="{{ url_for('static', path='js/tom-select-init.js') }}"></script>
-    
-    {# ИЗМЕНЕНИЕ 2: Подключаем скрипт для логики модальных окон #}
     <script src="{{ url_for('static', path='js/dictionary_modals.js') }}"></script>
-
 {% endblock %}

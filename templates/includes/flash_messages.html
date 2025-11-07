@@ -1,0 +1,32 @@
+<!-- templates/includes/flash_messages.html -->
+{% with messages = get_flashed_messages(request) %}
+  {% if messages %}
+    {% for message_data in messages %}
+      {# Пропускаем ошибки валидации, у них будет отдельный блок #}
+      {% if message_data.category != 'validation' %}
+        <div class="alert alert-{{ message_data.category or 'info' }} alert-dismissible fade show" role="alert">
+          {{ message_data.message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+{% with validation_messages = get_flashed_messages(request) %}
+  {% if validation_messages %}
+    {% for message_data in validation_messages %}
+      {% if message_data.category == 'validation' and message_data.message.errors %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <h6 class="alert-heading">Пожалуйста, исправьте следующие ошибки:</h6>
+          <ul class="mb-0">
+            {% for field, msg in message_data.message.errors.items() %}
+              <li><strong>{{ field }}:</strong> {{ msg }}</li>
+            {% endfor %}
+          </ul>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+{% endwith %}

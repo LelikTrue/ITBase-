@@ -1,6 +1,4 @@
 # app/schemas/dictionary.py
-
-
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 # --- Базовые схемы ---
@@ -17,8 +15,29 @@ class DictionarySimpleUpdate(BaseModel):
 
 # --- Схемы для конкретных справочников ---
 
-# AssetType, DeviceStatus, Manufacturer, Department, Location
-# используют общие схемы DictionarySimpleCreate и DictionarySimpleUpdate
+# --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем недостающие схемы ---
+
+class DeviceStatusCreate(DictionarySimpleCreate):
+    pass
+
+class ManufacturerCreate(DictionarySimpleCreate):
+    pass
+
+class DepartmentCreate(DictionarySimpleCreate):
+    pass
+
+class LocationCreate(DictionarySimpleCreate):
+    pass
+
+class SupplierCreate(BaseModel):
+    name: str = Field(..., max_length=100)
+    contact_person: str | None = Field(None, max_length=100)
+    phone: str | None = Field(None, max_length=20)
+    email: EmailStr | None = None
+    address: str | None = Field(None, max_length=255)
+
+# --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
 
 # ===============================================================
 # DeviceModel
@@ -29,7 +48,6 @@ class DeviceModelCreate(BaseModel):
     asset_type_id: int
     description: str | None = Field(None, max_length=255)
 
-    # --- НАЧАЛО ИЗМЕНЕНИЙ ---
     @field_validator('name', 'description', mode='before')
     @classmethod
     def strip_whitespace(cls, v: str | None) -> str | None:
@@ -37,20 +55,47 @@ class DeviceModelCreate(BaseModel):
         if isinstance(v, str):
             return v.strip()
         return v
-    # --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
 
 class DeviceModelUpdate(DeviceModelCreate):
     pass
+
+# ===============================================================
 # Employee
+# ===============================================================
 class EmployeeCreate(BaseModel):
     first_name: str = Field(..., max_length=50)
     last_name: str = Field(..., max_length=50)
     patronymic: str | None = Field(None, max_length=50)
-    employee_id: str | None = Field(None, max_length=50)
+    # Было employee_id, но в DICTIONARY_CONFIG мы используем position
+    position: str | None = Field(None, max_length=100)
     email: EmailStr | None = None
     phone_number: str | None = Field(None, max_length=20)
 
+
+class EmployeeUpdate(BaseModel):
+    first_name: str = Field(..., max_length=50)
+    last_name: str = Field(..., max_length=50)
+    patronymic: str | None = Field(None, max_length=50)
+    position: str | None = Field(None, max_length=100)
+    email: EmailStr | None = None
+    phone_number: str | None = Field(None, max_length=20)
+
+
+# ===============================================================
+# AssetType
+# ===============================================================
+class AssetTypeCreate(DictionarySimpleCreate):
+    """Схема для создания типа актива, включая префикс."""
+    prefix: str = Field(..., max_length=10)
+
+class AssetTypeUpdate(AssetTypeCreate):
+    """Схема для обновления типа актива. Наследует все поля от Create."""
+
+
+# ===============================================================
+# Схемы для ответов (Response)
+# ===============================================================
 class DictionarySimpleResponse(BaseModel):
     id: int
     name: str
@@ -72,29 +117,11 @@ class EmployeeResponse(BaseModel):
     first_name: str
     last_name: str
     patronymic: str | None = None
-    employee_id: str | None = None
+    position: str | None = None
     email: EmailStr | None = None
     phone_number: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
-
-
-class EmployeeUpdate(BaseModel):
-    first_name: str = Field(..., max_length=50)
-    last_name: str = Field(..., max_length=50)
-    patronymic: str | None = Field(None, max_length=50)
-    employee_id: str | None = Field(None, max_length=50)
-    email: EmailStr | None = None
-    phone_number: str | None = Field(None, max_length=20)
-
-# --- ДОБАВЬ ЭТИ ДВА КЛАССА В КОНЕЦ ФАЙЛА ---
-
-class AssetTypeCreate(DictionarySimpleCreate):
-    """Схема для создания типа актива, включая префикс."""
-    prefix: str = Field(..., max_length=10)
-
-class AssetTypeUpdate(AssetTypeCreate):
-    """Схема для обновления типа актива. Наследует все поля от Create."""
 
 class AssetTypeResponse(DictionarySimpleResponse):
     """Схема для ответа с типом актива, включая префикс."""

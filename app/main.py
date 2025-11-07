@@ -89,7 +89,8 @@ def create_app() -> FastAPI:
     # --- ПОДКЛЮЧЕНИЕ РОУТЕРОВ ---
     app.include_router(assets.router)
     app.include_router(audit_logs.router)
-    app.include_router(dictionaries.router)
+    # --- ИЗМЕНЕНИЕ ЗДЕСЬ: Добавляем префикс для API справочников ---
+    app.include_router(dictionaries.router, prefix='/api/dictionaries', tags=['Dictionaries'])
     app.include_router(admin.router, prefix='/admin')
     #app.include_router(health.router, prefix='/api/health', tags=['health'])
     app.include_router(tags.router, prefix='/api/v1/tags', tags=['tags'])

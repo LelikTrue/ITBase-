@@ -1,132 +1,48 @@
+# app/services/asset_type_service.py
 
-from sqlalchemy import func, or_, select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.models import AssetType, Device
+from app.models import AssetType, Device, DeviceModel
 from app.schemas.dictionary import AssetTypeCreate, AssetTypeUpdate
-from app.services.audit_log_service import log_action
+from app.services.base_service import BaseService
+from app.services.exceptions import DeletionError
 
-from .base_dictionary_service import BaseDictionaryService
-from .exceptions import DeletionError, DuplicateError
-
-
-class AssetTypeService(BaseDictionaryService):
+class AssetTypeService(BaseService[AssetType, AssetTypeCreate, AssetTypeUpdate]):
     """
     Сервис для управления типами активов.
-    Наследует базовую логику, но переопределяет методы
-    для обработки уникального поля 'prefix' и кастомной логики удаления.
+    Использует BaseService, но переопределяет методы для добавления
+    уникальной бизнес-логики:
+    - Проверка на дубликаты по двум полям: 'name' и 'prefix'.
+    - Проверка на связанные 'Device' и 'DeviceModel' перед удалением.
     """
-    def __init__(self):
-        super().__init__(
-            model=AssetType,
-            entity_name_russian='Тип актива'
-        )
+    
+    async def create(self, db: AsyncSession, obj_in: AssetTypeCreate, user_id: int) -> AssetType:
+        # Уникальная логика: проверка дубликатов по двум полям
+        await self._check_duplicate(db, "name", obj_in.name)
+        await self._check_duplicate(db, "prefix", obj_in.prefix)
+        # Вызов базового метода для создания, логирования и коммита
+        return await super().create(db, obj_in, user_id)
 
-    # Метод get_all() теперь наследуется от BaseDictionaryService и его здесь нет.
+    async def update(self, db: AsyncSession, obj_id: int, obj_in: AssetTypeUpdate, user_id: int) -> AssetType | None:
+        # Уникальная логика: проверка дубликатов по двум полям с учетом ID текущего объекта
+        if obj_in.name:
+            await self._check_duplicate(db, "name", obj_in.name, current_id=obj_id)
+        if obj_in.prefix:
+            await self._check_duplicate(db, "prefix", obj_in.prefix, current_id=obj_id)
+        # Вызов базового метода для обновления, логирования и коммита
+        return await super().update(db, obj_id, obj_in, user_id)
 
-    async def _check_duplicates(self, db: AsyncSession, name: str, prefix: str, item_id: int | None = None):
-        """Проверяет дубликаты по имени ИЛИ префиксу."""
-        stmt = select(AssetType).where(
-            or_(AssetType.name == name, AssetType.prefix == prefix)
-        )
-        if item_id:
-            stmt = stmt.where(AssetType.id != item_id)
+    async def delete(self, db: AsyncSession, obj_id: int, user_id: int) -> AssetType | None:
+        # Уникальная логика: проверка зависимостей в двух таблицах
+        related_models_count = await self._count_related(db, DeviceModel.asset_type_id, obj_id)
+        if related_models_count > 0:
+            raise DeletionError(f"Невозможно удалить тип актива, так как с ним связано {related_models_count} моделей устройств.")
+        
+        related_devices_count = await self._count_related(db, Device.asset_type_id, obj_id)
+        if related_devices_count > 0:
+            raise DeletionError(f"Невозможно удалить тип актива, так как с ним связано {related_devices_count} активов.")
+            
+        # Если зависимостей нет, вызываем базовый метод для удаления
+        return await super().delete(db, obj_id, user_id)
 
-        result = await db.execute(stmt)
-        existing_item = result.scalars().first()
-
-        if existing_item:
-            if existing_item.name == name:
-                raise DuplicateError(f"Тип актива с названием '{name}' уже существует.")
-            if existing_item.prefix == prefix:
-                raise DuplicateError(f"Тип актива с префиксом '{prefix}' уже существует.")
-
-    async def create(self, db: AsyncSession, data: AssetTypeCreate, user_id: int) -> AssetType:
-        """Создает новый тип актива с проверкой на дубликаты имени и префикса."""
-        name = data.name.strip()
-        prefix = data.prefix.strip().upper()
-        await self._check_duplicates(db, name, prefix)
-
-        try:
-            new_item = AssetType(
-                name=name,
-                prefix=prefix,
-                description=data.description.strip() if data.description else None
-            )
-            db.add(new_item)
-            await db.flush()
-
-            await log_action(
-                db=db, user_id=user_id, action_type='create',
-                entity_type=self.entity_name_for_log, entity_id=new_item.id,
-                details={'name': new_item.name, 'prefix': new_item.prefix}
-            )
-
-            await db.commit()
-            await db.refresh(new_item)
-            return new_item
-        except Exception:
-            await db.rollback()
-            raise
-
-    async def update(self, db: AsyncSession, item_id: int, data: AssetTypeUpdate, user_id: int) -> AssetType | None:
-        """Обновляет тип актива с проверкой на дубликаты."""
-        name = data.name.strip()
-        prefix = data.prefix.strip().upper()
-        await self._check_duplicates(db, name, prefix, item_id)
-
-        db_item = await db.get(AssetType, item_id)
-        if not db_item:
-            return None
-
-        try:
-            old_values = {'name': db_item.name, 'prefix': db_item.prefix, 'description': db_item.description}
-
-            db_item.name = name
-            db_item.prefix = prefix
-            db_item.description = data.description.strip() if data.description else None
-
-            new_values = {'name': db_item.name, 'prefix': db_item.prefix, 'description': db_item.description}
-
-            await log_action(
-                db=db, user_id=user_id, action_type='update',
-                entity_type=self.entity_name_for_log, entity_id=db_item.id,
-                details={'old': old_values, 'new': new_values}
-            )
-            await db.commit()
-            await db.refresh(db_item)
-            return db_item
-        except Exception:
-            await db.rollback()
-            raise
-
-    async def delete(self, db: AsyncSession, item_id: int, user_id: int) -> AssetType | None:
-        """Удаляет тип актива, проверяя зависимости в таблице Device."""
-        db_item = await db.get(AssetType, item_id)
-        if not db_item:
-            return None
-
-        devices_count_stmt = select(func.count(Device.id)).where(Device.asset_type_id == item_id)
-        devices_count = await db.scalar(devices_count_stmt)
-
-        if devices_count > 0:
-            raise DeletionError(f"Нельзя удалить тип актива '{db_item.name}', так как он используется в {devices_count} устройствах.")
-
-        try:
-            item_name = db_item.name
-            await db.delete(db_item)
-
-            await log_action(
-                db=db, user_id=user_id, action_type='delete',
-                entity_type=self.entity_name_for_log, entity_id=item_id,
-                details={'name': item_name}
-            )
-            await db.commit()
-            return db_item
-        except IntegrityError:
-            await db.rollback()
-            raise DeletionError(f"Невозможно удалить тип актива '{db_item.name}', так как он используется в других записях.")
-        except Exception:
-            await db.rollback()
-            raise
+# Создаем единственный экземпляр сервиса, передавая ему модель, с которой он работает
+asset_type_service = AssetTypeService(AssetType)

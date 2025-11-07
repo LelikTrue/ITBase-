@@ -17,3 +17,6 @@ class DeviceNotFoundException(BaseServiceException):
 
 class DuplicateDeviceError(BaseServiceException):
     """Исключение: устройство с таким уникальным полем уже существует."""
+
+class SupplierDeletionError(DeletionError):
+    """Исключение при невозможности удаления поставщика."""

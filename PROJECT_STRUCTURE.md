@@ -15,12 +15,10 @@ ITBase-/
 ├── Dockerfile.test
 ├── LICENSE
 ├── Makefile
-├── Makefile.dev
 ├── PROBLEM_SOLUTION.md
 ├── README.dev.md
 ├── README.md
 ├── alembic.ini
-├── docker-compose.ci.yml
 ├── docker-compose.dev.yml
 ├── docker-compose.override.yml
 ├── docker-compose.prod.yml
@@ -31,6 +29,7 @@ ITBase-/
 ├── pyproject.toml
 ├── requirements.txt
 ├── run_dev.py
+├── seed_assets.py
 ├── seed_devices.py
 ├── setup.cfg
 ├── setup.py
@@ -64,6 +63,8 @@ ITBase-/
 │   │   ├── 20250926_88b1196ca226_add_supplier_relationship_to_device_.py
 │   │   ├── 20251011_413e5e7e7c66_feat_consolidate_all_pending_model_.py
 │   │   ├── 20251012_7a9c8d6b5e4f_add_category_field_to_tags.py
+│   │   ├── 20251019_8fc178ad1a1b_добавим_description_to_tags.py
+│   │   ├── 20251025_4a21be86bcbc_add_name_column_to_devices_table.py
 ├── app/
 │   ├── __init__.py
 │   ├── config.py
@@ -72,6 +73,17 @@ ITBase-/
 │   ├── main.py
 │   ├── templating.py
 │   ├── test_main.py
+│   ├── schemas/
+│   │   ├── __init__.py
+│   │   ├── asset.py
+│   │   ├── audit_log.py
+│   │   ├── dictionary.py
+│   │   ├── supplier.py
+│   │   ├── tag.py
+│   ├── db/
+│   │   ├── __init__.py
+│   │   ├── database.py
+│   │   ├── initial_data_storage.py
 │   ├── api/
 │   │   ├── __init__.py
 │   │   ├── endpoints/
@@ -82,10 +94,24 @@ ITBase-/
 │   │   │   ├── dictionaries.py
 │   │   │   ├── health.py
 │   │   │   ├── tags.py
-│   ├── db/
+│   ├── utils/
 │   │   ├── __init__.py
-│   │   ├── database.py
-│   │   ├── initial_data_storage.py
+│   │   ├── helpers.py
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── asset_type_service.py
+│   │   ├── audit_log_service.py
+│   │   ├── base_service.py
+│   │   ├── department_service.py
+│   │   ├── device_model_service.py
+│   │   ├── device_service.py
+│   │   ├── device_status_service.py
+│   │   ├── employee_service.py
+│   │   ├── exceptions.py
+│   │   ├── location_service.py
+│   │   ├── manufacturer_service.py
+│   │   ├── supplier_service.py
+│   │   ├── tag_service.py
 │   ├── models/
 │   │   ├── __init__.py
 │   │   ├── action_log.py
@@ -102,30 +128,6 @@ ITBase-/
 │   │   ├── network.py
 │   │   ├── supplier.py
 │   │   ├── tag.py
-│   ├── schemas/
-│   │   ├── __init__.py
-│   │   ├── asset.py
-│   │   ├── audit_log.py
-│   │   ├── dictionary.py
-│   │   ├── tag.py
-│   ├── services/
-│   │   ├── __init__.py
-│   │   ├── asset_type_service.py
-│   │   ├── audit_log_service.py
-│   │   ├── base_dictionary_service.py
-│   │   ├── department_service.py
-│   │   ├── device_model_service.py
-│   │   ├── device_service.py
-│   │   ├── device_status_service.py
-│   │   ├── dictionary_service.py
-│   │   ├── employee_service.py
-│   │   ├── exceptions.py
-│   │   ├── location_service.py
-│   │   ├── manufacturer_service.py
-│   │   ├── tag_service.py
-│   ├── utils/
-│   │   ├── __init__.py
-│   │   ├── helpers.py
 ├── docs/
 │   ├── 01_initial_database_seeding.md
 ├── initdb/
@@ -136,6 +138,8 @@ ITBase-/
 │   ├── prod.txt
 ├── static/
 │   ├── styles.css
+│   ├── test_data/
+│   │   ├── device_fixture.json
 │   ├── css/
 │   │   ├── dictionary_modals.css
 │   │   ├── styles.css
@@ -146,8 +150,6 @@ ITBase-/
 │   │   ├── tom-select-init.js
 │   │   ├── vendor/
 │   │   │   ├── tom-select.complete.min.js
-│   ├── test_data/
-│   │   ├── device_fixture.json
 ├── templates/
 │   ├── add_asset.html
 │   ├── assets_list.html
@@ -167,6 +169,7 @@ ITBase-/
 │   │   ├── manufacturers.html
 │   │   ├── tags.html
 │   ├── includes/
+│   │   ├── flash_messages.html
 │   │   ├── form_helpers.html
 │   ├── modals/
 │   │   ├── dictionary_modals.html

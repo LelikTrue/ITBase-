@@ -1,106 +1,25 @@
 {% extends "base.html" %}
 
-{% macro sortable_header(column_key, display_name, current_sort_by, current_sort_order, query_params) %}
+{% macro sortable_header(column_key, display_name, current_sort_by, current_sort_order, query_params, extra_classes='') %}
     {% set sort_params = query_params.copy() %}
     {% set new_order = 'desc' if current_sort_by == column_key and current_sort_order == 'asc' else 'asc' %}
     {% set _ = sort_params.update({'sort_by': column_key, 'sort_order': new_order}) %}
-    <th scope="col">
-        <a href="{{ url_for('read_assets') }}?{{ sort_params|urlencode }}" class="text-white text-decoration-none">
+    <th scope="col" class="{{ extra_classes }}">
+        <a href="{{ url_for('read_assets') }}?{{ sort_params|urlencode }}" class="text-decoration-none">
             {{ display_name }}
             {% if current_sort_by == column_key %}<i class="bi bi-arrow-{{ 'down' if current_sort_order == 'asc' else 'up' }}"></i>{% endif %}
         </a>
     </th>
 {% endmacro %}
 
+{% block main_container_class %}container-fluid{% endblock %}
+
 {% block title %}{{ title | default('Список активов') }}{% endblock %}
 
-{% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const table = document.querySelector('.table-assets');
-    if (!table) return;
-
-    const headers = table.querySelectorAll('thead th');
-    const columnList = document.getElementById('column-list');
-    const storageKey = 'assetsListColumnVisibility';
-
-    // Загружаем состояние из localStorage или устанавливаем значения по умолчанию
-    let columnVisibility = JSON.parse(localStorage.getItem(storageKey)) || {
-        'ID': true,
-        'Название актива': true,
-        'Модель': true,
-        'Производитель': true,
-        'Тип': true,
-        'Статус': true,
-        'Отдел': true,
-        'Сотрудник': false, // Скрыто по умолчанию
-        'Локация': false,   // Скрыто по умолчанию
-        'Действия': true
-    };
-
-    // Функция для переключения видимости колонки
-    function toggleColumn(colIndex, show) {
-        const cells = table.querySelectorAll(`tr > *:nth-child(${colIndex + 1})`);
-        cells.forEach(cell => {
-            cell.style.display = show ? '' : 'none';
-        });
-    }
-
-    headers.forEach((th, index) => {
-        const columnName = th.innerText.trim();
-        if (!columnName) return;
-
-        // Устанавливаем видимость по умолчанию, если колонка новая
-        if (columnVisibility[columnName] === undefined) {
-            columnVisibility[columnName] = true;
-        }
-
-        // Создаем чекбокс для колонки
-        const li = document.createElement('li');
-        li.className = 'dropdown-item pe-2';
-        li.innerHTML = `
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" value="" id="col-check-${index}" 
-                       ${columnVisibility[columnName] ? 'checked' : ''} 
-                       ${columnName === 'Действия' ? 'disabled' : ''}>
-                <label class="form-check-label" for="col-check-${index}">
-                    ${columnName}
-                </label>
-            </div>
-        `;
-        columnList.appendChild(li);
-
-        // Добавляем обработчик события
-        const checkbox = li.querySelector('input');
-        if (columnName !== 'Действия') {
-            checkbox.addEventListener('change', () => {
-                toggleColumn(index, checkbox.checked);
-                columnVisibility[columnName] = checkbox.checked;
-                localStorage.setItem(storageKey, JSON.stringify(columnVisibility));
-            });
-        }
-    });
-
-    // Применяем начальную видимость при загрузке страницы
-    headers.forEach((th, index) => {
-        const columnName = th.innerText.trim();
-        if (columnVisibility[columnName] !== undefined) {
-            toggleColumn(index, columnVisibility[columnName]);
-        }
-    });
-
-    // Предотвращаем закрытие выпадающего меню при клике на чекбокс
-    columnList.addEventListener('click', function (e) {
-        e.stopPropagation();
-    });
-});
-</script>
-{% endblock %}
-
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Список активов</h1>
+<div class="mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <h1 class="mb-0">Список активов</h1>
         <div class="btn-group">
             <a href="{{ request.url_for('add_asset_form') }}" class="btn btn-primary">
                 <i class="bi bi-plus-circle"></i> Добавить актив
@@ -198,14 +117,15 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <input class="form-check-input" type="checkbox" id="selectAllCheckbox" title="Выбрать все на странице">
                             </th>
                             {{ sortable_header('id', 'ID', filters.sort_by, filters.sort_order, query_params) }}
-                            {{ sortable_header('name', 'Название актива', filters.sort_by, filters.sort_order, query_params) }}
+                            {{ sortable_header('name', 'Название актива', filters.sort_by, filters.sort_order, query_params) }} {# Высокий приоритет #}
                             {{ sortable_header('device_model', 'Модель', filters.sort_by, filters.sort_order, query_params) }} 
                             <th scope="col">Производитель</th>
                             {{ sortable_header('asset_type', 'Тип', filters.sort_by, filters.sort_order, query_params) }}
-                            {{ sortable_header('status', 'Статус', filters.sort_by, filters.sort_order, query_params) }}
+                            {{ sortable_header('status', 'Статус', filters.sort_by, filters.sort_order, query_params) }} {# Высокий приоритет #}
                             <th scope="col">Отдел</th>
                             <th scope="col">Сотрудник</th>
                             {{ sortable_header('location', 'Локация', filters.sort_by, filters.sort_order, query_params) }}
+                            {{ sortable_header('tags', 'Теги', filters.sort_by, filters.sort_order, query_params) }}
                             <th scope="col" class="text-end" style="min-width: 100px;">Действия</th>
                         </tr>
                     </thead>
@@ -241,6 +161,13 @@ document.addEventListener('DOMContentLoaded', function () {
                             <td>{{ device.department.name if device.department else '-' }}</td>
                             <td>{{ (device.employee.last_name + ' ' + device.employee.first_name[0] + '.') if device.employee else '-' }}</td>
                             <td>{{ device.location.name if device.location else '-' }}</td>
+                            <td class="tags-cell">
+                                <div class="tags-container">
+                                    {% for tag in device.tags %}
+                                        <span class="badge bg-secondary">{{ tag.name }}</span>
+                                    {% endfor %}
+                                </div>
+                            </td>
 
                             <td class="text-end">
                                 <div class="btn-group" role="group">
@@ -315,6 +242,87 @@ document.addEventListener('DOMContentLoaded', function () {
 {{ super() }}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // --- НАЧАЛО КОДА ДЛЯ ВЫБОРА КОЛОНОК (перенесен отсюда) ---
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .column-hidden-by-user { display: none !important; }
+        .table-assets td { 
+            word-break: break-word; 
+            white-space: normal !important; 
+            max-width: 250px;
+        }
+        .table-assets td.tags-cell .tags-container { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+    `;
+    document.head.appendChild(style);
+
+    const table = document.querySelector('.table-assets');
+    if (table) {
+        const headers = table.querySelectorAll('thead th');
+        const columnList = document.getElementById('column-list');
+        const storageKey = 'assetsListColumnVisibility';
+
+        let columnVisibility = JSON.parse(localStorage.getItem(storageKey)) || {
+            'ID': false, 'Название актива': true, 'Модель': true, 'Производитель': false,
+            'Тип': true, 'Статус': true, 'Отдел': false, 'Сотрудник': true,
+            'Локация': true, 'Теги': true, 'Действия': true
+        };
+
+        function toggleColumn(colIndex, show) {
+            const cells = table.querySelectorAll(`tr > *:nth-child(${colIndex + 1})`);
+            cells.forEach(cell => {
+                cell.classList.toggle('column-hidden-by-user', !show);
+            });
+        }
+
+        if (columnList) {
+            headers.forEach((th, index) => {
+                const link = th.querySelector('a');
+                const columnName = (link ? link.innerText : th.innerText).trim();
+                if (!columnName && index > 0) return; // Пропускаем пустые заголовки, кроме первого (чекбокс)
+
+                if (columnVisibility[columnName] === undefined) {
+                    columnVisibility[columnName] = true;
+                }
+
+                const li = document.createElement('li');
+                li.className = 'dropdown-item pe-2';
+                li.innerHTML = `
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="" id="col-check-${index}" 
+                               ${columnVisibility[columnName] ? 'checked' : ''} 
+                               ${columnName === 'Действия' ? 'disabled' : ''}>
+                        <label class="form-check-label" for="col-check-${index}">${columnName}</label>
+                    </div>
+                `;
+                columnList.appendChild(li);
+
+                const checkbox = li.querySelector('input');
+                if (columnName !== 'Действия') {
+                    checkbox.addEventListener('change', () => {
+                        toggleColumn(index, checkbox.checked);
+                        columnVisibility[columnName] = checkbox.checked;
+                        localStorage.setItem(storageKey, JSON.stringify(columnVisibility));
+                    });
+                }
+            });
+
+            headers.forEach((th, index) => {
+                const link = th.querySelector('a');
+                const columnName = (link ? link.innerText : th.innerText).trim();
+                if (columnVisibility[columnName] !== undefined) {
+                    toggleColumn(index, columnVisibility[columnName]);
+                }
+            });
+
+            columnList.addEventListener('click', function (e) {
+                e.stopPropagation();
+            });
+        }
+    }
+    // --- КОНЕЦ КОДА ДЛЯ ВЫБОРА КОЛОНОК ---
+
+
+    // --- НАЧАЛО КОДА ДЛЯ МАССОВЫХ ДЕЙСТВИЙ (он уже был здесь) ---
     const selectAllCheckbox = document.getElementById('selectAllCheckbox');
     const deviceCheckboxes = document.querySelectorAll('.device-checkbox');
     const bulkActionsPanel = document.getElementById('bulk-actions-panel');
@@ -322,20 +330,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function updateBulkActionsPanel() {
         const selectedCount = document.querySelectorAll('.device-checkbox:checked').length;
-        if (selectedCount > 0) {
-            bulkActionsPanel.style.display = 'block';
-            selectedCountSpan.textContent = `Выбрано: ${selectedCount}`;
-        } else {
-            bulkActionsPanel.style.display = 'none';
+        if (bulkActionsPanel) {
+            if (selectedCount > 0) {
+                bulkActionsPanel.style.display = 'block';
+                selectedCountSpan.textContent = `Выбрано: ${selectedCount}`;
+            } else {
+                bulkActionsPanel.style.display = 'none';
+            }
         }
     }
 
-    selectAllCheckbox.addEventListener('change', function () {
-        deviceCheckboxes.forEach(checkbox => {
-            checkbox.checked = selectAllCheckbox.checked;
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function () {
+            deviceCheckboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+            updateBulkActionsPanel();
         });
-        updateBulkActionsPanel();
-    });
+    }
 
     deviceCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function () {
@@ -343,7 +355,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    updateBulkActionsPanel(); // Initial check
+    updateBulkActionsPanel(); // Initial check on page load
+    // --- КОНЕЦ КОДА ДЛЯ МАССОВЫХ ДЕЙСТВИЙ ---
 });
 </script>
 {% endblock %}

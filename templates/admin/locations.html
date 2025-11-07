@@ -1,9 +1,210 @@
-{% extends 'admin/dictionaries_dashboard.html' %}
+<!-- templates/admin/locations.html -->
+{% extends "base.html" %}
+
+{% block title %}Управление местоположениями{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Местоположения</h2>
-    <p>Здесь будет управление местоположениями (locations).</p>
-    <!-- Здесь можно добавить таблицу, формы и т.д. -->
+<div class="container-fluid">
+    <div class="row align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <div class="col-md-6">
+            <h1 class="h2">Управление местоположениями</h1>
+        </div>
+        <div class="col-md-6 text-md-end">
+            <a href="{{ url_for('dictionaries_dashboard') }}" class="btn btn-sm btn-outline-secondary me-2">
+                <i class="bi bi-arrow-left"></i>
+                Назад к справочникам
+            </a>
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+                <i class="bi bi-plus-lg"></i>
+                Добавить местоположение
+            </button>
+        </div>
+    </div>
+    
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('read_assets') }}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('dictionaries_dashboard') }}">Администрирование</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Местоположения</li>
+        </ol>
+    </nav>
+
+    {% include 'includes/flash_messages.html' %}
+
+    <!-- === НОВЫЙ БЛОК: ПОИСК === -->
+    <div class="mb-3">
+        <input type="text" id="searchInput" class="form-control" placeholder="Поиск по названию или описанию...">
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Название</th>
+                    <!-- === НОВАЯ КОЛОНКА === -->
+                    <th scope="col">Описание</th>
+                    <th scope="col">Действия</th>
+                </tr>
+            </thead>
+            <tbody id="dataTableBody">
+                {% for location in locations %}
+                <tr>
+                    <td>{{ location.id }}</td>
+                    <td class="search-name">{{ location.name }}</td>
+                    <!-- === НОВАЯ КОЛОНКА === -->
+                    <td class="search-description">{{ location.description or '' }}</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#editModal"
+                                data-id="{{ location.id }}"
+                                data-name="{{ location.name }}"
+                                data-description="{{ location.description or '' }}">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                data-bs-toggle="modal"
+                                data-bs-target="#deleteModal"
+                                data-id="{{ location.id }}"
+                                data-name="{{ location.name }}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center">Местоположения не найдены.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
+
+<!-- Модальное окно "Добавить" -->
+<div class="modal fade" id="addModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('create_dictionary_item', dictionary_type='locations') }}" method="post">
+                <div class="modal-header"><h5 class="modal-title">Добавить местоположение</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="add-name" class="form-label">Название</label>
+                        <input type="text" class="form-control" id="add-name" name="name" required>
+                    </div>
+                    <!-- === НОВОЕ ПОЛЕ === -->
+                    <div class="mb-3">
+                        <label for="add-description" class="form-label">Описание</label>
+                        <textarea class="form-control" id="add-description" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно "Редактировать" -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="editForm" method="post">
+                <div class="modal-header"><h5 class="modal-title">Редактировать местоположение</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit-name" class="form-label">Название</label>
+                        <input type="text" class="form-control" id="edit-name" name="name" required>
+                    </div>
+                    <!-- === НОВОЕ ПОЛЕ === -->
+                    <div class="mb-3">
+                        <label for="edit-description" class="form-label">Описание</label>
+                        <textarea class="form-control" id="edit-description" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно "Удалить" (без изменений) -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="deleteForm" method="post">
+                <div class="modal-header"><h5 class="modal-title">Подтверждение удаления</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body"><p>Вы уверены, что хотите удалить местоположение <strong id="delete-name"></strong>?</p></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // --- НОВЫЙ СКРИПТ ДЛЯ ПОИСКА ---
+    const searchInput = document.getElementById('searchInput');
+    const tableBody = document.getElementById('dataTableBody');
+    const tableRows = tableBody.getElementsByTagName('tr');
+
+    searchInput.addEventListener('keyup', function() {
+        const filter = searchInput.value.toLowerCase();
+        for (let i = 0; i < tableRows.length; i++) {
+            const nameTd = tableRows[i].querySelector('.search-name');
+            const descriptionTd = tableRows[i].querySelector('.search-description');
+            if (nameTd || descriptionTd) {
+                const nameText = nameTd.textContent || nameTd.innerText;
+                const descriptionText = descriptionTd ? (descriptionTd.textContent || descriptionTd.innerText) : '';
+                if (nameText.toLowerCase().indexOf(filter) > -1 || descriptionText.toLowerCase().indexOf(filter) > -1) {
+                    tableRows[i].style.display = "";
+                } else {
+                    tableRows[i].style.display = "none";
+                }
+            }
+        }
+    });
+
+    const editModal = document.getElementById('editModal');
+    if (editModal) {
+        editModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const id = button.getAttribute('data-id');
+            const name = button.getAttribute('data-name');
+            // --- НОВАЯ СТРОКА ---
+            const description = button.getAttribute('data-description');
+
+            const form = editModal.querySelector('form');
+            form.action = `{{ url_for('manage_dictionary', dictionary_type='locations') }}/${id}/edit`;
+            form.querySelector('#edit-name').value = name;
+            // --- НОВАЯ СТРОКА ---
+            form.querySelector('#edit-description').value = description;
+        });
+    }
+
+    const deleteModal = document.getElementById('deleteModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const id = button.getAttribute('data-id');
+            const name = button.getAttribute('data-name');
+            const form = deleteModal.querySelector('form');
+            form.action = `{{ url_for('manage_dictionary', dictionary_type='locations') }}/${id}/delete`;
+            const nameElement = deleteModal.querySelector('#delete-name');
+            nameElement.textContent = name;
+        });
+    }
+});
+</script>
 {% endblock %}

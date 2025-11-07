@@ -4,13 +4,6 @@
 
 {% block content %}
 <div class="container-fluid mt-4">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url_for('read_assets') }}">Главная</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Администрирование</li>
-        </ol>
-    </nav>
-
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">
             <i class="bi bi-gear-fill text-primary me-2"></i>
@@ -19,7 +12,6 @@
     </div>
 
     <div class="row">
-        <!-- Левая колонка со списком справочников -->
         <div class="col-lg-8">
             <div class="card">
                 <div class="card-header">
@@ -27,130 +19,27 @@
                 </div>
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
-                        <!-- Типы активов -->
-                        <div class="list-group-item dictionary-item">
+                        
+                        <!-- Динамический цикл для отрисовки всех справочников из DICTIONARY_CONFIG -->
+                        {% for key, config in dictionaries.items() %}
+                        <div class="list-group-item">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="d-flex align-items-center">
-                                    <i class="bi bi-box-seam text-primary fs-4 me-3"></i>
+                                    <i class="bi {{ config.icon }} text-primary fs-4 me-3"></i>
                                     <div>
-                                        <h6 class="mb-1">Типы активов</h6>
-                                        <small class="text-muted">Категории оборудования ({{ stats.asset_types }} записей)</small>
+                                        <h6 class="mb-1">{{ config.title }}</h6>
+                                        <small class="text-muted">
+                                            {{ config.description }} ({{ stats.get(key.replace('-', '_'), 0) }} записей)
+                                        </small>
                                     </div>
                                 </div>
-                                <a href="{{ url_for('manage_dictionary', dictionary_type='asset-types') }}" class="btn btn-outline-primary btn-sm">
+                                <a href="{{ url_for('manage_dictionary', dictionary_type=key) }}" class="btn btn-outline-primary btn-sm">
                                     <i class="bi bi-gear"></i> Управлять
                                 </a>
                             </div>
                         </div>
-                        <!-- Модели устройств -->
-                        <div class="list-group-item dictionary-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center">
-                                    <i class="bi bi-laptop text-success fs-4 me-3"></i>
-                                    <div>
-                                        <h6 class="mb-1">Модели устройств</h6>
-                                        <small class="text-muted">Конкретные модели техники ({{ stats.device_models }} записей)</small>
-                                    </div>
-                                </div>
-                                <a href="{{ url_for('manage_dictionary', dictionary_type='device-models') }}" class="btn btn-outline-success btn-sm">
-                                    <i class="bi bi-gear"></i> Управлять
-                                </a>
-                            </div>
-                        </div>
-                        <!-- Статусы устройств -->
-                        <div class="list-group-item dictionary-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center">
-                                    <i class="bi bi-check-circle text-info fs-4 me-3"></i>
-                                    <div>
-                                        <h6 class="mb-1">Статусы устройств</h6>
-                                        <small class="text-muted">Состояния активов ({{ stats.device_statuses }} записей)</small>
-                                    </div>
-                                </div>
-                                <a href="{{ url_for('manage_dictionary', dictionary_type='device-statuses') }}" class="btn btn-outline-info btn-sm">
-                                    <i class="bi bi-gear"></i> Управлять
-                                </a>
-                            </div>
-                        </div>
-                        <!-- Производители -->
-                        <div class="list-group-item dictionary-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center">
-                                    <i class="bi bi-building text-warning fs-4 me-3"></i>
-                                    <div>
-                                        <h6 class="mb-1">Производители</h6>
-                                        <small class="text-muted">Бренды оборудования ({{ stats.manufacturers }} записей)</small>
-                                    </div>
-                                </div>
-                                <a href="{{ url_for('manage_dictionary', dictionary_type='manufacturers') }}" class="btn btn-outline-warning btn-sm">
-                                    <i class="bi bi-gear"></i> Управлять
-                                </a>
-                            </div>
-                        </div>
-                        <!-- Отделы -->
-                        <div class="list-group-item dictionary-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center">
-                                    <i class="bi bi-diagram-3 text-danger fs-4 me-3"></i>
-                                    <div>
-                                        <h6 class="mb-1">Отделы</h6>
-                                        <small class="text-muted">Структурные подразделения ({{ stats.departments }} записей)</small>
-                                    </div>
-                                </div>
-                                <a href="{{ url_for('manage_dictionary', dictionary_type='departments') }}" class="btn btn-outline-danger btn-sm">
-                                    <i class="bi bi-gear"></i> Управлять
-                                </a>
-                            </div>
-                        </div>
-                        <!-- Местоположения -->
-                        <div class="list-group-item dictionary-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center">
-                                    <i class="bi bi-geo-alt text-secondary fs-4 me-3"></i>
-                                    <div>
-                                        <h6 class="mb-1">Местоположения</h6>
-                                        <small class="text-muted">Кабинеты, офисы, склады ({{ stats.locations }} записей)</small>
-                                    </div>
-                                </div>
-                                <a href="{{ url_for('manage_dictionary', dictionary_type='locations') }}" class="btn btn-outline-secondary btn-sm">
-                                    <i class="bi bi-gear"></i> Управлять
-                                </a>
-                            </div>
-                        </div>
-                        <!-- Сотрудники -->
-                        <div class="list-group-item dictionary-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center">
-                                    <i class="bi bi-people text-dark fs-4 me-3"></i>
-                                    <div>
-                                        <h6 class="mb-1">Сотрудники</h6>
-                                        <small class="text-muted">Персонал организации ({{ stats.employees }} записей)</small>
-                                    </div>
-                                </div>
-                                <a href="{{ url_for('manage_dictionary', dictionary_type='employees') }}" 
-                                   class="btn btn-outline-dark btn-sm">
-                                    <i class="bi bi-gear"></i> Управлять
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Теги -->
-                        <div class="list-group-item dictionary-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center">
-                                    <i class="bi bi-tags text-primary fs-4 me-3"></i>
-                                    <div>
-                                        <h6 class="mb-1">Теги</h6>
-                                        <small class="text-muted">Метки и свойства активов ({{ stats.tags }} записей)</small>
-                                    </div>
-                                </div>
-                                <a href="{{ url_for('manage_dictionary', dictionary_type='tags') }}" 
-                                   class="btn btn-outline-primary btn-sm">
-                                    <i class="bi bi-gear"></i> Управлять
-                                </a>
-                            </div>
-                        </div>
-
+                        {% endfor %}
+                        
                     </div>
                 </div>
             </div>

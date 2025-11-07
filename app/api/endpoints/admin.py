@@ -1,178 +1,185 @@
-# app/api/endpoints/admin.py
-
-import asyncio
 import logging
-from typing import Any
-
-from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse
-from sqlalchemy import func, select
+from fastapi import APIRouter, Depends, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from pydantic import ValidationError
 
 from app.db.database import get_db
-from app.models import (
-    AssetType,
-    Department,
-    Device,
-    DeviceModel,
-    DeviceStatus,
-    Employee,
-    Location,
-    Manufacturer,
-    Tag,
-)
-from app.services.tag_service import TagService
 from app.templating import templates
+from app.flash import flash
+from app.services.exceptions import DeletionError, DuplicateError
 
-# Инициализация
+# --- Импортируем схемы для DeviceModel ---
+from app.schemas.dictionary import (
+    DictionarySimpleCreate, 
+    DictionarySimpleUpdate, 
+    AssetTypeCreate, 
+    AssetTypeUpdate,
+    DeviceModelCreate,
+    DeviceModelUpdate
+)
+
+from app.services.asset_type_service import asset_type_service
+from app.services.department_service import department_service
+from app.services.device_model_service import device_model_service
+from app.services.device_status_service import device_status_service
+from app.services.employee_service import employee_service
+from app.services.location_service import location_service
+from app.services.manufacturer_service import manufacturer_service
+from app.services.tag_service import tag_service
+from app.services.supplier_service import supplier_service
+
 logger = logging.getLogger(__name__)
-router = APIRouter(tags=['admin'])
+router = APIRouter()
 
-tag_service = TagService()
+DICTIONARY_CONFIG = {
+    "asset-types": {
+        "service": asset_type_service, "title": "Типы активов", "icon": "bi-box-seam",
+        "description": "Категории оборудования", "list_variable_name": "asset_types",
+        "template": "admin/asset_types.html"
+    },
+    "device-models": {
+        "service": device_model_service, "title": "Модели устройств", "icon": "bi-laptop",
+        "description": "Конкретные модели техники", "list_variable_name": "device_models",
+        "template": "admin/device_models.html"
+    },
+    "device-statuses": {
+        "service": device_status_service, "title": "Статусы устройств", "icon": "bi-check-circle",
+        "description": "Состояния активов", "list_variable_name": "device_statuses",
+        "template": "admin/device_statuses.html"
+    },
+    "manufacturers": {
+        "service": manufacturer_service, "title": "Производители", "icon": "bi-building",
+        "description": "Бренды оборудования", "list_variable_name": "manufacturers",
+        "template": "admin/manufacturers.html"
+    },
+    "suppliers": {
+        "service": supplier_service, "title": "Поставщики", "icon": "bi-truck",
+        "description": "Компании-поставщики", "list_variable_name": "suppliers",
+        "template": "admin/suppliers.html" 
+    },
+    "departments": {
+        "service": department_service, "title": "Отделы", "icon": "bi-diagram-3",
+        "description": "Структурные подразделения", "list_variable_name": "departments",
+        "template": "admin/departments.html"
+    },
+    "locations": {
+        "service": location_service, "title": "Местоположения", "icon": "bi-geo-alt",
+        "description": "Кабинеты, офисы, склады", "list_variable_name": "locations",
+        "template": "admin/locations.html"
+    },
+    "employees": {
+        "service": employee_service, "title": "Сотрудники", "icon": "bi-people",
+        "description": "Персонал организации", "list_variable_name": "employees",
+        "template": "admin/employees.html"
+    },
+    "tags": {
+        "service": tag_service, "title": "Теги", "icon": "bi-tags",
+        "description": "Метки и свойства активов", "list_variable_name": "tags",
+        "template": "admin/tags.html"
+    },
+}
 
-@router.get('/dictionaries', response_class=HTMLResponse)
+@router.get('/dictionaries', response_class=HTMLResponse, name="dictionaries_dashboard")
 async def dictionaries_dashboard(request: Request, db: AsyncSession = Depends(get_db)):
-    """Главная страница управления справочниками"""
+    stats = {}
+    for name, config in DICTIONARY_CONFIG.items():
+        stats[name.replace('-', '_')] = await config["service"].get_count(db)
+    return templates.TemplateResponse('admin/dictionaries_dashboard.html', {
+        'request': request, 'stats': stats, 'dictionaries': DICTIONARY_CONFIG,
+        'title': 'Управление справочниками'
+    })
+
+@router.get("/dictionaries/{dictionary_type}", response_class=HTMLResponse, name="manage_dictionary")
+async def manage_dictionary(request: Request, dictionary_type: str, db: AsyncSession = Depends(get_db)):
+    if dictionary_type not in DICTIONARY_CONFIG:
+        return templates.TemplateResponse('error.html', {'request': request, 'error': 'Справочник не найден.'}, status_code=404)
+    config = DICTIONARY_CONFIG[dictionary_type]
+    items = await config["service"].get_all(db)
+    context = {"request": request, "title": config["title"], config["list_variable_name"]: items}
+    if dictionary_type == 'device-models':
+        context['manufacturers'] = await manufacturer_service.get_all(db)
+        context['asset_types'] = await asset_type_service.get_all(db)
+    return templates.TemplateResponse(config["template"], context)
+
+@router.post("/dictionaries/{dictionary_type}/add", name="create_dictionary_item")
+async def create_dictionary_item(request: Request, dictionary_type: str, db: AsyncSession = Depends(get_db)):
+    if dictionary_type not in DICTIONARY_CONFIG:
+        return RedirectResponse(url=request.url_for("dictionaries_dashboard"), status_code=303)
+    
+    config = DICTIONARY_CONFIG[dictionary_type]
+    service = config["service"]
+    form_data = await request.form()
+    user_id = 1 
+
     try:
-        # --- ИСПРАВЛЕНИЕ: Выполняем запросы последовательно, без asyncio.gather ---
-
-        # 1. Получаем статистику
-        stats_results = [
-            await db.scalar(select(func.count(AssetType.id))),
-            await db.scalar(select(func.count(DeviceModel.id))),
-            await db.scalar(select(func.count(DeviceStatus.id))),
-            await db.scalar(select(func.count(Manufacturer.id))),
-            await db.scalar(select(func.count(Department.id))),
-            await db.scalar(select(func.count(Location.id))),
-            await db.scalar(select(func.count(Employee.id))),
-            await db.scalar(select(func.count(Device.id))),
-            await db.scalar(select(func.count(Tag.id))),
-        ]
-
-        stats = dict(zip([
-            'asset_types', 'device_models', 'device_statuses', 'manufacturers',
-            'departments', 'locations', 'employees', 'devices', 'tags'
-        ], stats_results, strict=False))
-
-        # 2. Получаем последние записи
-        asset_types_res = await db.execute(select(AssetType).order_by(AssetType.id.desc()).limit(3))
-        device_models_res = await db.execute(select(DeviceModel).order_by(DeviceModel.id.desc()).limit(3))
-        device_statuses_res = await db.execute(select(DeviceStatus).order_by(DeviceStatus.id.desc()).limit(3))
-
-        recent_items = {
-            'asset_types': asset_types_res.scalars().all(),
-            'device_models': device_models_res.scalars().all(),
-            'device_statuses': device_statuses_res.scalars().all(),
-        }
-
-        return templates.TemplateResponse('admin/dictionaries_dashboard.html', {
-            'request': request,
-            'stats': stats,
-            'recent_items': recent_items,
-            'title': 'Управление справочниками'
-        })
-    except Exception as e:
-        logger.error(f'Ошибка при загрузке дашборда администратора: {e}', exc_info=True)
-        return templates.TemplateResponse('error.html', {'request': request, 'error': 'Не удалось загрузить дашборд администратора.'}, status_code=500)
-
-@router.get('/dictionaries/{dictionary_type}', response_class=HTMLResponse)
-async def manage_dictionary(
-    request: Request,
-    dictionary_type: str,
-    db: AsyncSession = Depends(get_db)
-):
-    """Страница управления конкретным справочником"""
-    try:
-        # Маппинг типов справочников
-        dictionary_mapping = {
-            'asset-types': {
-                'model': AssetType,
-                'title': 'Типы активов',
-                'fields': ['name', 'description'],
-                'template': 'admin/asset_types.html'
-            },
-            'device-models': {
-                'model': DeviceModel,
-                'title': 'Модели устройств',
-                'fields': ['name', 'manufacturer', 'asset_type', 'description'],
-                'template': 'admin/device_models.html'
-            },
-            'device-statuses': {
-                'model': DeviceStatus,
-                'title': 'Статусы устройств',
-                'fields': ['name', 'description'],
-                'template': 'admin/device_statuses.html'
-            },
-            'manufacturers': {
-                'model': Manufacturer,
-                'title': 'Производители',
-                'fields': ['name', 'description'],
-                'template': 'admin/manufacturers.html'
-            },
-            'departments': {
-                'model': Department,
-                'title': 'Отделы',
-                'fields': ['name', 'description'],
-                'template': 'admin/departments.html'
-            },
-            'locations': {
-                'model': Location,
-                'title': 'Местоположения',
-                'fields': ['name', 'description'],
-                'template': 'admin/locations.html'
-            },
-            'employees': {
-                'model': Employee,
-                'title': 'Сотрудники',
-                'fields': ['first_name', 'last_name', 'patronymic', 'employee_id', 'email'],
-                'template': 'admin/employees.html'
-            },
-            'tags': {
-                'model': Tag,
-                'title': 'Теги',
-                'fields': ['name', 'description'],
-                'template': 'admin/tags.html'
-            }
-        }
-
-        if dictionary_type not in dictionary_mapping:
-            raise HTTPException(status_code=404, detail='Справочник не найден')
-
-        config = dictionary_mapping[dictionary_type]
-        model = config['model']
-
-        # Получаем все записи
-        if dictionary_type == 'device-models':
-            # Для моделей устройств нужны связанные данные
-            stmt = select(model).options(
-                selectinload(model.manufacturer),
-                selectinload(model.asset_type)
-            ).order_by(model.id.desc())
-            items_result = await db.execute(stmt)
-            items = items_result.scalars().all()
-
-            # --- ИСПРАВЛЕНИЕ: Убираем asyncio.gather и здесь ---
-            # Получаем списки для выпадающих списков последовательно
-            manufacturers_res = await db.execute(select(Manufacturer).order_by(Manufacturer.name))
-            asset_types_res = await db.execute(select(AssetType).order_by(AssetType.name))
-
-            manufacturers = manufacturers_res.scalars().all()
-            asset_types = asset_types_res.scalars().all()
-            extra_data = {'manufacturers': manufacturers, 'asset_types': asset_types}
+        if dictionary_type == "asset-types":
+            schema = AssetTypeCreate.model_validate(form_data)
+        # --- Добавляем обработку для DeviceModel ---
+        elif dictionary_type == "device-models":
+            schema = DeviceModelCreate.model_validate(form_data)
         else:
-            items_result = await db.execute(select(model).order_by(model.id.desc()))
-            items = items_result.scalars().all()
-            extra_data = {}
+            schema = DictionarySimpleCreate.model_validate(form_data)
+        
+        await service.create(db, obj_in=schema, user_id=user_id)
+        flash(request, f"{config['title']} '{schema.name}' успешно создан.", "success")
 
-        return templates.TemplateResponse(config['template'], {
-            'request': request,
-            'items': items,
-            'title': config['title'],
-            'dictionary_type': dictionary_type,
-            'fields': config['fields'],
-            **extra_data
-        })
-    except Exception as e:
-        logger.error(f"Ошибка при загрузке справочника '{dictionary_type}': {e}", exc_info=True)
-        return templates.TemplateResponse('error.html', {'request': request, 'error': f"Не удалось загрузить справочник '{dictionary_type}'."}, status_code=500)
+    except ValidationError as e:
+        errors = e.errors()
+        error_message = "; ".join([f"Поле '{err['loc'][0]}': {err['msg']}" for err in errors])
+        flash(request, f"Ошибка валидации: {error_message}", "danger")
+
+    except DuplicateError as e:
+        flash(request, str(e), "danger")
+    
+    return RedirectResponse(url=request.url_for("manage_dictionary", dictionary_type=dictionary_type), status_code=303)
+
+@router.post("/dictionaries/{dictionary_type}/{item_id}/edit", name="edit_dictionary_item")
+async def edit_dictionary_item(request: Request, dictionary_type: str, item_id: int, db: AsyncSession = Depends(get_db)):
+    if dictionary_type not in DICTIONARY_CONFIG:
+        return RedirectResponse(url=request.url_for("dictionaries_dashboard"), status_code=303)
+        
+    config = DICTIONARY_CONFIG[dictionary_type]
+    service = config["service"]
+    form_data = await request.form()
+    user_id = 1
+
+    try:
+        if dictionary_type == "asset-types":
+            schema = AssetTypeUpdate.model_validate(form_data)
+        # --- Добавляем обработку для DeviceModel ---
+        elif dictionary_type == "device-models":
+            schema = DeviceModelUpdate.model_validate(form_data)
+        else:
+            schema = DictionarySimpleUpdate.model_validate(form_data)
+
+        await service.update(db, obj_id=item_id, obj_in=schema, user_id=user_id)
+        flash(request, f"{config['title']} успешно обновлен.", "success")
+
+    except ValidationError as e:
+        errors = e.errors()
+        error_message = "; ".join([f"Поле '{err['loc'][0]}': {err['msg']}" for err in errors])
+        flash(request, f"Ошибка валидации: {error_message}", "danger")
+
+    except DuplicateError as e:
+        flash(request, str(e), "danger")
+
+    return RedirectResponse(url=request.url_for("manage_dictionary", dictionary_type=dictionary_type), status_code=303)
+
+@router.post("/dictionaries/{dictionary_type}/{item_id}/delete", name="delete_dictionary_item")
+async def delete_dictionary_item(request: Request, dictionary_type: str, item_id: int, db: AsyncSession = Depends(get_db)):
+    if dictionary_type not in DICTIONARY_CONFIG:
+        return RedirectResponse(url=request.url_for("dictionaries_dashboard"), status_code=303)
+        
+    config = DICTIONARY_CONFIG[dictionary_type]
+    service = config["service"]
+    user_id = 1
+
+    try:
+        deleted_item = await service.delete(db, obj_id=item_id, user_id=user_id)
+        if deleted_item:
+            flash(request, f"{config['title']} '{getattr(deleted_item, 'name', '')}' успешно удален.", "success")
+    except DeletionError as e:
+        flash(request, str(e), "danger")
+
+    return RedirectResponse(url=request.url_for("manage_dictionary", dictionary_type=dictionary_type), status_code=303)

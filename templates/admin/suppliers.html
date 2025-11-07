@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Управление производителями{% endblock %}
+{% block title %}Управление поставщиками{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
@@ -9,22 +9,22 @@
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ url_for('read_assets') }}">Главная</a></li>
             <li class="breadcrumb-item"><a href="{{ url_for('dictionaries_dashboard') }}">Администрирование</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Производители</li>
+            <li class="breadcrumb-item active" aria-current="page">Поставщики</li>
         </ol>
     </nav>
 
     <!-- Заголовок и кнопки действий -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0 text-nowrap">
-            <i class="bi bi-building text-primary me-2"></i>
-            Управление производителями
+            <i class="bi bi-truck text-primary me-2"></i>
+            Управление поставщиками
         </h1>
         <div>
             <a href="{{ url_for('dictionaries_dashboard') }}" class="btn btn-outline-secondary me-2">
                 <i class="bi bi-arrow-left"></i> Назад
             </a>
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
-                <i class="bi bi-plus-circle"></i> Добавить производителя
+                <i class="bi bi-plus-circle"></i> Добавить поставщика
             </button>
         </div>
     </div>
@@ -42,7 +42,7 @@
     <!-- Таблица -->
     <div class="card">
         <div class="card-header">
-            <h5 class="mb-0">Список производителей ({{ manufacturers|length }} записей)</h5>
+            <h5 class="mb-0">Список поставщиков ({{ suppliers|length }} записей)</h5>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -56,7 +56,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for item in manufacturers %}
+                        {% for item in suppliers %}
                         <tr>
                             <td>{{ item.id }}</td>
                             <td>{{ item.name }}</td>
@@ -83,7 +83,7 @@
                         <tr>
                             <td colspan="4" class="text-center text-muted py-4">
                                 <i class="bi bi-inbox display-4 d-block mb-2"></i>
-                                Производители не найдены
+                                Поставщики не найдены
                             </td>
                         </tr>
                         {% endfor %}
@@ -94,13 +94,13 @@
     </div>
 </div>
 
-<!-- Модальное окно: Добавить производителя -->
+<!-- Модальное окно: Добавить поставщика -->
 <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form method="post" action="{{ url_for('create_dictionary_item', dictionary_type='manufacturers') }}">
+            <form method="post" action="{{ url_for('create_dictionary_item', dictionary_type='suppliers') }}">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addModalLabel">Добавить производителя</h5>
+                    <h5 class="modal-title" id="addModalLabel">Добавить поставщика</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -122,13 +122,13 @@
     </div>
 </div>
 
-<!-- Модальное окно: Редактировать производителя -->
+<!-- Модальное окно: Редактировать поставщика -->
 <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <form id="editForm" method="post">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="editModalLabel">Редактировать производителя</h5>
+                    <h5 class="modal-title" id="editModalLabel">Редактировать поставщика</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -160,7 +160,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Вы уверены, что хотите удалить производителя <strong id="deleteItemName"></strong>?</p>
+                    <p>Вы уверены, что хотите удалить поставщика <strong id="deleteItemName"></strong>?</p>
                     <p class="text-danger">Это действие нельзя отменить.</p>
                 </div>
                 <div class="modal-footer">
@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const nameInput = document.getElementById('editName');
         const descriptionInput = document.getElementById('editDescription');
         
-        const url = "{{ url_for('edit_dictionary_item', dictionary_type='manufacturers', item_id='__ITEM_ID__') }}".replace('__ITEM_ID__', id);
+        const url = "{{ url_for('edit_dictionary_item', dictionary_type='suppliers', item_id='__ITEM_ID__') }}".replace('__ITEM_ID__', id);
         form.action = url;
 
         nameInput.value = name;
@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const form = document.getElementById('deleteForm');
         const itemNameSpan = document.getElementById('deleteItemName');
         
-        const url = "{{ url_for('delete_dictionary_item', dictionary_type='manufacturers', item_id='__ITEM_ID__') }}".replace('__ITEM_ID__', id);
+        const url = "{{ url_for('delete_dictionary_item', dictionary_type='suppliers', item_id='__ITEM_ID__') }}".replace('__ITEM_ID__', id);
         form.action = url;
         itemNameSpan.textContent = name;
     });
