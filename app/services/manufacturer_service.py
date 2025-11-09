@@ -4,9 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import DeviceModel, Manufacturer
 from app.schemas.dictionary import DictionarySimpleCreate, DictionarySimpleUpdate
 from app.services.base_service import BaseService
-from app.services.exceptions import DeletionError
+from app.services import DuplicateCheckMixin, DependencyCheckMixin
 
-class ManufacturerService(BaseService[Manufacturer, DictionarySimpleCreate, DictionarySimpleUpdate]):
+class ManufacturerService(DuplicateCheckMixin, DependencyCheckMixin, BaseService[Manufacturer, DictionarySimpleCreate, DictionarySimpleUpdate]):
     """
     Сервис для управления производителями.
     - Проверяет дубликаты по 'name'.
@@ -28,10 +28,7 @@ class ManufacturerService(BaseService[Manufacturer, DictionarySimpleCreate, Dict
 
     async def delete(self, db: AsyncSession, obj_id: int, user_id: int) -> Manufacturer | None:
         # Уникальная логика: проверка зависимостей в DeviceModel
-        related_count = await self._count_related(db, DeviceModel.manufacturer_id, obj_id)
-        if related_count > 0:
-            raise DeletionError(f"Невозможно удалить производителя, так как с ним связано {related_count} моделей устройств.")
-        
+        await self._check_dependencies(db, DeviceModel.manufacturer_id, obj_id, "моделей устройств")
         # Вызов базового метода
         return await super().delete(db, obj_id, user_id)
 

@@ -4,9 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Department, Device
 from app.schemas.dictionary import DictionarySimpleCreate, DictionarySimpleUpdate
 from app.services.base_service import BaseService
-from app.services.exceptions import DeletionError
+from app.services import DuplicateCheckMixin, DependencyCheckMixin
 
-class DepartmentService(BaseService[Department, DictionarySimpleCreate, DictionarySimpleUpdate]):
+class DepartmentService(DuplicateCheckMixin, DependencyCheckMixin, BaseService[Department, DictionarySimpleCreate, DictionarySimpleUpdate]):
     """
     Сервис для управления отделами.
     - Проверяет дубликаты по 'name'.
@@ -23,9 +23,7 @@ class DepartmentService(BaseService[Department, DictionarySimpleCreate, Dictiona
         return await super().update(db, obj_id, obj_in, user_id)
 
     async def delete(self, db: AsyncSession, obj_id: int, user_id: int) -> Department | None:
-        related_count = await self._count_related(db, Device.department_id, obj_id)
-        if related_count > 0:
-            raise DeletionError(f"Невозможно удалить отдел, так как с ним связано {related_count} активов.")
+        await self._check_dependencies(db, Device.department_id, obj_id, "активов")
         return await super().delete(db, obj_id, user_id)
 
 # Создаем единственный экземпляр сервиса, передавая ему модель

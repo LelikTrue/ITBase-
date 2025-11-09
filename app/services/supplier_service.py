@@ -5,9 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Device, Supplier
 from app.schemas.supplier import SupplierCreate, SupplierUpdate
 from app.services.base_service import BaseService
-from app.services.exceptions import DeletionError
+from app.services import DuplicateCheckMixin, DependencyCheckMixin
 
-class SupplierService(BaseService[Supplier, SupplierCreate, SupplierUpdate]):
+class SupplierService(DuplicateCheckMixin, DependencyCheckMixin, BaseService[Supplier, SupplierCreate, SupplierUpdate]):
     """
     Сервис для управления поставщиками со специфичными бизнес-правилами.
     """
@@ -31,12 +31,7 @@ class SupplierService(BaseService[Supplier, SupplierCreate, SupplierUpdate]):
         """
         Удаляет поставщика, предварительно проверив, не связан ли он с активами.
         """
-        # Считаем связанные активы с помощью универсального метода _count_related
-        related_devices_count = await self._count_related(db, Device.supplier_id, obj_id)
-        if related_devices_count > 0:
-            raise DeletionError(
-                f"Невозможно удалить поставщика, так как с ним связано {related_devices_count} активов."
-            )
+        await self._check_dependencies(db, Device.supplier_id, obj_id, "активов")
         # Если зависимостей нет, вызываем универсальный метод delete из BaseService
         return await super().delete(db, obj_id, user_id)
 

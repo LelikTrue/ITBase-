@@ -5,9 +5,10 @@ from sqlalchemy.orm import selectinload
 from app.models import Tag
 from app.schemas.tag import TagCreate, TagUpdate
 from app.services.base_service import BaseService
+from app.services import DuplicateCheckMixin, DependencyCheckMixin
 from app.services.exceptions import DeletionError
 
-class TagService(BaseService[Tag, TagCreate, TagUpdate]):
+class TagService(DuplicateCheckMixin, DependencyCheckMixin, BaseService[Tag, TagCreate, TagUpdate]):
     async def create(self, db: AsyncSession, obj_in: TagCreate, user_id: int) -> Tag:
         await self._check_duplicate(db, "name", obj_in.name)
         return await super().create(db, obj_in, user_id)

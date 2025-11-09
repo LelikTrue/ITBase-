@@ -4,9 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import AssetType, Device, DeviceModel
 from app.schemas.dictionary import AssetTypeCreate, AssetTypeUpdate
 from app.services.base_service import BaseService
-from app.services.exceptions import DeletionError
+from app.services import DuplicateCheckMixin, DependencyCheckMixin
 
-class AssetTypeService(BaseService[AssetType, AssetTypeCreate, AssetTypeUpdate]):
+class AssetTypeService(DuplicateCheckMixin, DependencyCheckMixin, BaseService[AssetType, AssetTypeCreate, AssetTypeUpdate]):
     """
     Сервис для управления типами активов.
     Использует BaseService, но переопределяет методы для добавления
@@ -33,13 +33,8 @@ class AssetTypeService(BaseService[AssetType, AssetTypeCreate, AssetTypeUpdate])
 
     async def delete(self, db: AsyncSession, obj_id: int, user_id: int) -> AssetType | None:
         # Уникальная логика: проверка зависимостей в двух таблицах
-        related_models_count = await self._count_related(db, DeviceModel.asset_type_id, obj_id)
-        if related_models_count > 0:
-            raise DeletionError(f"Невозможно удалить тип актива, так как с ним связано {related_models_count} моделей устройств.")
-        
-        related_devices_count = await self._count_related(db, Device.asset_type_id, obj_id)
-        if related_devices_count > 0:
-            raise DeletionError(f"Невозможно удалить тип актива, так как с ним связано {related_devices_count} активов.")
+        await self._check_dependencies(db, DeviceModel.asset_type_id, obj_id, "моделей устройств")
+        await self._check_dependencies(db, Device.asset_type_id, obj_id, "активов")
             
         # Если зависимостей нет, вызываем базовый метод для удаления
         return await super().delete(db, obj_id, user_id)
