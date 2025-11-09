@@ -16,6 +16,7 @@ ITBase-/
 ├── LICENSE
 ├── Makefile
 ├── PROBLEM_SOLUTION.md
+├── PROJECT_STRUCTURE.md
 ├── README.dev.md
 ├── README.md
 ├── alembic.ini
@@ -73,45 +74,10 @@ ITBase-/
 │   ├── main.py
 │   ├── templating.py
 │   ├── test_main.py
-│   ├── schemas/
-│   │   ├── __init__.py
-│   │   ├── asset.py
-│   │   ├── audit_log.py
-│   │   ├── dictionary.py
-│   │   ├── supplier.py
-│   │   ├── tag.py
 │   ├── db/
 │   │   ├── __init__.py
 │   │   ├── database.py
 │   │   ├── initial_data_storage.py
-│   ├── api/
-│   │   ├── __init__.py
-│   │   ├── endpoints/
-│   │   │   ├── __init__.py
-│   │   │   ├── admin.py
-│   │   │   ├── assets.py
-│   │   │   ├── audit_logs.py
-│   │   │   ├── dictionaries.py
-│   │   │   ├── health.py
-│   │   │   ├── tags.py
-│   ├── utils/
-│   │   ├── __init__.py
-│   │   ├── helpers.py
-│   ├── services/
-│   │   ├── __init__.py
-│   │   ├── asset_type_service.py
-│   │   ├── audit_log_service.py
-│   │   ├── base_service.py
-│   │   ├── department_service.py
-│   │   ├── device_model_service.py
-│   │   ├── device_service.py
-│   │   ├── device_status_service.py
-│   │   ├── employee_service.py
-│   │   ├── exceptions.py
-│   │   ├── location_service.py
-│   │   ├── manufacturer_service.py
-│   │   ├── supplier_service.py
-│   │   ├── tag_service.py
 │   ├── models/
 │   │   ├── __init__.py
 │   │   ├── action_log.py
@@ -128,6 +94,42 @@ ITBase-/
 │   │   ├── network.py
 │   │   ├── supplier.py
 │   │   ├── tag.py
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── asset_type_service.py
+│   │   ├── audit_log_service.py
+│   │   ├── base_service.py
+│   │   ├── department_service.py
+│   │   ├── device_model_service.py
+│   │   ├── device_service.py
+│   │   ├── device_status_service.py
+│   │   ├── dictionary_service.py
+│   │   ├── employee_service.py
+│   │   ├── exceptions.py
+│   │   ├── location_service.py
+│   │   ├── manufacturer_service.py
+│   │   ├── supplier_service.py
+│   │   ├── tag_service.py
+│   ├── schemas/
+│   │   ├── __init__.py
+│   │   ├── asset.py
+│   │   ├── audit_log.py
+│   │   ├── dictionary.py
+│   │   ├── supplier.py
+│   │   ├── tag.py
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── endpoints/
+│   │   │   ├── __init__.py
+│   │   │   ├── admin.py
+│   │   │   ├── assets.py
+│   │   │   ├── audit_logs.py
+│   │   │   ├── dictionaries.py
+│   │   │   ├── health.py
+│   │   │   ├── tags.py
+│   ├── utils/
+│   │   ├── __init__.py
+│   │   ├── helpers.py
 ├── docs/
 │   ├── 01_initial_database_seeding.md
 ├── initdb/
@@ -159,6 +161,11 @@ ITBase-/
 │   ├── edit_asset.html
 │   ├── error.html
 │   ├── pagination.html
+│   ├── includes/
+│   │   ├── flash_messages.html
+│   │   ├── form_helpers.html
+│   ├── modals/
+│   │   ├── dictionary_modals.html
 │   ├── admin/
 │   │   ├── asset_types.html
 │   │   ├── departments.html
@@ -167,12 +174,8 @@ ITBase-/
 │   │   ├── dictionaries_dashboard.html
 │   │   ├── locations.html
 │   │   ├── manufacturers.html
+│   │   ├── suppliers.html
 │   │   ├── tags.html
-│   ├── includes/
-│   │   ├── flash_messages.html
-│   │   ├── form_helpers.html
-│   ├── modals/
-│   │   ├── dictionary_modals.html
 ├── tests/
 │   ├── __init__.py
 │   ├── conftest.py
