@@ -50,3 +50,5 @@ generate_structure.py
 # Ignore Continue extension files
 .continue/
 
+Спец.tsv
+.trae/rules/project_rules.md
