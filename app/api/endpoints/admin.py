@@ -1,3 +1,4 @@
+# app/api/endpoints/admin.py
 import logging
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -9,14 +10,15 @@ from app.templating import templates
 from app.flash import flash
 from app.services.exceptions import DeletionError, DuplicateError
 
-# --- Импортируем схемы для DeviceModel ---
 from app.schemas.dictionary import (
     DictionarySimpleCreate, 
     DictionarySimpleUpdate, 
     AssetTypeCreate, 
     AssetTypeUpdate,
     DeviceModelCreate,
-    DeviceModelUpdate
+    DeviceModelUpdate,
+    EmployeeCreate,
+    EmployeeUpdate
 )
 
 from app.services.asset_type_service import asset_type_service
@@ -94,12 +96,18 @@ async def dictionaries_dashboard(request: Request, db: AsyncSession = Depends(ge
 async def manage_dictionary(request: Request, dictionary_type: str, db: AsyncSession = Depends(get_db)):
     if dictionary_type not in DICTIONARY_CONFIG:
         return templates.TemplateResponse('error.html', {'request': request, 'error': 'Справочник не найден.'}, status_code=404)
+    
     config = DICTIONARY_CONFIG[dictionary_type]
     items = await config["service"].get_all(db)
     context = {"request": request, "title": config["title"], config["list_variable_name"]: items}
+
     if dictionary_type == 'device-models':
         context['manufacturers'] = await manufacturer_service.get_all(db)
         context['asset_types'] = await asset_type_service.get_all(db)
+    
+    if dictionary_type == 'employees':
+        context['departments'] = await department_service.get_all(db)
+
     return templates.TemplateResponse(config["template"], context)
 
 @router.post("/dictionaries/{dictionary_type}/add", name="create_dictionary_item")
@@ -115,14 +123,15 @@ async def create_dictionary_item(request: Request, dictionary_type: str, db: Asy
     try:
         if dictionary_type == "asset-types":
             schema = AssetTypeCreate.model_validate(form_data)
-        # --- Добавляем обработку для DeviceModel ---
         elif dictionary_type == "device-models":
             schema = DeviceModelCreate.model_validate(form_data)
+        elif dictionary_type == "employees":
+            schema = EmployeeCreate.model_validate(form_data)
         else:
             schema = DictionarySimpleCreate.model_validate(form_data)
         
         await service.create(db, obj_in=schema, user_id=user_id)
-        flash(request, f"{config['title']} '{schema.name}' успешно создан.", "success")
+        flash(request, f"Запись в справочнике '{config['title']}' успешно создана.", "success")
 
     except ValidationError as e:
         errors = e.errors()
@@ -147,14 +156,15 @@ async def edit_dictionary_item(request: Request, dictionary_type: str, item_id: 
     try:
         if dictionary_type == "asset-types":
             schema = AssetTypeUpdate.model_validate(form_data)
-        # --- Добавляем обработку для DeviceModel ---
         elif dictionary_type == "device-models":
             schema = DeviceModelUpdate.model_validate(form_data)
+        elif dictionary_type == "employees":
+            schema = EmployeeUpdate.model_validate(form_data)
         else:
             schema = DictionarySimpleUpdate.model_validate(form_data)
 
         await service.update(db, obj_id=item_id, obj_in=schema, user_id=user_id)
-        flash(request, f"{config['title']} успешно обновлен.", "success")
+        flash(request, f"Запись в справочнике '{config['title']}' успешно обновлена.", "success")
 
     except ValidationError as e:
         errors = e.errors()
@@ -178,7 +188,7 @@ async def delete_dictionary_item(request: Request, dictionary_type: str, item_id
     try:
         deleted_item = await service.delete(db, obj_id=item_id, user_id=user_id)
         if deleted_item:
-            flash(request, f"{config['title']} '{getattr(deleted_item, 'name', '')}' успешно удален.", "success")
+            flash(request, f"Запись '{getattr(deleted_item, 'name', getattr(deleted_item, 'full_name', ''))}' успешно удалена.", "success")
     except DeletionError as e:
         flash(request, str(e), "danger")
 

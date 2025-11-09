@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ title }}</h1>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addItemModal">
+            <i class="bi bi-plus-circle"></i> Добавить сотрудника
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if employees %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th scope="col">ID</th>
+                            <th scope="col">ФИО</th>
+                            <th scope="col">Табельный номер</th>
+                            <th scope="col">Должность</th>
+                            <th scope="col">Отдел</th>
+                            <th scope="col" class="text-end">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in employees %}
+                        <tr>
+                            <th scope="row">{{ item.id }}</th>
+                            <td>{{ item.full_name }}</td>
+                            <td>{{ item.employee_id or '-' }}</td>
+                            <td>{{ item.position or '-' }}</td>
+                            <td>{{ item.department.name if item.department else '-' }}</td>
+                            <td class="text-end">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                            data-bs-toggle="modal" data-bs-target="#editItemModal-{{ item.id }}"
+                                            title="Редактировать">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <form action="{{ url_for('delete_dictionary_item', dictionary_type='employees', item_id=item.id) }}"
+                                          method="post" class="d-inline"
+                                          onsubmit="return confirm('Вы уверены, что хотите удалить сотрудника \'{{ item.full_name }}\'?')">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Удалить">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center p-5">
+                <i class="bi bi-people text-muted" style="font-size: 4rem;"></i>
+                <h4 class="mt-3">Сотрудники не найдены</h4>
+                <p class="text-muted">Вы еще не добавили ни одного сотрудника. Нажмите кнопку "Добавить", чтобы начать.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для добавления -->
+<div class="modal fade" id="addItemModal" tabindex="-1" aria-labelledby="addItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('create_dictionary_item', dictionary_type='employees') }}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addItemModalLabel">Добавить сотрудника</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="add-last_name" class="form-label">Фамилия <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="add-last_name" name="last_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="add-first_name" class="form-label">Имя <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="add-first_name" name="first_name" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-patronymic" class="form-label">Отчество</label>
+                        <input type="text" class="form-control" id="add-patronymic" name="patronymic">
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-employee_id" class="form-label">Табельный номер <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="add-employee_id" name="employee_id" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-position" class="form-label">Должность</label>
+                        <input type="text" class="form-control" id="add-position" name="position">
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-department_id" class="form-label">Отдел</label>
+                        <select class="form-select" id="add-department_id" name="department_id">
+                            <option value="">Не выбран</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="add-email" name="email">
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-phone_number" class="form-label">Телефон</label>
+                        <input type="text" class="form-control" id="add-phone_number" name="phone_number">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальные окна для редактирования -->
+{% for item in employees %}
+<div class="modal fade" id="editItemModal-{{ item.id }}" tabindex="-1" aria-labelledby="editItemModalLabel-{{ item.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('edit_dictionary_item', dictionary_type='employees', item_id=item.id) }}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editItemModalLabel-{{ item.id }}">Редактировать сотрудника</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-last_name-{{ item.id }}" class="form-label">Фамилия <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="edit-last_name-{{ item.id }}" name="last_name" value="{{ item.last_name }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-first_name-{{ item.id }}" class="form-label">Имя <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="edit-first_name-{{ item.id }}" name="first_name" value="{{ item.first_name }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-patronymic-{{ item.id }}" class="form-label">Отчество</label>
+                        <input type="text" class="form-control" id="edit-patronymic-{{ item.id }}" name="patronymic" value="{{ item.patronymic or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-employee_id-{{ item.id }}" class="form-label">Табельный номер <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="edit-employee_id-{{ item.id }}" name="employee_id" value="{{ item.employee_id or '' }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-position-{{ item.id }}" class="form-label">Должность</label>
+                        <input type="text" class="form-control" id="edit-position-{{ item.id }}" name="position" value="{{ item.position or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-department_id-{{ item.id }}" class="form-label">Отдел</label>
+                        <select class="form-select" id="edit-department_id-{{ item.id }}" name="department_id">
+                            <option value="">Не выбран</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}" {% if item.department_id == dept.id %}selected{% endif %}>{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-email-{{ item.id }}" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="edit-email-{{ item.id }}" name="email" value="{{ item.email or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-phone_number-{{ item.id }}" class="form-label">Телефон</label>
+                        <input type="text" class="form-control" id="edit-phone_number-{{ item.id }}" name="phone_number" value="{{ item.phone_number or '' }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}

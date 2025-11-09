@@ -1,5 +1,5 @@
-# app/schemas/dictionary.py
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from typing import Optional
 
 # --- Базовые схемы ---
 
@@ -14,8 +14,6 @@ class DictionarySimpleUpdate(BaseModel):
     description: str | None = Field(None, max_length=255)
 
 # --- Схемы для конкретных справочников ---
-
-# --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем недостающие схемы ---
 
 class DeviceStatusCreate(DictionarySimpleCreate):
     pass
@@ -35,8 +33,6 @@ class SupplierCreate(BaseModel):
     phone: str | None = Field(None, max_length=20)
     email: EmailStr | None = None
     address: str | None = Field(None, max_length=255)
-
-# --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
 
 # ===============================================================
@@ -64,22 +60,38 @@ class DeviceModelUpdate(DeviceModelCreate):
 # Employee
 # ===============================================================
 class EmployeeCreate(BaseModel):
-    first_name: str = Field(..., max_length=50)
-    last_name: str = Field(..., max_length=50)
-    patronymic: str | None = Field(None, max_length=50)
-    # Было employee_id, но в DICTIONARY_CONFIG мы используем position
-    position: str | None = Field(None, max_length=100)
-    email: EmailStr | None = None
-    phone_number: str | None = Field(None, max_length=20)
+    # --- ОБЯЗАТЕЛЬНЫЕ ПОЛЯ ---
+    last_name: str = Field(..., max_length=50, description="Фамилия")
+    first_name: str = Field(..., max_length=50, description="Имя")
 
+    # --- ОПЦИОНАЛЬНЫЕ ПОЛЯ ---
+    patronymic: Optional[str] = Field(None, max_length=50)
+    employee_id: Optional[str] = Field(None, max_length=50) # Сделали опциональным
+    position: Optional[str] = Field(None, max_length=255)
+    email: Optional[EmailStr] = None
+    phone_number: Optional[str] = Field(None, max_length=20)
+    department_id: Optional[int] = Field(None)
 
-class EmployeeUpdate(BaseModel):
-    first_name: str = Field(..., max_length=50)
-    last_name: str = Field(..., max_length=50)
-    patronymic: str | None = Field(None, max_length=50)
-    position: str | None = Field(None, max_length=100)
-    email: EmailStr | None = None
-    phone_number: str | None = Field(None, max_length=20)
+    # --- ВАЛИДАТОР ДЛЯ ПРЕОБРАЗОВАНИЯ ПУСТЫХ СТРОК В NONE ---
+    @field_validator(
+        'patronymic', 'employee_id', 'position', 'email', 
+        'phone_number', 'department_id', 
+        mode='before'
+    )
+    @classmethod
+    def empty_str_to_none(cls, v):
+        """
+        Преобразует пустую строку, пришедшую из формы, в None.
+        Это позволяет опциональным полям (включая EmailStr) 
+        корректно проходить валидацию, если они не заполнены.
+        """
+        if v == '':
+            return None
+        return v
+
+class EmployeeUpdate(EmployeeCreate):
+    """Схема обновления наследует всю логику и поля от схемы создания."""
+    pass
 
 
 # ===============================================================
@@ -120,6 +132,7 @@ class EmployeeResponse(BaseModel):
     position: str | None = None
     email: EmailStr | None = None
     phone_number: str | None = None
+    employee_id: Optional[str] # Также делаем опциональным в ответе
 
     model_config = ConfigDict(from_attributes=True)
 
