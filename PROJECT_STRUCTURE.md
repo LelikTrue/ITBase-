@@ -110,6 +110,10 @@ ITBase-/
 │   │   ├── manufacturer_service.py
 │   │   ├── supplier_service.py
 │   │   ├── tag_service.py
+│   │   ├── mixins/
+│   │   │   ├── __init__.py
+│   │   │   ├── dependency_check_mixin.py
+│   │   │   ├── duplicate_check_mixin.py
 │   ├── schemas/
 │   │   ├── __init__.py
 │   │   ├── asset.py
@@ -172,6 +176,7 @@ ITBase-/
 │   │   ├── device_models.html
 │   │   ├── device_statuses.html
 │   │   ├── dictionaries_dashboard.html
+│   │   ├── employees.html
 │   │   ├── locations.html
 │   │   ├── manufacturers.html
 │   │   ├── suppliers.html
