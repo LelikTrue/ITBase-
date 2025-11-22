@@ -37,6 +37,7 @@ from app.db.database import AsyncSessionFactory
 import app.models  # Важно для Alembic
 from app.api.endpoints import admin, assets, audit_logs, dictionaries, health, tags
 from app.config import BASE_DIR
+from app.logging_config import EndpointFilter
 from app.flash import flash
 
 # --- Custom Swagger UI for Assets API ---
@@ -48,8 +49,12 @@ except FileNotFoundError:
     print(f'Warning: {OPENAPI_ASSETS_SPEC_PATH} not found. Assets API docs will not be available.')
     openapi_assets_spec = {}
 
-# Настройка логирования
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# --- Настройка логирования ---
+# Исключаем логи для эндпоинта /health
+logging.getLogger("uvicorn.access").addFilter(EndpointFilter(path="/health"))
+
+# Общая конфигурация логирования
+logging.basicConfig(level=logging.INFO, format='%(levelname)-8s %(message)s')
 logger = logging.getLogger(__name__)
 
 def format_validation_errors_to_dict(errors: list) -> dict:
