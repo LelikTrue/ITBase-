@@ -4,20 +4,22 @@ import random
 import sys
 from pathlib import Path
 
-project_root = Path(__file__).resolve().parent
-sys.path.insert(0, str(project_root))
-
-from faker import Faker # type: ignore
-from sqlalchemy import select # pyright: ignore[reportMissingImports]
-from sqlalchemy.orm import joinedload # type: ignore
-
-from app.db.database import AsyncSessionFactory
-from app.models import Department, DeviceModel, DeviceStatus, Employee, Location, Tag
+from faker import Faker  # type: ignore
 from app.schemas.asset import AssetCreate
 from app.services.device_service import DeviceService
+from app.db.database import AsyncSessionFactory
+from app.models import Department, DeviceModel, DeviceStatus, Employee, Location, Tag
+from sqlalchemy import select  # pyright: ignore[reportMissingImports]
+from sqlalchemy.orm import joinedload  # type: ignore
+ 
+project_root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(project_root))
 
 NUMBER_OF_DEVICES = 30
+# ID пользователя для записи в журнал аудита при генерации тестовых данных
+# Предполагается, что первый пользователь в системе - администратор
 ADMIN_USER_ID = 1
+
 
 async def seed_devices():
     """Основная функция для генерации и добавления тестовых активов."""
@@ -66,19 +68,19 @@ async def seed_devices():
                 'serial_number': faker.ean(length=13),
                 'mac_address': faker.mac_address() if random.random() > 0.5 else None,
                 'ip_address': faker.ipv4() if random.random() > 0.5 else None,
-                'notes': f'Тестовый актив №{i+1}. {faker.sentence(nb_words=10)}',
+                'notes': f'Тестовый актив №{i + 1}. {faker.sentence(nb_words=10)}',
                 'source': 'Сгенерировано скриптом',
                 'manufacturer_id': selected_model.manufacturer_id,
                 'purchase_date': faker.date_between(start_date='-1y', end_date='today'),
-                'warranty_end_date': faker.date_between(start_date='today', end_date='+1y'), 
+                'warranty_end_date': faker.date_between(start_date='today', end_date='+1y'),
                 'asset_type_id': selected_model.asset_type_id,
                 'device_model_id': selected_model.id,
                 'status_id': selected_status.id,
                 'department_id': selected_department.id if selected_department else None,
                 'location_id': selected_location.id if selected_location else None,
                 'employee_id': selected_employee.id if selected_employee else None,
-                'tag_ids': [tag.id for tag in selected_tags],           
-                }
+                'tag_ids': [tag.id for tag in selected_tags],
+            }
 
             asset_to_create = AssetCreate(**asset_data)
 
@@ -87,7 +89,7 @@ async def seed_devices():
                 await device_service.create_device(db, asset_to_create, user_id=ADMIN_USER_ID)
                 print(".", end="", flush=True)
                 successful_creations += 1
-        except Exception as e:
+        except Exception:
             print("F", end="", flush=True)
             failed_creations += 1
 
