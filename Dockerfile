@@ -1,117 +1,117 @@
 # =====================================================================
-# Стадия 1: builder – Установка зависимостей
+# Стадия 1: builder-base – Установка основных зависимостей
 # =====================================================================
-# Используем конкретную версию slim-образа для предсказуемости
-FROM python:3.12.3-slim-bookworm AS builder
+# Используем плавающий тег для получения последних обновлений безопасности
+FROM python:3.12-slim-bookworm AS builder-base
 
-# Устанавливаем системные переменные, чтобы Python работал корректно
+# Устанавливаем системные переменные
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    # Путь к пакетам, установленным через pip
     PATH="/root/.local/bin:$PATH"
 
-# Обновляем списки пакетов и устанавливаем curl для HEALTHCHECK.
-# --no-install-recommends экономит место.
-# В конце чистим кэш apt, чтобы образ оставался маленьким.
+# Обновляем списки пакетов, обновляем систему и устанавливаем curl/git
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends curl git && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Копируем только файлы зависимостей. Это ключевой шаг для кеширования.
-# Если эти файлы не меняются, Docker не будет переустанавливать зависимости.
+# Копируем файлы зависимостей
+COPY setup.py README.md ./
 COPY requirements/base.txt requirements/dev.txt requirements/prod.txt ./requirements/
 
-# Устанавливаем базовые и dev-зависимости с использованием кеша pip
-# Это ускорит последующие сборки
+# Устанавливаем ТОЛЬКО основные зависимости
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements/base.txt && \
-    pip install --no-cache-dir -r requirements/dev.txt
-
+    pip install --user --no-cache-dir -r requirements/base.txt
 
 # =====================================================================
-# Стадия 2: dev – Образ для разработки
+# Стадия 2: dev-dependencies – Установка dev-зависимостей
 # =====================================================================
-FROM builder AS dev
+FROM builder-base AS dev-dependencies
+
+# Доустанавливаем dev-зависимости поверх base
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --user --no-cache-dir -r requirements/dev.txt
+
+# =====================================================================
+# Стадия 3: dev – Образ для разработки
+# =====================================================================
+FROM python:3.12-slim-bookworm AS dev
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/home/appuser/.local/bin:$PATH"
+
+# Обновляем систему и устанавливаем curl для HEALTHCHECK
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Создаем пользователя
+ARG UID=1000
+ARG GID=1000
+RUN groupadd -r -g "${GID}" appuser && useradd -r -u "${UID}" -g appuser -d /home/appuser -m -s /bin/bash appuser
 
 WORKDIR /app
 
-# Копируем остальные файлы проекта.
-# Мы делаем это после установки зависимостей, чтобы изменения в коде
-# не приводили к переустановке всех пакетов.
-COPY . .
+# Копируем зависимости из dev-dependencies
+COPY --from=dev-dependencies /root/.local /home/appuser/.local
 
-# Создаем непривилегированного пользователя для безопасности
-ARG UID=1000
-ARG GID=1000
-RUN groupadd -r -g "${GID}" appuser && useradd -r -u "${UID}" -g appuser appuser
+# Копируем код приложения
+COPY --chown=appuser:appuser . .
 
-# Меняем владельца директории приложения
-RUN chown -R appuser:appuser /app
-
-# Переключаемся на созданного пользователя
 USER appuser
 
-# Открываем порт, на котором будет работать uvicorn
 EXPOSE 8000
 
-# Healthcheck для проверки, что приложение запустилось и отвечает
 HEALTHCHECK --interval=10s --timeout=5s --start-period=15s --retries=10 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Команда для запуска сервера в режиме разработки с автоперезагрузкой
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
 
 # =====================================================================
-# Стадия 3: prod – Финальный образ для продакшена
+# Стадия 4: prod – Финальный образ для продакшена
 # =====================================================================
-# Начинаем с чистого образа, чтобы он был минималистичным
-FROM python:3.12.3-slim-bookworm AS prod
+FROM python:3.12-slim-bookworm AS prod
 
-# Устанавливаем системные переменные для продакшена
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/home/appuser/.local/bin:$PATH" \
-    # Настройки для pip
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Устанавливаем curl для HEALTHCHECK в production-образе
+# Обновляем систему и устанавливаем curl для HEALTHCHECK
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install -y --no-install-recommends curl && \
     rm -rf /var/lib/apt/lists/*
 
-# Создаем пользователя ПЕРЕД копированием файлов, чтобы сразу задать нужного владельца
+# Создаем пользователя
 ARG UID=1000
 ARG GID=1000
-RUN groupadd -r -g "${GID}" appuser && useradd -r -u "${UID}" -g appuser -d /home/appuser -m -s /bin/bash
+RUN groupadd -r -g "${GID}" appuser && useradd -r -u "${UID}" -g appuser -d /home/appuser -m -s /bin/bash appuser
 
 WORKDIR /app
 
-# Копируем установленные зависимости из стадии builder
-COPY --from=builder /root/.local /home/appuser/.local
-# Копируем только production-зависимости, если они есть
-# RUN --mount=type=cache,target=/root/.cache/pip \
-#     pip install --no-cache-dir -r requirements/prod.txt
+# Копируем зависимости ТОЛЬКО из builder-base (чистые production-зависимости)
+COPY --from=builder-base /root/.local /home/appuser/.local
 
-# Копируем только нужные для работы приложения файлы с правильными правами
+# Копируем код приложения
 COPY --chown=appuser:appuser app ./app
 COPY --chown=appuser:appuser alembic ./alembic
 COPY --chown=appuser:appuser alembic.ini .
 COPY --chown=appuser:appuser openapi-assets.yaml .
 COPY --chown=appuser:appuser static ./static
 
-# Переключаемся на нашего пользователя
 USER appuser
 
 EXPOSE 8000
 
-# Healthcheck для продакшена с более консервативными настройками
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Команда для запуска сервера в продакшене
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

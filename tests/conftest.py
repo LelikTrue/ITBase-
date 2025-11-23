@@ -42,7 +42,7 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 # Фикстура для создания ИЗОЛИРОВАННОГО приложения
 @pytest_asyncio.fixture(scope="function")
 def test_app(db_session: AsyncSession) -> FastAPI:
-    app = create_app() # Создаем чистый экземпляр только для этого теста
+    app = create_app()
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         yield db_session
     app.dependency_overrides[get_db] = override_get_db

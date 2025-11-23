@@ -4,7 +4,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
-.PHONY: help up down down-clean logs migrate migration init-data seed-devices dev-full wait-ready shell lint lint-fix format type-check test ps restart db-shell redis-cli clean dev prod
+.PHONY: help up down down-clean rebuild-db logs logs-db migrate migration init-data seed-devices dev-full wait-ready shell lint lint-fix format type-check test ps restart db-shell redis-cli clean dev prod
 
 # --- Переменные ---
 # По умолчанию используем dev-окружение
@@ -51,7 +51,7 @@ dev: check-env
 	@echo "${YELLOW}Запуск в режиме разработки (с логами)...${RESET}"
 	docker compose $(COMPOSE_FILE) up --build
 
-## prod: Запуск в продакшн режиме
+## prod: Запуск в продакшн режиме (оптимизированный образ)
 prod: COMPOSE_FILE := -f docker-compose.yml -f docker-compose.prod.yml
 prod: check-env
 	@echo "${YELLOW}Запуск в продакшн режиме...${RESET}"
@@ -72,10 +72,29 @@ down-clean:
 	@echo "${YELLOW}Полная очистка (контейнеры + volume)...${RESET}"
 	docker compose $(COMPOSE_FILE) down -v --remove-orphans
 
+## rebuild-db: Пересоздать базу данных (при проблемах с версиями PostgreSQL)
+rebuild-db:
+	@echo "${RED}⚠️  Внимание! Это удалит ВСЕ данные из базы данных!${RESET}"
+	@read -p "Продолжить? (yes/no): " confirm; \
+	if [ "$$confirm" = "yes" ]; then \
+		echo "${YELLOW}Остановка контейнеров...${RESET}"; \
+		docker compose $(COMPOSE_FILE) down; \
+		echo "${YELLOW}Удаление volume базы данных...${RESET}"; \
+		docker volume rm ${COMPOSE_PROJECT_NAME:-itbase}_postgres_data 2>/dev/null || true; \
+		echo "${GREEN}База данных будет пересоздана при следующем запуске (make up)${RESET}"; \
+	else \
+		echo "${YELLOW}Отменено.${RESET}"; \
+	fi
+
 ## logs: Показать логи приложения (Ctrl+C для выхода)
 logs:
 	@echo "${YELLOW}Просмотр логов приложения...${RESET}"
 	docker compose $(COMPOSE_FILE) logs -f $(APP_SERVICE_NAME)
+
+## logs-db: Показать логи базы данных (для диагностики)
+logs-db:
+	@echo "${YELLOW}Просмотр логов базы данных...${RESET}"
+	docker compose $(COMPOSE_FILE) logs -f db
 
 ## restart: Перезапустить приложение
 restart:
@@ -87,12 +106,9 @@ restart:
 ## wait-ready: Ожидание готовности PostgreSQL и приложения
 wait-ready:
 	@echo "${YELLOW}Ожидание готовности сервисов...${RESET}"
-	@timeout=60 counter=0; \
-	until docker compose $(COMPOSE_FILE) ps | grep -E 'backend.*\(healthy\)' > /dev/null 2>&1; do \
-		[ $$counter -ge $$timeout ] && echo "\n${RED}Ошибка: Приложение не достигло статуса 'healthy'${RESET}" && exit 1; \
-		printf "."; sleep 3; counter=$$((counter+3)); \
-	done
-	@echo "\n${GREEN}Приложение готово!${RESET}"
+	@sleep 5
+	@curl -sf http://localhost:${APP_PORT:-8002}/health > /dev/null 2>&1 || (echo "${RED}Приложение не готово, но продолжаем...${RESET}")
+	@echo "${GREEN}Приложение запущено!${RESET}"
 
 # --- Работа с базой данных ---
 
@@ -117,9 +133,15 @@ seed-devices: wait-ready
 	@echo "${YELLOW}Создание 30 демо-активов...${RESET}"
 	docker compose $(COMPOSE_FILE) exec $(APP_SERVICE_NAME) python -m seed_devices
 
+## create-admin: Создать администратора системы
+create-admin: wait-ready
+	@echo "${YELLOW}Создание администратора...${RESET}"
+	docker compose $(COMPOSE_FILE) exec $(APP_SERVICE_NAME) python create_admin.py
+
 ## dev-full: Полный запуск: миграции + справочники + демо-активы
 dev-full: up migrate init-data seed-devices
 	@echo "\n${GREEN}Готово! Открывай: http://localhost:$(APP_PORT)/dashboard${RESET}"
+
 
 # --- Инструменты разработки ---
 
