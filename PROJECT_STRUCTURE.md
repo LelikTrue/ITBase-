@@ -20,6 +20,7 @@ ITBase-/
 ├── README.dev.md
 ├── README.md
 ├── alembic.ini
+├── create_admin.py
 ├── docker-compose.dev.yml
 ├── docker-compose.override.yml
 ├── docker-compose.prod.yml
@@ -66,11 +67,13 @@ ITBase-/
 │   │   ├── 20251012_7a9c8d6b5e4f_add_category_field_to_tags.py
 │   │   ├── 20251019_8fc178ad1a1b_добавим_description_to_tags.py
 │   │   ├── 20251025_4a21be86bcbc_add_name_column_to_devices_table.py
+│   │   ├── 20251122_d1fc03a6856f_add_user_model.py
 ├── app/
 │   ├── __init__.py
 │   ├── config.py
 │   ├── flash.py
 │   ├── form_helpers.html
+│   ├── logging_config.py
 │   ├── main.py
 │   ├── templating.py
 │   ├── test_main.py
@@ -94,6 +97,9 @@ ITBase-/
 │   │   ├── network.py
 │   │   ├── supplier.py
 │   │   ├── tag.py
+│   │   ├── user.py
+│   ├── core/
+│   │   ├── security.py
 │   ├── services/
 │   │   ├── __init__.py
 │   │   ├── asset_type_service.py
@@ -121,16 +127,21 @@ ITBase-/
 │   │   ├── dictionary.py
 │   │   ├── supplier.py
 │   │   ├── tag.py
+│   │   ├── user.py
 │   ├── api/
 │   │   ├── __init__.py
+│   │   ├── deps.py
 │   │   ├── endpoints/
 │   │   │   ├── __init__.py
 │   │   │   ├── admin.py
 │   │   │   ├── assets.py
 │   │   │   ├── audit_logs.py
+│   │   │   ├── auth.py
 │   │   │   ├── dictionaries.py
 │   │   │   ├── health.py
 │   │   │   ├── tags.py
+│   │   │   ├── users.py
+│   │   │   ├── web_auth.py
 │   ├── utils/
 │   │   ├── __init__.py
 │   │   ├── helpers.py
@@ -164,7 +175,9 @@ ITBase-/
 │   ├── dashboard.html
 │   ├── edit_asset.html
 │   ├── error.html
+│   ├── login.html
 │   ├── pagination.html
+│   ├── register.html
 │   ├── includes/
 │   │   ├── flash_messages.html
 │   │   ├── form_helpers.html
@@ -181,10 +194,13 @@ ITBase-/
 │   │   ├── manufacturers.html
 │   │   ├── suppliers.html
 │   │   ├── tags.html
+│   │   ├── users.html
 ├── tests/
 │   ├── __init__.py
 │   ├── conftest.py
 │   ├── test_assets.py
+│   ├── test_auth.py
 │   ├── test_health.py
 │   ├── test_simple.py
+│   ├── test_web_auth.py
 ```
