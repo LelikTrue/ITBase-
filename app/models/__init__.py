@@ -18,6 +18,7 @@ from .manufacturer import Manufacturer
 from .network import NetworkSettings
 from .supplier import Supplier
 from .tag import Tag
+from .user import User
 
 __all__ = [
     'Base',
@@ -34,5 +35,5 @@ __all__ = [
     'NetworkSettings',
     'ActionLog',
     'Tag',
-    'Supplier',  # <-- И ЭТА СТРОКА СЮДА
+    'Supplier',
 ]
