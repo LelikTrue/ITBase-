@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+  <div class="col-md-5">
+    <div class="card shadow-sm border-0">
+      <div class="card-body p-5">
+        <div class="text-center mb-4">
+          <i class="bi bi-person-plus display-4 text-success"></i>
+          <h2 class="mt-3">Регистрация</h2>
+          <p class="text-muted">Создайте новый аккаунт</p>
+        </div>
+
+        <form method="post" action="{{ url_for('register_user') }}" id="registerForm">
+          <div class="mb-3">
+            <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+              <input
+                type="email"
+                class="form-control"
+                id="email"
+                name="email"
+                placeholder="your@email.com"
+                required
+                autofocus
+              />
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="full_name" class="form-label">Полное имя</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-person"></i></span>
+              <input
+                type="text"
+                class="form-control"
+                id="full_name"
+                name="full_name"
+                placeholder="Иван Иванов"
+              />
+            </div>
+            <small class="text-muted">Необязательное поле</small>
+          </div>
+
+          <div class="mb-3">
+            <label for="password" class="form-label">Пароль <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-lock"></i></span>
+              <input
+                type="password"
+                class="form-control"
+                id="password"
+                name="password"
+                placeholder="••••••••"
+                minlength="8"
+                required
+              />
+            </div>
+            <small class="text-muted">Минимум 8 символов</small>
+          </div>
+
+          <div class="mb-4">
+            <label for="password_confirm" class="form-label">Подтверждение пароля <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+              <input
+                type="password"
+                class="form-control"
+                id="password_confirm"
+                name="password_confirm"
+                placeholder="••••••••"
+                minlength="8"
+                required
+              />
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-success w-100 py-2">
+            <i class="bi bi-person-plus me-2"></i>Зарегистрироваться
+          </button>
+        </form>
+        
+        <div class="text-center mt-3">
+          <small class="text-muted">
+            Уже есть аккаунт? <a href="{{ url_for('login_page') }}" class="text-decoration-none">Войти</a>
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Проверка совпадения паролей
+document.getElementById('registerForm').addEventListener('submit', function(e) {
+  const password = document.getElementById('password').value;
+  const passwordConfirm = document.getElementById('password_confirm').value;
+  
+  if (password !== passwordConfirm) {
+    e.preventDefault();
+    alert('Пароли не совпадают!');
+    return false;
+  }
+  
+  if (password.length < 8) {
+    e.preventDefault();
+    alert('Пароль должен содержать минимум 8 символов!');
+    return false;
+  }
+});
+</script>
+{% endblock %}

@@ -84,12 +84,8 @@ def create_app() -> FastAPI:
         allow_headers=['*'],
     )
 
-    app.add_middleware(
-        SessionMiddleware,
-        secret_key=os.getenv('SECRET_KEY', secrets.token_hex(32)),
-        session_cookie='session',
-        max_age=3600
-    )
+
+
 
     # --- ПОДКЛЮЧЕНИЕ РОУТЕРОВ ---
     app.include_router(assets.router)
@@ -99,6 +95,12 @@ def create_app() -> FastAPI:
     app.include_router(admin.router, prefix='/admin')
     #app.include_router(health.router, prefix='/api/health', tags=['health'])
     app.include_router(tags.router, prefix='/api/v1/tags', tags=['tags'])
+
+    # --- AUTH & USERS ---
+    from app.api.endpoints import auth, users, web_auth
+    app.include_router(auth.router, tags=["login"])
+    app.include_router(users.router, prefix="/users", tags=["users"])
+    app.include_router(web_auth.router)  # Web login/logout
 
     # --- НОВЫЙ HEALTH CHECK БЕЗ ПРОВЕРКИ БД ---
     @app.get('/health', include_in_schema=False)
@@ -153,8 +155,34 @@ def create_app() -> FastAPI:
         )
 
     @app.get('/openapi-assets.json', include_in_schema=False)
-    async def get_openapi_assets_endpoint():
+    async def get_assets_openapi():
         return openapi_assets_spec
+
+    # --- AUTH MIDDLEWARE (добавляется в конце, чтобы выполнялся после SessionMiddleware) ---
+    @app.middleware("http")
+    async def auth_redirect_middleware(request: Request, call_next):
+        """Redirect unauthenticated users to login page"""
+        # Public paths that don't require authentication
+        public_paths = ["/login", "/register", "/logout", "/health", "/ready", "/static", "/api", "/docs", "/openapi", "/users"]
+        
+        # Check if path is public
+        is_public = any(request.url.path.startswith(path) for path in public_paths)
+        
+        if not is_public:
+            # Check if user is authenticated (session is available here)
+            user_id = request.session.get("user_id") if "session" in request.scope else None
+            if not user_id:
+                return RedirectResponse(url="/login", status_code=303)
+        
+        response = await call_next(request)
+        return response
+
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=os.getenv('SECRET_KEY', secrets.token_hex(32)),
+        session_cookie='session',
+        max_age=3600
+    )
 
     @app.get('/', status_code=302, include_in_schema=False)
     async def root_redirect(request: Request):
