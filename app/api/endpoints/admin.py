@@ -1,24 +1,27 @@
 # app/api/endpoints/admin.py
 import logging
+
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import ValidationError
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api import deps
 from app.db.database import get_db
-from app.templating import templates
 from app.flash import flash
+from app.models.user import User
 from app.services.exceptions import DeletionError, DuplicateError
+from app.templating import templates
 
 from app.schemas.dictionary import (
-    DictionarySimpleCreate, 
-    DictionarySimpleUpdate, 
-    AssetTypeCreate, 
+    AssetTypeCreate,
     AssetTypeUpdate,
     DeviceModelCreate,
     DeviceModelUpdate,
+    DictionarySimpleCreate,
+    DictionarySimpleUpdate,
     EmployeeCreate,
-    EmployeeUpdate
+    EmployeeUpdate,
 )
 
 from app.services.asset_type_service import asset_type_service
@@ -58,7 +61,7 @@ DICTIONARY_CONFIG = {
     "suppliers": {
         "service": supplier_service, "title": "Поставщики", "icon": "bi-truck",
         "description": "Компании-поставщики", "list_variable_name": "suppliers",
-        "template": "admin/suppliers.html" 
+        "template": "admin/suppliers.html"
     },
     "departments": {
         "service": department_service, "title": "Отделы", "icon": "bi-diagram-3",
@@ -82,6 +85,7 @@ DICTIONARY_CONFIG = {
     },
 }
 
+
 @router.get('/dictionaries', response_class=HTMLResponse, name="dictionaries_dashboard")
 async def dictionaries_dashboard(request: Request, db: AsyncSession = Depends(get_db)):
     stats = {}
@@ -92,11 +96,12 @@ async def dictionaries_dashboard(request: Request, db: AsyncSession = Depends(ge
         'title': 'Управление справочниками'
     })
 
+
 @router.get("/dictionaries/{dictionary_type}", response_class=HTMLResponse, name="manage_dictionary")
 async def manage_dictionary(request: Request, dictionary_type: str, db: AsyncSession = Depends(get_db)):
     if dictionary_type not in DICTIONARY_CONFIG:
         return templates.TemplateResponse('error.html', {'request': request, 'error': 'Справочник не найден.'}, status_code=404)
-    
+
     config = DICTIONARY_CONFIG[dictionary_type]
     items = await config["service"].get_all(db)
     context = {"request": request, "title": config["title"], config["list_variable_name"]: items}
@@ -104,21 +109,27 @@ async def manage_dictionary(request: Request, dictionary_type: str, db: AsyncSes
     if dictionary_type == 'device-models':
         context['manufacturers'] = await manufacturer_service.get_all(db)
         context['asset_types'] = await asset_type_service.get_all(db)
-    
+
     if dictionary_type == 'employees':
         context['departments'] = await department_service.get_all(db)
 
     return templates.TemplateResponse(config["template"], context)
 
+
 @router.post("/dictionaries/{dictionary_type}/add", name="create_dictionary_item")
-async def create_dictionary_item(request: Request, dictionary_type: str, db: AsyncSession = Depends(get_db)):
+async def create_dictionary_item(
+    request: Request,
+    dictionary_type: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(deps.get_current_user_from_session),
+):
     if dictionary_type not in DICTIONARY_CONFIG:
         return RedirectResponse(url=request.url_for("dictionaries_dashboard"), status_code=303)
-    
+
     config = DICTIONARY_CONFIG[dictionary_type]
     service = config["service"]
     form_data = await request.form()
-    user_id = 1 
+    user_id = current_user.id
 
     try:
         if dictionary_type == "asset-types":
@@ -129,7 +140,7 @@ async def create_dictionary_item(request: Request, dictionary_type: str, db: Asy
             schema = EmployeeCreate.model_validate(form_data)
         else:
             schema = DictionarySimpleCreate.model_validate(form_data)
-        
+
         await service.create(db, obj_in=schema, user_id=user_id)
         flash(request, f"Запись в справочнике '{config['title']}' успешно создана.", "success")
 
@@ -143,15 +154,22 @@ async def create_dictionary_item(request: Request, dictionary_type: str, db: Asy
     
     return RedirectResponse(url=request.url_for("manage_dictionary", dictionary_type=dictionary_type), status_code=303)
 
+
 @router.post("/dictionaries/{dictionary_type}/{item_id}/edit", name="edit_dictionary_item")
-async def edit_dictionary_item(request: Request, dictionary_type: str, item_id: int, db: AsyncSession = Depends(get_db)):
+async def edit_dictionary_item(
+    request: Request,
+    dictionary_type: str,
+    item_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(deps.get_current_user_from_session),
+):
     if dictionary_type not in DICTIONARY_CONFIG:
         return RedirectResponse(url=request.url_for("dictionaries_dashboard"), status_code=303)
-        
+
     config = DICTIONARY_CONFIG[dictionary_type]
     service = config["service"]
     form_data = await request.form()
-    user_id = 1
+    user_id = current_user.id
 
     try:
         if dictionary_type == "asset-types":
@@ -176,14 +194,21 @@ async def edit_dictionary_item(request: Request, dictionary_type: str, item_id: 
 
     return RedirectResponse(url=request.url_for("manage_dictionary", dictionary_type=dictionary_type), status_code=303)
 
+
 @router.post("/dictionaries/{dictionary_type}/{item_id}/delete", name="delete_dictionary_item")
-async def delete_dictionary_item(request: Request, dictionary_type: str, item_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_dictionary_item(
+    request: Request,
+    dictionary_type: str,
+    item_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(deps.get_current_user_from_session),
+):
     if dictionary_type not in DICTIONARY_CONFIG:
         return RedirectResponse(url=request.url_for("dictionaries_dashboard"), status_code=303)
-        
+
     config = DICTIONARY_CONFIG[dictionary_type]
     service = config["service"]
-    user_id = 1
+    user_id = current_user.id
 
     try:
         deleted_item = await service.delete(db, obj_id=item_id, user_id=user_id)

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Управление пользователями{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="h3">
+        <i class="bi bi-people text-primary"></i> Управление пользователями
+      </h1>
+      <p class="text-muted">Просмотр и управление правами пользователей системы</p>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Email</th>
+              <th>Полное имя</th>
+              <th>Статус</th>
+              <th>Права</th>
+              <th>Дата создания</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in users %}
+            <tr>
+              <td>{{ user.id }}</td>
+              <td>
+                <i class="bi bi-envelope me-1"></i>
+                {{ user.email }}
+              </td>
+              <td>{{ user.full_name or '—' }}</td>
+              <td>
+                {% if user.is_active %}
+                  <span class="badge bg-success">Активен</span>
+                {% else %}
+                  <span class="badge bg-secondary">Неактивен</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if user.is_superuser %}
+                  <span class="badge bg-danger">
+                    <i class="bi bi-shield-fill-check"></i> Администратор
+                  </span>
+                {% else %}
+                  <span class="badge bg-info">
+                    <i class="bi bi-person"></i> Пользователь
+                  </span>
+                {% endif %}
+              </td>
+              <td>
+                <small class="text-muted">
+                  {{ user.created_at.strftime('%d.%m.%Y %H:%M') if user.created_at else '—' }}
+                </small>
+              </td>
+              <td>
+                {% if user.id != current_user_id %}
+                <form method="post" action="{{ url_for('toggle_superuser', user_id=user.id) }}" style="display: inline;">
+                  {% if user.is_superuser %}
+                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Снять права администратора">
+                      <i class="bi bi-shield-x"></i> Снять права
+                    </button>
+                  {% else %}
+                    <button type="submit" class="btn btn-sm btn-outline-success" title="Назначить администратором">
+                      <i class="bi bi-shield-fill-check"></i> Сделать админом
+                    </button>
+                  {% endif %}
+                </form>
+                
+                <form method="post" action="{{ url_for('toggle_active', user_id=user.id) }}" style="display: inline;">
+                  {% if user.is_active %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Деактивировать пользователя">
+                      <i class="bi bi-person-x"></i> Деактивировать
+                    </button>
+                  {% else %}
+                    <button type="submit" class="btn btn-sm btn-outline-primary" title="Активировать пользователя">
+                      <i class="bi bi-person-check"></i> Активировать
+                    </button>
+                  {% endif %}
+                </form>
+                {% else %}
+                  <span class="text-muted"><small>Это вы</small></span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      {% if not users %}
+      <div class="text-center py-5">
+        <i class="bi bi-people display-1 text-muted"></i>
+        <p class="text-muted mt-3">Пользователи не найдены</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
