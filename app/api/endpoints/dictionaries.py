@@ -3,7 +3,6 @@ import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
@@ -28,6 +27,7 @@ from app.schemas.dictionary import (
     SupplierCreate,
 )
 from app.services.dictionary_service import DictionaryService
+
 # --- ИЗМЕНЕНИЕ 1: Импортируем наше кастомное исключение ---
 from app.services.exceptions import DuplicateError
 
@@ -37,6 +37,7 @@ router = APIRouter()
 
 def get_dictionary_service() -> DictionaryService:
     return DictionaryService()
+
 
 DICTIONARY_CONFIG = {
     'asset-types': {
@@ -97,7 +98,9 @@ DICTIONARY_CONFIG = {
             {'name': 'last_name', 'label': 'Фамилия', 'type': 'text', 'required': True},
             {'name': 'first_name', 'label': 'Имя', 'type': 'text', 'required': True},
             {'name': 'patronymic', 'label': 'Отчество', 'type': 'text', 'required': False},
+            {'name': 'employee_id', 'label': 'Табельный номер', 'type': 'text', 'required': False},
             {'name': 'position', 'label': 'Должность', 'type': 'text', 'required': False},
+            {'name': 'department_id', 'label': 'ID Отдела', 'type': 'number', 'required': False},
             {'name': 'email', 'label': 'Email', 'type': 'email', 'required': False},
             {'name': 'phone_number', 'label': 'Телефон', 'type': 'text', 'required': False},
         ]
@@ -126,7 +129,7 @@ async def create_dictionary_entry(
 
     config = DICTIONARY_CONFIG[dict_name]
     form_data = await request.form()
-    
+
     data_dict = {}
     field_names = [field['name'] for field in config['form_fields']]
     for field_name in field_names:
@@ -146,17 +149,20 @@ async def create_dictionary_entry(
     except Exception as e:
         logger.error(f'Ошибка при создании записи в справочнике {dict_name}: {e}', exc_info=True)
         # Все остальные ошибки считаем ошибкой валидации или сервера
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Ошибка валидации или сохранения: {e}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'Ошибка валидации или сохранения: {e}')
 
 
 @router.get('/{dict_name}')
 async def get_dictionary_entries(
-    dict_name: str, db: AsyncSession = Depends(get_db),
+    dict_name: str,
+    db: AsyncSession = Depends(get_db),
     service: DictionaryService = Depends(get_dictionary_service),
-) -> list[Any]:
+) -> list[dict[str, Any]]:
     if dict_name not in DICTIONARY_CONFIG:
         raise HTTPException(status_code=404, detail=f'Справочник "{dict_name}" не найден.')
 
     model = DICTIONARY_CONFIG[dict_name]['model']
     items = await service.get_all(db, model)
-    return items
+    
+    # Преобразуем SQLAlchemy модели в словари для корректной сериализации
+    return [{'id': item.id, 'name': item.name} for item in items]

@@ -1,4 +1,3 @@
-import asyncio
 import csv
 import io
 import json
@@ -12,6 +11,7 @@ from fastapi.responses import (
     Response,
     StreamingResponse,
 )
+from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,6 +27,7 @@ from app.services.exceptions import (
 )
 from app.templating import templates
 from app.utils.helpers import safe_int
+
 # ИМПОРТИРУЕМ НАШУ КОНФИГУРАЦИЮ ИЗ СОСЕДНЕГО ФАЙЛА
 from .dictionaries import DICTIONARY_CONFIG
 
@@ -205,18 +206,57 @@ async def create_asset(
     tag_ids = [int(tag_id) for tag_id in tag_ids_str if tag_id.isdigit()]
     form_dict['tag_ids'] = tag_ids
 
+    # Логируем полученные данные для отладки
+    logger.debug(f'Получены данные формы создания актива:')
+    logger.debug(f'  Все ключи: {list(form_data.keys())}')
+    logger.debug(f'  form_dict: {form_dict}')
+    logger.debug(f'  Обязательные поля: name={form_dict.get("name")}, '
+                 f'asset_type_id={form_dict.get("asset_type_id")}, '
+                 f'device_model_id={form_dict.get("device_model_id")}, '
+                 f'status_id={form_dict.get("status_id")}')
+
     try:
         asset_data = AssetCreate(**form_dict)
         await device_service.create_device(db=db, asset_data=asset_data, user_id=1)
         flash(request, 'Актив успешно добавлен!', 'success')
-        return RedirectResponse(url=request.url_for('read_assets'), status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(
+            url=request.url_for('read_assets'), status_code=status.HTTP_303_SEE_OTHER
+        )
+    except ValidationError as e:
+        logger.warning(f'Ошибка валидации при создании актива: {e.errors()}')
+        error_messages = []
+        for error in e.errors():
+            field = error['loc'][0] if error['loc'] else 'unknown'
+            msg = error['msg']
+            error_messages.append(f'{field}: {msg}')
+        flash(
+            request,
+            {
+                'errors': {'general': 'Пожалуйста, заполните все обязательные поля'},
+                'submitted_data': form_dict,
+            },
+            'validation',
+        )
     except (DuplicateDeviceError, NotFoundError) as e:
         logger.warning(f'Ошибка бизнес-логики при создании актива: {e}')
-        flash(request, {'errors': {'general': str(e)}, 'submitted_data': form_dict}, 'validation')
+        flash(
+            request,
+            {'errors': {'general': str(e)}, 'submitted_data': form_dict},
+            'validation',
+        )
     except Exception as e:
         logger.error(f'Непредвиденная ошибка при создании актива: {e}', exc_info=True)
-        flash(request, {'errors': {'general': f'Произошла непредвиденная ошибка: {e}'}, 'submitted_data': form_dict}, 'validation')
-    return RedirectResponse(url=request.url_for('add_asset_form'), status_code=status.HTTP_303_SEE_OTHER)
+        flash(
+            request,
+            {
+                'errors': {'general': f'Произошла непредвиденная ошибка: {e}'},
+                'submitted_data': form_dict,
+            },
+            'validation',
+        )
+    return RedirectResponse(
+        url=request.url_for('add_asset_form'), status_code=status.HTTP_303_SEE_OTHER
+    )
 
 @router.get('/edit/{device_id}', response_class=HTMLResponse, name='edit_asset')
 async def edit_asset(
@@ -231,7 +271,7 @@ async def edit_asset(
     except Exception as e:
         logger.error(f'Ошибка при загрузке данных для формы редактирования: {e}', exc_info=True)
         raise HTTPException(status_code=500, detail='Ошибка при загрузке данных для формы.')
-    existing_tags_data = [{"id": tag.id, "name": tag.name} for tag in device.tags]
+    existing_tags_data = [{'id': tag.id, 'name': tag.name} for tag in device.tags]
     return templates.TemplateResponse(
         'edit_asset.html',
         {

@@ -6,13 +6,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
 from app.schemas.tag import TagResponse
-from app.services.tag_service import TagService
+from app.services.tag_service import TagService, tag_service
 
 router = APIRouter()
 
+
 # Провайдер для сервиса тегов
 def get_tag_service() -> TagService:
-    return TagService()
+    return tag_service
 
 @router.get('/search', response_model=list[TagResponse])
 async def search_tags_api(

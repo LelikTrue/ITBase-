@@ -169,4 +169,48 @@
 {% block scripts %}
     <script src="{{ url_for('static', path='js/tom-select-init.js') }}"></script>
     <script src="{{ url_for('static', path='js/dictionary_modals.js') }}"></script>
+    <script>
+        // Валидация формы перед отправкой
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form[action="{{ url_for('create_asset') }}"]');
+            
+            if (form) {
+                form.addEventListener('submit', function(event) {
+                    // Проверяем обязательные поля
+                    const requiredFields = [
+                        { id: 'name', label: 'Название актива' },
+                        { id: 'asset_type_id', label: 'Тип актива' },
+                        { id: 'device_model_id', label: 'Модель' },
+                        { id: 'status_id', label: 'Статус' },
+                        { id: 'location_id', label: 'Расположение' }
+                    ];
+                    
+                    let hasErrors = false;
+                    const errors = [];
+                    
+                    requiredFields.forEach(field => {
+                        const input = document.getElementById(field.id);
+                        if (input && (!input.value || input.value === '')) {
+                            hasErrors = true;
+                            errors.push(field.label);
+                            input.classList.add('is-invalid');
+                        } else if (input) {
+                            input.classList.remove('is-invalid');
+                        }
+                    });
+                    
+                    if (hasErrors) {
+                        event.preventDefault();
+                        alert('Пожалуйста, заполните все обязательные поля:\n- ' + errors.join('\n- '));
+                        // Переключаемся на первую вкладку, если ошибки там
+                        const mainTab = document.getElementById('main-tab');
+                        if (mainTab) {
+                            mainTab.click();
+                        }
+                        return false;
+                    }
+                });
+            }
+        });
+    </script>
 {% endblock %}

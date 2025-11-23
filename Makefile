@@ -4,7 +4,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
-.PHONY: help up down down-clean rebuild-db logs logs-db migrate migration init-data seed-devices dev-full wait-ready shell lint lint-fix format type-check test ps restart db-shell redis-cli clean dev prod
+.PHONY: help up down down-clean rebuild-db logs logs-clear logs-db migrate migration init-data seed-devices dev-full wait-ready shell lint lint-fix format type-check test ps restart db-shell redis-cli clean dev prod
 
 # --- Переменные ---
 # По умолчанию используем dev-окружение
@@ -88,8 +88,18 @@ rebuild-db:
 
 ## logs: Показать логи приложения (Ctrl+C для выхода)
 logs:
-	@echo "${YELLOW}Просмотр логов приложения...${RESET}"
+	@echo "${YELLOW}Логи приложения (Ctrl+C для выхода):${RESET}"
 	docker compose $(COMPOSE_FILE) logs -f $(APP_SERVICE_NAME)
+
+## logs-clear: Очистить логи (остановка и повторный запуск)
+logs-clear:
+	@echo "${YELLOW}Очистка логов через пересоздание контейнеров...${RESET}"
+	@echo "${YELLOW}Остановка контейнеров...${RESET}"
+	docker compose $(COMPOSE_FILE) down
+	@echo "${YELLOW}Запуск контейнеров заново...${RESET}"
+	docker compose $(COMPOSE_FILE) up -d
+	@echo "${GREEN}✓ Контейнеры пересозданы, логи полностью очищены${RESET}"
+	@echo "${GREEN}Приложение доступно на http://localhost:$(APP_PORT)${RESET}"
 
 ## logs-db: Показать логи базы данных (для диагностики)
 logs-db:
