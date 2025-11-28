@@ -6,16 +6,20 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
 class Settings(BaseSettings):
     """
     Централизованная конфигурация приложения.
     Значения считываются из переменных окружения.
     """
+
     # --- БАЗА ДАННЫХ ---
     POSTGRES_HOST: str = Field(default="db", env="POSTGRES_HOST")
     POSTGRES_PORT: int = Field(default=5432, env="POSTGRES_PORT")
     POSTGRES_USER: str = Field(default="postgres", env="POSTGRES_USER")
-    POSTGRES_PASSWORD: str = Field(..., env="POSTGRES_PASSWORD", description="Пароль для PostgreSQL (обязательный)")
+    POSTGRES_PASSWORD: str = Field(
+        ..., env="POSTGRES_PASSWORD", description="Пароль для PostgreSQL (обязательный)"
+    )
     POSTGRES_DB: str = Field(default="itbase", env="POSTGRES_DB")
 
     # --- REDIS ---
@@ -25,9 +29,13 @@ class Settings(BaseSettings):
     REDIS_DB: int = Field(default=0, env="REDIS_DB")
 
     # --- БЕЗОПАСНОСТЬ ---
-    SECRET_KEY: str = Field(..., env="SECRET_KEY", description="Секретный ключ для JWT (обязательный)")
+    SECRET_KEY: str = Field(
+        ..., env="SECRET_KEY", description="Секретный ключ для JWT (обязательный)"
+    )
     ALGORITHM: str = Field(default="HS256", env="ALGORITHM")
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30, env="ACCESS_TOKEN_EXPIRE_MINUTES")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(
+        default=30, env="ACCESS_TOKEN_EXPIRE_MINUTES"
+    )
 
     # --- ПУТИ ---
     TEMPLATES_DIR: Path = BASE_DIR / "templates"
@@ -47,11 +55,9 @@ class Settings(BaseSettings):
         return f"redis://{auth}{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=False,
-        extra="ignore"
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
     )
+
 
 # Глобальный экземпляр
 settings = Settings()

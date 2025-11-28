@@ -4,6 +4,7 @@
 # Импортируем Base из центрального места, чтобы все модели могли его использовать.
 from ..db.database import Base  # Alembic использует этот Base для автогенерации
 from .action_log import ActionLog
+
 # А теперь импортируем все конкретные модели
 from .asset_type import AssetType
 from .attachment import Attachment
@@ -21,19 +22,19 @@ from .tag import Tag
 from .user import User
 
 __all__ = [
-    'Base',
-    'BaseMixin',
-    'AssetType',
-    'Department',
-    'DeviceModel',
-    'DeviceStatus',
-    'Employee',
-    'Location',
-    'Manufacturer',
-    'Attachment',
-    'Device',
-    'NetworkSettings',
-    'ActionLog',
-    'Tag',
-    'Supplier',
+    "Base",
+    "BaseMixin",
+    "AssetType",
+    "Department",
+    "DeviceModel",
+    "DeviceStatus",
+    "Employee",
+    "Location",
+    "Manufacturer",
+    "Attachment",
+    "Device",
+    "NetworkSettings",
+    "ActionLog",
+    "Tag",
+    "Supplier",
 ]

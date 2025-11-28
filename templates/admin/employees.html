@@ -91,8 +91,8 @@
                         <input type="text" class="form-control" id="add-patronymic" name="patronymic">
                     </div>
                     <div class="mb-3">
-                        <label for="add-employee_id" class="form-label">Табельный номер <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="add-employee_id" name="employee_id" required>
+                        <label for="add-employee_id" class="form-label">Табельный номер</label>
+                        <input type="text" class="form-control" id="add-employee_id" name="employee_id">
                     </div>
                     <div class="mb-3">
                         <label for="add-position" class="form-label">Должность</label>
@@ -151,8 +151,8 @@
                         <input type="text" class="form-control" id="edit-patronymic-{{ item.id }}" name="patronymic" value="{{ item.patronymic or '' }}">
                     </div>
                     <div class="mb-3">
-                        <label for="edit-employee_id-{{ item.id }}" class="form-label">Табельный номер <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="edit-employee_id-{{ item.id }}" name="employee_id" value="{{ item.employee_id or '' }}" required>
+                        <label for="edit-employee_id-{{ item.id }}" class="form-label">Табельный номер</label>
+                        <input type="text" class="form-control" id="edit-employee_id-{{ item.id }}" name="employee_id" value="{{ item.employee_id or '' }}">
                     </div>
                     <div class="mb-3">
                         <label for="edit-position-{{ item.id }}" class="form-label">Должность</label>

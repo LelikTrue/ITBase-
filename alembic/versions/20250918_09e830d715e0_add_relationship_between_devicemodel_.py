@@ -5,11 +5,12 @@ Revises: e4500be6f749
 Create Date: 2025-09-18 17:59:20.179290
 
 """
+
 from collections.abc import Sequence
 
 # revision identifiers, used by Alembic.
-revision: str = '09e830d715e0'
-down_revision: str | None = 'e4500be6f749'
+revision: str = "09e830d715e0"
+down_revision: str | None = "e4500be6f749"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

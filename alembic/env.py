@@ -12,17 +12,17 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 
 # 1. Добавляем корень проекта в пути, чтобы Alembic мог найти 'app'
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # 2. Импортируем наш единый конфиг и Base
-from app.config import settings  # noqa: E402
-from app.db.database import Base  # noqa: E402
+from app.config import settings
+from app.db.database import Base
 
 # --- ГЛАВНОЕ ИЗМЕНЕНИЕ ---
 # Явно импортируем КАЖДЫЙ МОДУЛЬ с моделями.
 # Это гарантирует, что все классы-модели "зарегистрируются" в Base.metadata
 # до того, как Alembic начнет свою работу. Это самый надежный способ.
-from app.models import *  # noqa: F401, F403, E402
+from app.models import *  # noqa: F403
 
 # Получаем конфигурацию Alembic
 config = context.config
@@ -35,9 +35,9 @@ if config.config_file_name is not None:
 # Если задана переменная окружения DATABASE_URL (например, в тестах), используем её.
 # Иначе берем из settings (для dev/prod).
 if os.environ.get("DATABASE_URL"):
-    config.set_main_option('sqlalchemy.url', os.environ.get("DATABASE_URL"))
+    config.set_main_option("sqlalchemy.url", os.environ.get("DATABASE_URL"))
 else:
-    config.set_main_option('sqlalchemy.url', settings.DATABASE_URL_ASYNC)
+    config.set_main_option("sqlalchemy.url", settings.DATABASE_URL_ASYNC)
 target_metadata = Base.metadata
 
 

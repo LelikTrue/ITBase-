@@ -11,8 +11,10 @@ class ActionLogBase(BaseModel):
     entity_id: int
     details: dict[str, Any] = {}
 
+
 class ActionLogCreate(ActionLogBase):
     pass
+
 
 class ActionLog(ActionLogBase):
     id: int

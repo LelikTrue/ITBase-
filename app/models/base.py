@@ -12,6 +12,7 @@ class BaseMixin:
     """
     Базовый класс-примесь (mixin) для всех моделей с общими полями created_at и updated_at.
     """
+
     # Если ты хочешь, чтобы имя таблицы генерировалось автоматически (например, Device -> devices),
     # можно добавить это сюда. Если ты указываешь __tablename__ в каждой модели, это не нужно.
     # @declared_attr
@@ -22,11 +23,11 @@ class BaseMixin:
         DateTime(timezone=True),
         server_default=text("TIMEZONE('utc', now())"),
         default=lambda: datetime.now(UTC),
-        nullable=False
+        nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=text("TIMEZONE('utc', now())"),
         onupdate=lambda: datetime.now(UTC),
-        nullable=False
+        nullable=False,
     )

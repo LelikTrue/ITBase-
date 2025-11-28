@@ -17,7 +17,7 @@ from app.templating import templates
 router = APIRouter()
 
 
-@router.post('/', response_model=UserResponse)
+@router.post("/", response_model=UserResponse)
 async def create_user(
     *,
     db: Annotated[AsyncSession, Depends(get_db)],
@@ -32,7 +32,7 @@ async def create_user(
     if user:
         raise HTTPException(
             status_code=400,
-            detail='The user with this username already exists in the system.',
+            detail="The user with this username already exists in the system.",
         )
 
     user = User(
@@ -47,9 +47,9 @@ async def create_user(
     return user
 
 
-@router.get('/me', response_model=UserResponse)
+@router.get("/me", response_model=UserResponse)
 async def read_user_me(
-    current_user: Annotated[User, Depends(deps.get_current_active_user)]
+    current_user: Annotated[User, Depends(deps.get_current_active_user)],
 ) -> Any:
     """
     Get current user.
@@ -57,7 +57,7 @@ async def read_user_me(
     return current_user
 
 
-@router.get('/admin/users', response_class=HTMLResponse)
+@router.get("/admin/users", response_class=HTMLResponse)
 async def users_list(
     request: Request,
     current_user: Annotated[User, Depends(deps.get_current_superuser_from_session)],
@@ -68,16 +68,16 @@ async def users_list(
     users = result.scalars().all()
 
     return templates.TemplateResponse(
-        'admin/users.html',
+        "admin/users.html",
         {
-            'request': request,
-            'users': users,
-            'current_user_id': current_user.id,
+            "request": request,
+            "users": users,
+            "current_user_id": current_user.id,
         },
     )
 
 
-@router.post('/admin/users/{user_id}/toggle-superuser')
+@router.post("/admin/users/{user_id}/toggle-superuser")
 async def toggle_superuser(
     request: Request,
     user_id: int,
@@ -86,25 +86,27 @@ async def toggle_superuser(
 ):
     """Toggle superuser status for a user (admin only)"""
     if user_id == current_user.id:
-        flash(request, 'Вы не можете изменить свои собственные права', category='warning')
-        return RedirectResponse(url='/admin/users', status_code=303)
+        flash(
+            request, "Вы не можете изменить свои собственные права", category="warning"
+        )
+        return RedirectResponse(url="/admin/users", status_code=303)
 
     result = await db.execute(select(User).filter(User.id == user_id))
     user = result.scalars().first()
 
     if not user:
-        flash(request, 'Пользователь не найден', category='danger')
-        return RedirectResponse(url='/admin/users', status_code=303)
+        flash(request, "Пользователь не найден", category="danger")
+        return RedirectResponse(url="/admin/users", status_code=303)
 
     user.is_superuser = not user.is_superuser
     await db.commit()
 
-    status = 'администратором' if user.is_superuser else 'обычным пользователем'
-    flash(request, f'Пользователь {user.email} теперь {status}', category='success')
-    return RedirectResponse(url='/admin/users', status_code=303)
+    status = "администратором" if user.is_superuser else "обычным пользователем"
+    flash(request, f"Пользователь {user.email} теперь {status}", category="success")
+    return RedirectResponse(url="/admin/users", status_code=303)
 
 
-@router.post('/admin/users/{user_id}/toggle-active')
+@router.post("/admin/users/{user_id}/toggle-active")
 async def toggle_active(
     request: Request,
     user_id: int,
@@ -113,19 +115,23 @@ async def toggle_active(
 ):
     """Toggle active status for a user (admin only)"""
     if user_id == current_user.id:
-        flash(request, 'Вы не можете деактивировать свой собственный аккаунт', category='warning')
-        return RedirectResponse(url='/admin/users', status_code=303)
+        flash(
+            request,
+            "Вы не можете деактивировать свой собственный аккаунт",
+            category="warning",
+        )
+        return RedirectResponse(url="/admin/users", status_code=303)
 
     result = await db.execute(select(User).filter(User.id == user_id))
     user = result.scalars().first()
 
     if not user:
-        flash(request, 'Пользователь не найден', category='danger')
-        return RedirectResponse(url='/admin/users', status_code=303)
+        flash(request, "Пользователь не найден", category="danger")
+        return RedirectResponse(url="/admin/users", status_code=303)
 
     user.is_active = not user.is_active
     await db.commit()
 
-    status = 'активирован' if user.is_active else 'деактивирован'
-    flash(request, f'Пользователь {user.email} {status}', category='success')
-    return RedirectResponse(url='/admin/users', status_code=303)
+    status = "активирован" if user.is_active else "деактивирован"
+    flash(request, f"Пользователь {user.email} {status}", category="success")
+    return RedirectResponse(url="/admin/users", status_code=303)

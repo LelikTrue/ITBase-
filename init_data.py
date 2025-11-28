@@ -29,7 +29,9 @@ from app.models import (
 )
 
 
-async def _seed_data(db: AsyncSession, model, data: list[dict], index_elements: list[str]):
+async def _seed_data(
+    db: AsyncSession, model, data: list[dict], index_elements: list[str]
+):
     """
     Универсальная и производительная функция для заполнения таблиц данными.
     Использует `INSERT ... ON CONFLICT DO NOTHING` для избежания дубликатов
@@ -51,26 +53,42 @@ async def _seed_data(db: AsyncSession, model, data: list[dict], index_elements: 
 async def create_tables():
     """Создает все таблицы в базе данных."""
     async with async_engine.begin() as conn:
-        print('🗑️  Удаление старых таблиц...')
+        print("🗑️  Удаление старых таблиц...")
         await conn.run_sync(Base.metadata.drop_all)
-        print('✨ Создание новых таблиц...')
+        print("✨ Создание новых таблиц...")
         await conn.run_sync(Base.metadata.create_all)
-    print('👍 Таблицы успешно созданы.')
+    print("👍 Таблицы успешно созданы.")
+
 
 async def main():
     """Основная функция для инициализации данных."""
     await create_tables()
     async with AsyncSessionFactory() as db:
-        print('\n--- 🏁 Начало заполнения справочников ---')
+        print("\n--- 🏁 Начало заполнения справочников ---")
 
         # --- Простые справочники ---
-        await _seed_data(db, AssetType, initial_data_storage.ASSET_TYPES, index_elements=['name'])
-        await _seed_data(db, Manufacturer, initial_data_storage.MANUFACTURERS, index_elements=['name'])
-        await _seed_data(db, DeviceStatus, initial_data_storage.STATUSES, index_elements=['name'])
-        await _seed_data(db, Department, initial_data_storage.DEPARTMENTS, index_elements=['name'])
-        await _seed_data(db, Location, initial_data_storage.LOCATIONS, index_elements=['name'])
-        await _seed_data(db, Employee, initial_data_storage.EMPLOYEES, index_elements=['employee_id'])
-        await _seed_data(db, Tag, initial_data_storage.TAGS, index_elements=['name'])
+        await _seed_data(
+            db, AssetType, initial_data_storage.ASSET_TYPES, index_elements=["name"]
+        )
+        await _seed_data(
+            db,
+            Manufacturer,
+            initial_data_storage.MANUFACTURERS,
+            index_elements=["name"],
+        )
+        await _seed_data(
+            db, DeviceStatus, initial_data_storage.STATUSES, index_elements=["name"]
+        )
+        await _seed_data(
+            db, Department, initial_data_storage.DEPARTMENTS, index_elements=["name"]
+        )
+        await _seed_data(
+            db, Location, initial_data_storage.LOCATIONS, index_elements=["name"]
+        )
+        await _seed_data(
+            db, Employee, initial_data_storage.EMPLOYEES, index_elements=["employee_id"]
+        )
+        await _seed_data(db, Tag, initial_data_storage.TAGS, index_elements=["name"])
 
         # --- Сложный справочник (DeviceModel) ---
         # Сначала нужно получить ID уже созданных производителей и типов
@@ -80,15 +98,25 @@ async def main():
         manufacturers_map = {name: id for id, name in manufacturers}
         asset_types_map = {name: id for id, name in asset_types}
 
-        device_models_data = initial_data_storage.get_device_models(manufacturers_map, asset_types_map)
+        device_models_data = initial_data_storage.get_device_models(
+            manufacturers_map, asset_types_map
+        )
 
         # Фильтруем модели, для которых не нашлись ID
-        valid_device_models = [m for m in device_models_data if m['manufacturer_id'] and m['asset_type_id']]
+        valid_device_models = [
+            m for m in device_models_data if m["manufacturer_id"] and m["asset_type_id"]
+        ]
 
-        await _seed_data(db, DeviceModel, valid_device_models, index_elements=['name', 'manufacturer_id'])
+        await _seed_data(
+            db,
+            DeviceModel,
+            valid_device_models,
+            index_elements=["name", "manufacturer_id"],
+        )
 
         await db.commit()
-        print('\n--- 🎉 Все данные успешно инициализированы! ---')
+        print("\n--- 🎉 Все данные успешно инициализированы! ---")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     asyncio.run(main())

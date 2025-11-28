@@ -14,17 +14,17 @@ if TYPE_CHECKING:
 
 
 class Department(BaseMixin, Base):
-    __tablename__ = 'departments'
+    __tablename__ = "departments"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
+    name: Mapped[str] = mapped_column(
+        String(255), nullable=False, unique=True, index=True
+    )
     description: Mapped[str | None] = mapped_column(String(500))
 
-    devices: Mapped[list['Device']] = relationship(back_populates='department')
-    employees: Mapped[list['Employee']] = relationship(back_populates='department')
+    devices: Mapped[list["Device"]] = relationship(back_populates="department")
+    employees: Mapped[list["Employee"]] = relationship(back_populates="department")
 
     # --- ДОБАВЬ ЭТОТ БЛОК ---
-    __table_args__ = (
-        UniqueConstraint('name', name='uq_departments_name'),
-    )
+    __table_args__ = (UniqueConstraint("name", name="uq_departments_name"),)
     # -----------------------

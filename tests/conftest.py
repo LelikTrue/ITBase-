@@ -1,22 +1,27 @@
 # tests/conftest.py
+import os
+import subprocess
 from collections.abc import AsyncGenerator
 
+import asyncpg
 import pytest_asyncio
-from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine, AsyncEngine
 from fastapi import FastAPI
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
+import app.models  # noqa: F401
 from app.config import settings
 from app.db.database import get_db
-import app.models  # noqa: F401
-import asyncpg
-import subprocess
-import os
 from app.main import create_app
 
 # Настройка тестовой базы данных
 TEST_DATABASE_URL = settings.DATABASE_URL_ASYNC.replace(
-    f'/{settings.POSTGRES_DB}', f'/{settings.POSTGRES_DB}_test'
+    f"/{settings.POSTGRES_DB}", f"/{settings.POSTGRES_DB}_test"
 )
 
 
@@ -31,7 +36,9 @@ async def engine_test() -> AsyncGenerator[AsyncEngine, None]:
 async def db_session(engine_test: AsyncEngine) -> AsyncGenerator[AsyncSession, None]:
     connection = await engine_test.connect()
     transaction = await connection.begin()
-    session_maker = async_sessionmaker(bind=connection, class_=AsyncSession, expire_on_commit=False)
+    session_maker = async_sessionmaker(
+        bind=connection, class_=AsyncSession, expire_on_commit=False
+    )
     session = session_maker()
     yield session
     await session.close()
@@ -52,7 +59,11 @@ def test_app(db_session: AsyncSession) -> FastAPI:
 
 @pytest_asyncio.fixture(scope="function")
 async def async_client(test_app: FastAPI) -> AsyncGenerator[AsyncClient, None]:
-    async with AsyncClient(app=test_app, base_url='http://test') as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=test_app),
+        base_url="http://test",
+        headers={"X-Test-Mode": "true"},  # Пропускаем auth middleware в тестах
+    ) as client:
         yield client
 
 

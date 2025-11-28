@@ -8,10 +8,17 @@ from ..db.database import Base
 
 class Supplier(Base):
     """Модель Поставщика."""
-    __tablename__ = 'suppliers'
+
+    __tablename__ = "suppliers"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
+    name: Mapped[str] = mapped_column(
+        String(100), unique=True, nullable=False, index=True
+    )
+    contact_person: Mapped[str | None] = mapped_column(String(100))
+    phone: Mapped[str | None] = mapped_column(String(20))
+    email: Mapped[str | None] = mapped_column(String(100))
+    address: Mapped[str | None] = mapped_column(String(255))
     description: Mapped[str | None] = mapped_column(Text)
 
     def __repr__(self) -> str:

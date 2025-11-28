@@ -13,14 +13,12 @@ from app.db.database import get_db
 from app.models.user import User
 from app.schemas.user import TokenData
 
-reusable_oauth2 = OAuth2PasswordBearer(
-    tokenUrl="/login/access-token"
-)
+reusable_oauth2 = OAuth2PasswordBearer(tokenUrl="/login/access-token")
 
 
 async def get_current_user(
     token: Annotated[str, Depends(reusable_oauth2)],
-    db: Annotated[AsyncSession, Depends(get_db)]
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -47,7 +45,7 @@ async def get_current_user(
 
 
 async def get_current_active_user(
-    current_user: Annotated[User, Depends(get_current_user)]
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> User:
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
@@ -55,7 +53,7 @@ async def get_current_active_user(
 
 
 async def get_current_superuser(
-    current_user: Annotated[User, Depends(get_current_user)]
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> User:
     if not current_user.is_superuser:
         raise HTTPException(
@@ -65,7 +63,7 @@ async def get_current_superuser(
 
 
 async def get_current_active_superuser(
-    current_user: Annotated[User, Depends(get_current_active_user)]
+    current_user: Annotated[User, Depends(get_current_active_user)],
 ) -> User:
     """Get current active superuser (combines active and superuser checks)"""
     if not current_user.is_superuser:
@@ -79,8 +77,7 @@ async def get_current_active_superuser(
 
 
 async def get_current_user_from_session(
-    request: Request,
-    db: Annotated[AsyncSession, Depends(get_db)]
+    request: Request, db: Annotated[AsyncSession, Depends(get_db)]
 ) -> User:
     """Get current user from session (for web routes)"""
     user_id = request.session.get("user_id")
@@ -90,7 +87,7 @@ async def get_current_user_from_session(
         raise HTTPException(
             status_code=status.HTTP_303_SEE_OTHER,
             detail="Not authenticated",
-            headers={"Location": "/login"}
+            headers={"Location": "/login"},
         )
 
     result = await db.execute(select(User).filter(User.id == user_id))
@@ -101,7 +98,7 @@ async def get_current_user_from_session(
         raise HTTPException(
             status_code=status.HTTP_303_SEE_OTHER,
             detail="User not found",
-            headers={"Location": "/login"}
+            headers={"Location": "/login"},
         )
 
     return user
@@ -109,12 +106,12 @@ async def get_current_user_from_session(
 
 async def get_current_superuser_from_session(
     request: Request,
-    current_user: Annotated[User, Depends(get_current_user_from_session)]
+    current_user: Annotated[User, Depends(get_current_user_from_session)],
 ) -> User:
     """Get current superuser from session (for web routes)"""
     if not current_user.is_superuser:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="The user doesn't have enough privileges"
+            detail="The user doesn't have enough privileges",
         )
     return current_user

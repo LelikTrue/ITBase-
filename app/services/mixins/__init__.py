@@ -11,13 +11,13 @@
 
 Примеры использования:
     >>> from app.services.mixins import DependencyCheckMixin, DuplicateCheckMixin
-    >>> 
+    >>>
     >>> class AssetService(BaseService, DependencyCheckMixin, DuplicateCheckMixin):
     ...     # Ваш сервис с поддержкой проверки зависимостей и дубликатов
     ...     pass
 """
 
-from .duplicate_check_mixin import DuplicateCheckMixin
 from .dependency_check_mixin import DependencyCheckMixin
+from .duplicate_check_mixin import DuplicateCheckMixin
 
 __all__ = ["DuplicateCheckMixin", "DependencyCheckMixin"]

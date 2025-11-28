@@ -6,6 +6,7 @@ from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from app.config import settings
 
+
 class Base(DeclarativeBase):
     pass
 
@@ -31,6 +32,7 @@ AsyncSessionFactory = sessionmaker(
     autoflush=False,
     autocommit=False,
 )
+
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """

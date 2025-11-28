@@ -11,11 +11,11 @@ async def log_action(
     action_type: str,
     entity_type: str,
     entity_id: int,
-    details: dict[str, Any] | None = None
+    details: dict[str, Any] | None = None,
 ) -> ActionLog:
     """
     Асинхронно создает запись в логе действий
-    
+
     Args:
         db: Сессия базы данных
         user_id: ID пользователя, выполнившего действие
@@ -23,7 +23,7 @@ async def log_action(
         entity_type: Тип сущности (Device, Employee, etc.)
         entity_id: ID сущности
         details: Дополнительные детали действия
-        
+
     Returns:
         ActionLog: Созданная запись лога
     """
@@ -32,7 +32,7 @@ async def log_action(
         action_type=action_type,
         entity_type=entity_type,
         entity_id=entity_id,
-        details=details or {}
+        details=details or {},
     )
 
     db.add(log_entry)
