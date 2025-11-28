@@ -23,6 +23,7 @@ from app.schemas.dictionary import (
 
 # --- ИЗМЕНЕНИЕ 2: Импортируем наше кастомное исключение ---
 from app.services.exceptions import DuplicateError
+from app.schemas.tag import TagCreate
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +60,15 @@ class DictionaryService:
 
     async def get_all(self, db: AsyncSession, model: type[Base]) -> list[Any]:
         """Получает все записи из указанной таблицы-справочника."""
+        from sqlalchemy.orm import selectinload
+        from app.models import DeviceModel
+
         stmt = select(model).order_by(getattr(model, "name", model.id))
+
+        # Для DeviceModel загружаем связь с manufacturer
+        if model == DeviceModel:
+            stmt = stmt.options(selectinload(DeviceModel.manufacturer))
+
         result = await db.execute(stmt)
         return result.scalars().all()
 
@@ -108,3 +117,8 @@ class DictionaryService:
         from app.models import Supplier
 
         return await self._create_item(db, Supplier, data)
+
+    async def create_tag(self, db: AsyncSession, data: TagCreate) -> Base:
+        from app.models import Tag
+
+        return await self._create_item(db, Tag, data)

@@ -15,6 +15,7 @@ from app.models import (
     Location,
     Manufacturer,
     Supplier,
+    Tag,
 )
 from app.schemas.dictionary import (
     AssetTypeCreate,
@@ -26,6 +27,7 @@ from app.schemas.dictionary import (
     ManufacturerCreate,
     SupplierCreate,
 )
+from app.schemas.tag import TagCreate
 from app.services.dictionary_service import DictionaryService
 
 # --- ИЗМЕНЕНИЕ 1: Импортируем наше кастомное исключение ---
@@ -217,6 +219,15 @@ DICTIONARY_CONFIG = {
             },
         ],
     },
+    "tags": {
+        "model": Tag,
+        "schema": TagCreate,
+        "service_method": "create_tag",
+        "modal_title": "Добавить тег",
+        "form_fields": [
+            {"name": "name", "label": "Название", "type": "text", "required": True},
+        ],
+    },
 }
 
 
@@ -277,4 +288,75 @@ async def get_dictionary_entries(
     items = await service.get_all(db, model)
 
     # Преобразуем SQLAlchemy модели в словари для корректной сериализации
+    # Для device-models добавляем информацию о производителе
+    if dict_name == "device-models":
+        return [
+            {
+                "id": item.id,
+                "name": item.name,
+                "manufacturer": {
+                    "id": item.manufacturer.id,
+                    "name": item.manufacturer.name,
+                } if item.manufacturer else None,
+            }
+            for item in items
+        ]
     return [{"id": item.id, "name": item.name} for item in items]
+
+
+@router.delete("/{dict_name}/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_dictionary_entry(
+    dict_name: str,
+    item_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    """Удаляет запись из справочника через API."""
+    if dict_name not in DICTIONARY_CONFIG:
+        raise HTTPException(
+            status_code=404, detail=f'Справочник "{dict_name}" не найден.'
+        )
+
+    # Для удаления используем специализированные сервисы, а не DictionaryService
+    # Они содержат логику проверки зависимостей
+    from app.services.asset_type_service import asset_type_service
+    from app.services.department_service import department_service
+    from app.services.device_model_service import device_model_service
+    from app.services.device_status_service import device_status_service
+    from app.services.employee_service import employee_service
+    from app.services.location_service import location_service
+    from app.services.manufacturer_service import manufacturer_service
+    from app.services.supplier_service import supplier_service
+    from app.services.tag_service import tag_service
+    from app.services.exceptions import DeletionError
+
+    service_map = {
+        "asset-types": asset_type_service,
+        "device-models": device_model_service,
+        "device-statuses": device_status_service,
+        "manufacturers": manufacturer_service,
+        "suppliers": supplier_service,
+        "departments": department_service,
+        "locations": location_service,
+        "employees": employee_service,
+        "tags": tag_service,
+    }
+
+    service = service_map.get(dict_name)
+    if not service:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Сервис для справочника {dict_name} не найден.",
+        )
+
+    try:
+        # Для API используем фиктивный user_id=1 (системный пользователь)
+        # В будущем можно добавить аутентификацию для API
+        deleted_item = await service.delete(db, obj_id=item_id, user_id=1)
+        if not deleted_item:
+            raise HTTPException(
+                status_code=404, detail="Запись не найдена."
+            )
+    except DeletionError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(e)
+        )

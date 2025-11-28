@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container-fluid mt-4">
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
@@ -24,9 +24,14 @@
             <i class="bi bi-tags text-primary me-2"></i>
             {{ title }}
         </h1>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editModal" data-id="" data-name="" data-description="">
-            <i class="bi bi-plus-circle"></i> Добавить тег
-        </button>
+        <div>
+            <a href="{{ url_for('dictionaries_dashboard') }}" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-arrow-left"></i> Назад
+            </a>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editModal" data-id="" data-name="" data-description="">
+                <i class="bi bi-plus-circle"></i> Добавить тег
+            </button>
+        </div>
     </div>
 
     <!-- Таблица с тегами -->
@@ -43,7 +48,7 @@
                         </tr>
                     </thead>
                     <tbody id="items-table-body">
-                        {% for item in items %}
+                        {% for item in tags %}
                         <tr id="item-row-{{ item.id }}">
                             <td>{{ item.id }}</td>
                             <td class="item-name">{{ item.name }}</td>
@@ -64,6 +69,13 @@
                                         data-name="{{ item.name }}">
                                     <i class="bi bi-trash"></i>
                                 </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">
+                                <i class="bi bi-inbox display-4 d-block mb-2"></i>
+                                Теги не найдены
                             </td>
                         </tr>
                         {% endfor %}

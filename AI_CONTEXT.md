@@ -24,3 +24,9 @@
 ## 4. Automation Tools
 - `python generate_structure.py`: Updates the file tree.
 - `make test`:Executes pytest only when requested by the user.
+
+## Shared Utilities (DO NOT DUPLICATE)
+- **Date/Time:** Use `app/utils/date_helpers.py` (do not use `datetime` directly if logic is complex).
+- **Security:** Use `app/core/security.py` for hashing/tokens.
+- **Validation:** All Pydantic schemas are in `app/schemas/`.
+- **DB:** `BaseService` in `app/services/base_service.py` already handles CRUD. **Do not write raw SQL for CRUD.**
