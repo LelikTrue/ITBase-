@@ -57,7 +57,7 @@ class DependencyCheckMixin:
         db: AsyncSession,
         related_field: Any,
         obj_id: int,
-        related_name: str = "объектов",
+        related_name: str = 'объектов',
     ) -> None:
         """
         Проверяет наличие зависимых записей перед удалением.
@@ -93,12 +93,12 @@ class DependencyCheckMixin:
                     f"'{device.name}' (инв. {device.inventory_number})"
                     for device in devices[:3]
                 ]
-                devices_str = ", ".join(device_names)
+                devices_str = ', '.join(device_names)
                 if related_count > 3:
-                    devices_str += f" и еще {related_count - 3} активов"
-                message = f"Невозможно удалить запись, так как с ней связаны активы: {devices_str}."
+                    devices_str += f' и еще {related_count - 3} активов'
+                message = f'Невозможно удалить запись, так как с ней связаны активы: {devices_str}.'
             else:
-                message = f"Невозможно удалить запись, так как с ней связано {related_count} {related_name}."
+                message = f'Невозможно удалить запись, так как с ней связано {related_count} {related_name}.'
 
             raise DeletionError(message)
 
@@ -124,12 +124,12 @@ class DependencyCheckMixin:
         field_str = str(related_field).lower()
 
         # Проверяем ключ поля
-        if hasattr(related_field, "key") and related_field.key:
-            if "device" in related_field.key.lower():
+        if hasattr(related_field, 'key') and related_field.key:
+            if 'device' in related_field.key.lower():
                 return True
 
         # Проверяем название таблицы в строковом представлении
-        if "device" in field_str:
+        if 'device' in field_str:
             return True
 
         return False

@@ -42,196 +42,196 @@ def get_dictionary_service() -> DictionaryService:
 
 
 DICTIONARY_CONFIG = {
-    "asset-types": {
-        "model": AssetType,
-        "schema": AssetTypeCreate,
-        "service_method": "create_asset_type",
-        "modal_title": "Добавить тип актива",
-        "form_fields": [
-            {"name": "name", "label": "Название", "type": "text", "required": True},
+    'asset-types': {
+        'model': AssetType,
+        'schema': AssetTypeCreate,
+        'service_method': 'create_asset_type',
+        'modal_title': 'Добавить тип актива',
+        'form_fields': [
+            {'name': 'name', 'label': 'Название', 'type': 'text', 'required': True},
             {
-                "name": "prefix",
-                "label": "Префикс",
-                "type": "text",
-                "required": True,
-                "maxlength": 10,
-                "placeholder": "Напр. PC, MONI, PRNT",
-                "help_text": "Короткий код для инвентарных номеров (до 10 символов).",
+                'name': 'prefix',
+                'label': 'Префикс',
+                'type': 'text',
+                'required': True,
+                'maxlength': 10,
+                'placeholder': 'Напр. PC, MONI, PRNT',
+                'help_text': 'Короткий код для инвентарных номеров (до 10 символов).',
             },
             {
-                "name": "description",
-                "label": "Описание",
-                "type": "textarea",
-                "required": False,
-            },
-        ],
-    },
-    "device-models": {
-        "model": DeviceModel,
-        "schema": DeviceModelCreate,
-        "service_method": "create_device_model",
-        "modal_title": "Добавить модель",
-        "form_fields": [
-            {"name": "name", "label": "Название", "type": "text", "required": True},
-            {
-                "name": "manufacturer_id",
-                "label": "Производитель",
-                "type": "select",
-                "required": True,
-                "options_from": "manufacturers",
-            },
-            {
-                "name": "asset_type_id",
-                "label": "Тип актива",
-                "type": "select",
-                "required": True,
-                "options_from": "asset-types",
-            },
-            {
-                "name": "description",
-                "label": "Описание",
-                "type": "textarea",
-                "required": False,
+                'name': 'description',
+                'label': 'Описание',
+                'type': 'textarea',
+                'required': False,
             },
         ],
     },
-    "device-statuses": {
-        "model": DeviceStatus,
-        "schema": DeviceStatusCreate,
-        "service_method": "create_device_status",
-        "modal_title": "Добавить статус",
-        "form_fields": [
-            {"name": "name", "label": "Название", "type": "text", "required": True},
+    'device-models': {
+        'model': DeviceModel,
+        'schema': DeviceModelCreate,
+        'service_method': 'create_device_model',
+        'modal_title': 'Добавить модель',
+        'form_fields': [
+            {'name': 'name', 'label': 'Название', 'type': 'text', 'required': True},
             {
-                "name": "description",
-                "label": "Описание",
-                "type": "textarea",
-                "required": False,
+                'name': 'manufacturer_id',
+                'label': 'Производитель',
+                'type': 'select',
+                'required': True,
+                'options_from': 'manufacturers',
+            },
+            {
+                'name': 'asset_type_id',
+                'label': 'Тип актива',
+                'type': 'select',
+                'required': True,
+                'options_from': 'asset-types',
+            },
+            {
+                'name': 'description',
+                'label': 'Описание',
+                'type': 'textarea',
+                'required': False,
             },
         ],
     },
-    "manufacturers": {
-        "model": Manufacturer,
-        "schema": ManufacturerCreate,
-        "service_method": "create_manufacturer",
-        "modal_title": "Добавить производителя",
-        "form_fields": [
-            {"name": "name", "label": "Название", "type": "text", "required": True},
+    'device-statuses': {
+        'model': DeviceStatus,
+        'schema': DeviceStatusCreate,
+        'service_method': 'create_device_status',
+        'modal_title': 'Добавить статус',
+        'form_fields': [
+            {'name': 'name', 'label': 'Название', 'type': 'text', 'required': True},
             {
-                "name": "description",
-                "label": "Описание",
-                "type": "textarea",
-                "required": False,
+                'name': 'description',
+                'label': 'Описание',
+                'type': 'textarea',
+                'required': False,
             },
         ],
     },
-    "departments": {
-        "model": Department,
-        "schema": DepartmentCreate,
-        "service_method": "create_department",
-        "modal_title": "Добавить отдел",
-        "form_fields": [
-            {"name": "name", "label": "Название", "type": "text", "required": True},
+    'manufacturers': {
+        'model': Manufacturer,
+        'schema': ManufacturerCreate,
+        'service_method': 'create_manufacturer',
+        'modal_title': 'Добавить производителя',
+        'form_fields': [
+            {'name': 'name', 'label': 'Название', 'type': 'text', 'required': True},
             {
-                "name": "description",
-                "label": "Описание",
-                "type": "textarea",
-                "required": False,
+                'name': 'description',
+                'label': 'Описание',
+                'type': 'textarea',
+                'required': False,
             },
         ],
     },
-    "locations": {
-        "model": Location,
-        "schema": LocationCreate,
-        "service_method": "create_location",
-        "modal_title": "Добавить расположение",
-        "form_fields": [
-            {"name": "name", "label": "Название", "type": "text", "required": True},
+    'departments': {
+        'model': Department,
+        'schema': DepartmentCreate,
+        'service_method': 'create_department',
+        'modal_title': 'Добавить отдел',
+        'form_fields': [
+            {'name': 'name', 'label': 'Название', 'type': 'text', 'required': True},
             {
-                "name": "description",
-                "label": "Описание",
-                "type": "textarea",
-                "required": False,
+                'name': 'description',
+                'label': 'Описание',
+                'type': 'textarea',
+                'required': False,
             },
         ],
     },
-    "employees": {
-        "model": Employee,
-        "schema": EmployeeCreate,
-        "service_method": "create_employee",
-        "modal_title": "Добавить сотрудника",
-        "form_fields": [
-            {"name": "last_name", "label": "Фамилия", "type": "text", "required": True},
-            {"name": "first_name", "label": "Имя", "type": "text", "required": True},
+    'locations': {
+        'model': Location,
+        'schema': LocationCreate,
+        'service_method': 'create_location',
+        'modal_title': 'Добавить расположение',
+        'form_fields': [
+            {'name': 'name', 'label': 'Название', 'type': 'text', 'required': True},
             {
-                "name": "patronymic",
-                "label": "Отчество",
-                "type": "text",
-                "required": False,
-            },
-            {
-                "name": "employee_id",
-                "label": "Табельный номер",
-                "type": "text",
-                "required": False,
-            },
-            {
-                "name": "position",
-                "label": "Должность",
-                "type": "text",
-                "required": False,
-            },
-            {
-                "name": "department_id",
-                "label": "ID Отдела",
-                "type": "number",
-                "required": False,
-            },
-            {"name": "email", "label": "Email", "type": "email", "required": False},
-            {
-                "name": "phone_number",
-                "label": "Телефон",
-                "type": "text",
-                "required": False,
+                'name': 'description',
+                'label': 'Описание',
+                'type': 'textarea',
+                'required': False,
             },
         ],
     },
-    "suppliers": {
-        "model": Supplier,
-        "schema": SupplierCreate,
-        "service_method": "create_supplier",
-        "modal_title": "Добавить поставщика",
-        "form_fields": [
-            {"name": "name", "label": "Название", "type": "text", "required": True},
+    'employees': {
+        'model': Employee,
+        'schema': EmployeeCreate,
+        'service_method': 'create_employee',
+        'modal_title': 'Добавить сотрудника',
+        'form_fields': [
+            {'name': 'last_name', 'label': 'Фамилия', 'type': 'text', 'required': True},
+            {'name': 'first_name', 'label': 'Имя', 'type': 'text', 'required': True},
             {
-                "name": "contact_person",
-                "label": "Контактное лицо",
-                "type": "text",
-                "required": False,
+                'name': 'patronymic',
+                'label': 'Отчество',
+                'type': 'text',
+                'required': False,
             },
-            {"name": "phone", "label": "Телефон", "type": "text", "required": False},
-            {"name": "email", "label": "Email", "type": "email", "required": False},
             {
-                "name": "address",
-                "label": "Адрес",
-                "type": "textarea",
-                "required": False,
+                'name': 'employee_id',
+                'label': 'Табельный номер',
+                'type': 'text',
+                'required': False,
+            },
+            {
+                'name': 'position',
+                'label': 'Должность',
+                'type': 'text',
+                'required': False,
+            },
+            {
+                'name': 'department_id',
+                'label': 'ID Отдела',
+                'type': 'number',
+                'required': False,
+            },
+            {'name': 'email', 'label': 'Email', 'type': 'email', 'required': False},
+            {
+                'name': 'phone_number',
+                'label': 'Телефон',
+                'type': 'text',
+                'required': False,
             },
         ],
     },
-    "tags": {
-        "model": Tag,
-        "schema": TagCreate,
-        "service_method": "create_tag",
-        "modal_title": "Добавить тег",
-        "form_fields": [
-            {"name": "name", "label": "Название", "type": "text", "required": True},
+    'suppliers': {
+        'model': Supplier,
+        'schema': SupplierCreate,
+        'service_method': 'create_supplier',
+        'modal_title': 'Добавить поставщика',
+        'form_fields': [
+            {'name': 'name', 'label': 'Название', 'type': 'text', 'required': True},
+            {
+                'name': 'contact_person',
+                'label': 'Контактное лицо',
+                'type': 'text',
+                'required': False,
+            },
+            {'name': 'phone', 'label': 'Телефон', 'type': 'text', 'required': False},
+            {'name': 'email', 'label': 'Email', 'type': 'email', 'required': False},
+            {
+                'name': 'address',
+                'label': 'Адрес',
+                'type': 'textarea',
+                'required': False,
+            },
+        ],
+    },
+    'tags': {
+        'model': Tag,
+        'schema': TagCreate,
+        'service_method': 'create_tag',
+        'modal_title': 'Добавить тег',
+        'form_fields': [
+            {'name': 'name', 'label': 'Название', 'type': 'text', 'required': True},
         ],
     },
 }
 
 
-@router.post("/{dict_name}", status_code=status.HTTP_201_CREATED)
+@router.post('/{dict_name}', status_code=status.HTTP_201_CREATED)
 async def create_dictionary_entry(
     request: Request,
     dict_name: str,
@@ -247,15 +247,15 @@ async def create_dictionary_entry(
     form_data = await request.form()
 
     data_dict = {}
-    field_names = [field["name"] for field in config["form_fields"]]
+    field_names = [field['name'] for field in config['form_fields']]
     for field_name in field_names:
         value = form_data.get(field_name)
         if value is not None:
             data_dict[field_name] = value
 
     try:
-        schema_instance = config["schema"](**data_dict)
-        service_method = getattr(service, config["service_method"])
+        schema_instance = config['schema'](**data_dict)
+        service_method = getattr(service, config['service_method'])
         created_item = await service_method(db=db, data=schema_instance)
         return created_item
     # --- ИЗМЕНЕНИЕ 2: Добавляем обработку нашей кастомной ошибки ---
@@ -264,16 +264,16 @@ async def create_dictionary_entry(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except Exception as e:
         logger.error(
-            f"Ошибка при создании записи в справочнике {dict_name}: {e}", exc_info=True
+            f'Ошибка при создании записи в справочнике {dict_name}: {e}', exc_info=True
         )
         # Все остальные ошибки считаем ошибкой валидации или сервера
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Ошибка валидации или сохранения: {e}",
+            detail=f'Ошибка валидации или сохранения: {e}',
         )
 
 
-@router.get("/{dict_name}")
+@router.get('/{dict_name}')
 async def get_dictionary_entries(
     dict_name: str,
     db: AsyncSession = Depends(get_db),
@@ -284,27 +284,27 @@ async def get_dictionary_entries(
             status_code=404, detail=f'Справочник "{dict_name}" не найден.'
         )
 
-    model = DICTIONARY_CONFIG[dict_name]["model"]
+    model = DICTIONARY_CONFIG[dict_name]['model']
     items = await service.get_all(db, model)
 
     # Преобразуем SQLAlchemy модели в словари для корректной сериализации
     # Для device-models добавляем информацию о производителе
-    if dict_name == "device-models":
+    if dict_name == 'device-models':
         return [
             {
-                "id": item.id,
-                "name": item.name,
-                "manufacturer": {
-                    "id": item.manufacturer.id,
-                    "name": item.manufacturer.name,
+                'id': item.id,
+                'name': item.name,
+                'manufacturer': {
+                    'id': item.manufacturer.id,
+                    'name': item.manufacturer.name,
                 } if item.manufacturer else None,
             }
             for item in items
         ]
-    return [{"id": item.id, "name": item.name} for item in items]
+    return [{'id': item.id, 'name': item.name} for item in items]
 
 
-@router.delete("/{dict_name}/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{dict_name}/{item_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_dictionary_entry(
     dict_name: str,
     item_id: int,
@@ -323,29 +323,29 @@ async def delete_dictionary_entry(
     from app.services.device_model_service import device_model_service
     from app.services.device_status_service import device_status_service
     from app.services.employee_service import employee_service
+    from app.services.exceptions import DeletionError
     from app.services.location_service import location_service
     from app.services.manufacturer_service import manufacturer_service
     from app.services.supplier_service import supplier_service
     from app.services.tag_service import tag_service
-    from app.services.exceptions import DeletionError
 
     service_map = {
-        "asset-types": asset_type_service,
-        "device-models": device_model_service,
-        "device-statuses": device_status_service,
-        "manufacturers": manufacturer_service,
-        "suppliers": supplier_service,
-        "departments": department_service,
-        "locations": location_service,
-        "employees": employee_service,
-        "tags": tag_service,
+        'asset-types': asset_type_service,
+        'device-models': device_model_service,
+        'device-statuses': device_status_service,
+        'manufacturers': manufacturer_service,
+        'suppliers': supplier_service,
+        'departments': department_service,
+        'locations': location_service,
+        'employees': employee_service,
+        'tags': tag_service,
     }
 
     service = service_map.get(dict_name)
     if not service:
         raise HTTPException(
             status_code=500,
-            detail=f"Сервис для справочника {dict_name} не найден.",
+            detail=f'Сервис для справочника {dict_name} не найден.',
         )
 
     try:
@@ -354,7 +354,7 @@ async def delete_dictionary_entry(
         deleted_item = await service.delete(db, obj_id=item_id, user_id=1)
         if not deleted_item:
             raise HTTPException(
-                status_code=404, detail="Запись не найдена."
+                status_code=404, detail='Запись не найдена.'
             )
     except DeletionError as e:
         raise HTTPException(

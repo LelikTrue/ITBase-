@@ -39,22 +39,22 @@ if TYPE_CHECKING:
 # 3. Создаем АССОЦИАТИВНУЮ ТАБЛИЦУ для связи Device <-> Tag
 # Эта таблица будет состоять только из двух внешних ключей.
 device_tags_table = Table(
-    "device_tags",
+    'device_tags',
     Base.metadata,
     Column(
-        "device_id",
+        'device_id',
         Integer,
-        ForeignKey("devices.id", ondelete="CASCADE"),
+        ForeignKey('devices.id', ondelete='CASCADE'),
         primary_key=True,
     ),
     Column(
-        "tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True
+        'tag_id', Integer, ForeignKey('tags.id', ondelete='CASCADE'), primary_key=True
     ),
 )
 
 
 class Device(BaseMixin, Base):
-    __tablename__ = "devices"
+    __tablename__ = 'devices'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     # !# ИЗМЕНЕНИЕ: Добавляем поле для названия актива
@@ -72,7 +72,7 @@ class Device(BaseMixin, Base):
     ip_address: Mapped[str | None] = mapped_column(String(255))
     notes: Mapped[str | None] = mapped_column(Text)
     source: Mapped[str] = mapped_column(
-        String(50), nullable=False, server_default="purchase", default="purchase"
+        String(50), nullable=False, server_default='purchase', default='purchase'
     )
     purchase_date: Mapped[date | None] = mapped_column(Date)
     warranty_end_date: Mapped[date | None] = mapped_column(Date)
@@ -82,63 +82,63 @@ class Device(BaseMixin, Base):
     attributes: Mapped[dict[str, Any] | None] = mapped_column(JSON)
 
     # Оставляем только одно определение для network_settings
-    network_settings: Mapped[Optional["NetworkSettings"]] = relationship(
-        "NetworkSettings",
-        back_populates="device",
+    network_settings: Mapped[Optional['NetworkSettings']] = relationship(
+        'NetworkSettings',
+        back_populates='device',
         uselist=False,
-        cascade="all, delete-orphan",
+        cascade='all, delete-orphan',
         # Явно указываем SQLAlchemy, что эта связь использует ВНЕШНИЙ ключ
-        foreign_keys="NetworkSettings.device_id",
+        foreign_keys='NetworkSettings.device_id',
     )
 
     # ForeignKey должен ссылаться на 'имя_таблицы.имя_колонки', а не 'ИмяКласса.id'.
     # Имена таблиц, как правило, в нижнем регистре и во множественном числе.
     device_model_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("devicemodels.id"), nullable=False
+        Integer, ForeignKey('devicemodels.id'), nullable=False
     )
     asset_type_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("assettypes.id"), nullable=False
+        Integer, ForeignKey('assettypes.id'), nullable=False
     )
     status_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("devicestatuses.id"), nullable=False
+        Integer, ForeignKey('devicestatuses.id'), nullable=False
     )
     department_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("departments.id")
+        Integer, ForeignKey('departments.id')
     )
-    location_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("locations.id"))
-    employee_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("employees.id"))
+    location_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('locations.id'))
+    employee_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('employees.id'))
     # НОВОЕ: Связь с Supplier (один-ко-многим)
-    supplier_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("suppliers.id"))
+    supplier_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('suppliers.id'))
 
     # Приводим `back_populates` к единому стилю для предсказуемости.
     # Убедись, что в связанных моделях (Department, Location, Employee)
     # есть поле `devices = relationship("Device", back_populates="...")`.
-    device_model: Mapped["DeviceModel"] = relationship(
-        "DeviceModel", back_populates="devices"
+    device_model: Mapped['DeviceModel'] = relationship(
+        'DeviceModel', back_populates='devices'
     )
-    asset_type: Mapped["AssetType"] = relationship(
-        "AssetType", back_populates="devices"
+    asset_type: Mapped['AssetType'] = relationship(
+        'AssetType', back_populates='devices'
     )
-    status: Mapped["DeviceStatus"] = relationship(
-        "DeviceStatus", back_populates="devices"
+    status: Mapped['DeviceStatus'] = relationship(
+        'DeviceStatus', back_populates='devices'
     )
-    department: Mapped[Optional["Department"]] = relationship(
-        "Department", back_populates="devices"
+    department: Mapped[Optional['Department']] = relationship(
+        'Department', back_populates='devices'
     )
-    location: Mapped[Optional["Location"]] = relationship(
-        "Location", back_populates="devices"
+    location: Mapped[Optional['Location']] = relationship(
+        'Location', back_populates='devices'
     )
-    employee: Mapped[Optional["Employee"]] = relationship(
-        "Employee", back_populates="devices"
+    employee: Mapped[Optional['Employee']] = relationship(
+        'Employee', back_populates='devices'
     )
     # НОВОЕ: Связь с Supplier. back_populates можно будет добавить в Supplier позже, если понадобится обратная связь.
-    supplier: Mapped[Optional["Supplier"]] = relationship("Supplier")
+    supplier: Mapped[Optional['Supplier']] = relationship('Supplier')
 
-    attachments: Mapped[list["Attachment"]] = relationship(
-        "Attachment", back_populates="device"
+    attachments: Mapped[list['Attachment']] = relationship(
+        'Attachment', back_populates='device'
     )
 
     # 4. Добавляем новую связь "многие-ко-многим" с тегами
-    tags: Mapped[list["Tag"]] = relationship(
-        secondary=device_tags_table, back_populates="devices"
+    tags: Mapped[list['Tag']] = relationship(
+        secondary=device_tags_table, back_populates='devices'
     )

@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class Manufacturer(Base, BaseMixin):
-    __tablename__ = "manufacturers"
+    __tablename__ = 'manufacturers'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(
@@ -20,10 +20,10 @@ class Manufacturer(Base, BaseMixin):
     description: Mapped[str | None] = mapped_column(String(500))
 
     # Relationships
-    device_models: Mapped[list["DeviceModel"]] = relationship(
-        "DeviceModel", back_populates="manufacturer"
+    device_models: Mapped[list['DeviceModel']] = relationship(
+        'DeviceModel', back_populates='manufacturer'
     )
 
     # --- ДОБАВЬ ЭТОТ БЛОК ---
-    __table_args__ = (UniqueConstraint("name", name="uq_manufacturers_name"),)
+    __table_args__ = (UniqueConstraint('name', name='uq_manufacturers_name'),)
     # -----------------------

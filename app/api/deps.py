@@ -13,7 +13,7 @@ from app.db.database import get_db
 from app.models.user import User
 from app.schemas.user import TokenData
 
-reusable_oauth2 = OAuth2PasswordBearer(tokenUrl="/login/access-token")
+reusable_oauth2 = OAuth2PasswordBearer(tokenUrl='/login/access-token')
 
 
 async def get_current_user(
@@ -22,14 +22,14 @@ async def get_current_user(
 ) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
+        detail='Could not validate credentials',
+        headers={'WWW-Authenticate': 'Bearer'},
     )
     try:
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
-        email: str = payload.get("sub")
+        email: str = payload.get('sub')
         if email is None:
             raise credentials_exception
         token_data = TokenData(email=email)
@@ -48,7 +48,7 @@ async def get_current_active_user(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> User:
     if not current_user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise HTTPException(status_code=400, detail='Inactive user')
     return current_user
 
 
@@ -80,14 +80,14 @@ async def get_current_user_from_session(
     request: Request, db: Annotated[AsyncSession, Depends(get_db)]
 ) -> User:
     """Get current user from session (for web routes)"""
-    user_id = request.session.get("user_id")
+    user_id = request.session.get('user_id')
 
     if not user_id:
         # Redirect to login page
         raise HTTPException(
             status_code=status.HTTP_303_SEE_OTHER,
-            detail="Not authenticated",
-            headers={"Location": "/login"},
+            detail='Not authenticated',
+            headers={'Location': '/login'},
         )
 
     result = await db.execute(select(User).filter(User.id == user_id))
@@ -97,8 +97,8 @@ async def get_current_user_from_session(
         request.session.clear()
         raise HTTPException(
             status_code=status.HTTP_303_SEE_OTHER,
-            detail="User not found",
-            headers={"Location": "/login"},
+            detail='User not found',
+            headers={'Location': '/login'},
         )
 
     return user

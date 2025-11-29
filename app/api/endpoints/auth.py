@@ -17,7 +17,7 @@ from app.schemas.user import Token, UserResponse
 router = APIRouter()
 
 
-@router.post("/login/access-token", response_model=Token)
+@router.post('/login/access-token', response_model=Token)
 async def login_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Annotated[AsyncSession, Depends(get_db)],
@@ -32,19 +32,19 @@ async def login_access_token(
     if not user or not security.verify_password(
         form_data.password, user.hashed_password
     ):
-        raise HTTPException(status_code=400, detail="Incorrect email or password")
+        raise HTTPException(status_code=400, detail='Incorrect email or password')
 
     if not user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise HTTPException(status_code=400, detail='Inactive user')
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = security.create_access_token(
         subject=user.email, expires_delta=access_token_expires
     )
-    return Token(access_token=access_token, token_type="bearer")
+    return Token(access_token=access_token, token_type='bearer')
 
 
-@router.post("/login/test-token", response_model=UserResponse)
+@router.post('/login/test-token', response_model=UserResponse)
 async def test_token(
     current_user: Annotated[User, Depends(deps.get_current_user)],
 ) -> Any:

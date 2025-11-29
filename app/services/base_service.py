@@ -10,9 +10,9 @@ from app.db.database import Base
 from app.services.audit_log_service import log_action
 from app.services.exceptions import DuplicateError
 
-ModelType = TypeVar("ModelType", bound=Base)
-CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
-UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
+ModelType = TypeVar('ModelType', bound=Base)
+CreateSchemaType = TypeVar('CreateSchemaType', bound=BaseModel)
+UpdateSchemaType = TypeVar('UpdateSchemaType', bound=BaseModel)
 
 
 class BaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
@@ -36,7 +36,7 @@ class BaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         await log_action(
             db=db,
             user_id=user_id,
-            action_type="create",
+            action_type='create',
             entity_type=self.model.__name__,
             entity_id=db_obj.id,
             details=obj_in.model_dump(),
@@ -66,7 +66,7 @@ class BaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         await db.flush()
 
         diff = {
-            k: {"old": old_data.get(k), "new": v}
+            k: {'old': old_data.get(k), 'new': v}
             for k, v in update_data.items()
             if old_data.get(k) != v
         }
@@ -74,10 +74,10 @@ class BaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             await log_action(
                 db=db,
                 user_id=user_id,
-                action_type="update",
+                action_type='update',
                 entity_type=self.model.__name__,
                 entity_id=db_obj.id,
-                details={"changes": diff},
+                details={'changes': diff},
             )
 
         await db.commit()
@@ -91,15 +91,15 @@ class BaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         if not db_obj:
             return None
 
-        obj_name = getattr(db_obj, "name", f"ID: {db_obj.id}")
+        obj_name = getattr(db_obj, 'name', f'ID: {db_obj.id}')
 
         await log_action(
             db=db,
             user_id=user_id,
-            action_type="delete",
+            action_type='delete',
             entity_type=self.model.__name__,
             entity_id=obj_id,
-            details={"name": obj_name},
+            details={'name': obj_name},
         )
         await db.delete(db_obj)
         await db.commit()

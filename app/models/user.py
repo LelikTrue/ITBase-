@@ -9,7 +9,7 @@ from .base import BaseMixin
 
 
 class User(BaseMixin, Base):
-    __tablename__ = "users"
+    __tablename__ = 'users'
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     email: Mapped[str] = mapped_column(

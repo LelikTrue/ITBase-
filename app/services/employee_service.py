@@ -29,9 +29,9 @@ class EmployeeService(BaseService[Employee, EmployeeCreate, EmployeeUpdate]):
     ) -> Employee:
         # Уникальная логика: проверка дубликатов по двум полям
         if obj_in.employee_id:
-            await self._check_duplicate(db, "employee_id", obj_in.employee_id)
+            await self._check_duplicate(db, 'employee_id', obj_in.employee_id)
         if obj_in.email:
-            await self._check_duplicate(db, "email", obj_in.email)
+            await self._check_duplicate(db, 'email', obj_in.email)
 
         # Проверка уникальности ФИО
 
@@ -47,10 +47,10 @@ class EmployeeService(BaseService[Employee, EmployeeCreate, EmployeeUpdate]):
         # Уникальная логика: проверка дубликатов по двум полям
         if obj_in.employee_id:
             await self._check_duplicate(
-                db, "employee_id", obj_in.employee_id, current_id=obj_id
+                db, 'employee_id', obj_in.employee_id, current_id=obj_id
             )
         if obj_in.email:
-            await self._check_duplicate(db, "email", obj_in.email, current_id=obj_id)
+            await self._check_duplicate(db, 'email', obj_in.email, current_id=obj_id)
 
         # Проверка уникальности ФИО (если меняются поля имени)
         await self._check_duplicate_name(
@@ -81,7 +81,7 @@ class EmployeeService(BaseService[Employee, EmployeeCreate, EmployeeUpdate]):
 
         result = await db.execute(query.limit(1))
         if result.scalar_one_or_none() is not None:
-            patr_str = f" {patronymic}" if patronymic else ""
+            patr_str = f' {patronymic}' if patronymic else ''
             raise DuplicateError(
                 f"Сотрудник с ФИО '{last_name} {first_name}{patr_str}' уже существует."
             )
@@ -92,7 +92,7 @@ class EmployeeService(BaseService[Employee, EmployeeCreate, EmployeeUpdate]):
         related_count = await self._count_related(db, Device.employee_id, obj_id)
         if related_count > 0:
             raise DeletionError(
-                f"Невозможно удалить сотрудника, так как с ним связано {related_count} активов."
+                f'Невозможно удалить сотрудника, так как с ним связано {related_count} активов.'
             )
 
         return await super().delete(db, obj_id, user_id)

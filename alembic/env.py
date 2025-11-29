@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 
 # 1. Добавляем корень проекта в пути, чтобы Alembic мог найти 'app'
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # 2. Импортируем наш единый конфиг и Base
 from app.config import settings
@@ -34,10 +34,10 @@ if config.config_file_name is not None:
 # 3. Устанавливаем URL из нашего центрального конфига
 # Если задана переменная окружения DATABASE_URL (например, в тестах), используем её.
 # Иначе берем из settings (для dev/prod).
-if os.environ.get("DATABASE_URL"):
-    config.set_main_option("sqlalchemy.url", os.environ.get("DATABASE_URL"))
+if os.environ.get('DATABASE_URL'):
+    config.set_main_option('sqlalchemy.url', os.environ.get('DATABASE_URL'))
 else:
-    config.set_main_option("sqlalchemy.url", settings.DATABASE_URL_ASYNC)
+    config.set_main_option('sqlalchemy.url', settings.DATABASE_URL_ASYNC)
 target_metadata = Base.metadata
 
 
@@ -53,12 +53,12 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = config.get_main_option('sqlalchemy.url')
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
+        dialect_opts={'paramstyle': 'named'},
     )
 
     with context.begin_transaction():
@@ -81,7 +81,7 @@ async def run_migrations_online() -> None:
     """
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
+        prefix='sqlalchemy.',
         poolclass=pool.NullPool,
     )
 

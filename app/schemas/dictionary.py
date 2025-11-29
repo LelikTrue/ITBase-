@@ -16,10 +16,10 @@ class DictionarySimpleCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     description: str | None = Field(None, max_length=255)
 
-    @field_validator("description", mode="before")
+    @field_validator('description', mode='before')
     @classmethod
     def empty_str_to_none(cls, v):
-        if v == "":
+        if v == '':
             return None
         return v
 
@@ -57,10 +57,10 @@ class SupplierCreate(BaseModel):
     email: EmailStr | None = None
     address: str | None = Field(None, max_length=255)
 
-    @field_validator("contact_person", "phone", "email", "address", mode="before")
+    @field_validator('contact_person', 'phone', 'email', 'address', mode='before')
     @classmethod
     def empty_str_to_none(cls, v):
-        if v == "":
+        if v == '':
             return None
         return v
 
@@ -74,13 +74,13 @@ class DeviceModelCreate(BaseModel):
     asset_type_id: int
     description: str | None = Field(None, max_length=255)
 
-    @field_validator("name", "description", mode="before")
+    @field_validator('name', 'description', mode='before')
     @classmethod
     def strip_whitespace(cls, v: str | None, info: ValidationInfo) -> str | None:
         """Удаляет начальные и конечные пробелы из строковых полей."""
         if isinstance(v, str):
             v = v.strip()
-            if v == "" and info.field_name == "description":
+            if v == '' and info.field_name == 'description':
                 return None
             return v
         return v
@@ -95,11 +95,11 @@ class DeviceModelUpdate(DeviceModelCreate):
 # ===============================================================
 class EmployeeCreate(BaseModel):
     # --- ОБЯЗАТЕЛЬНЫЕ ПОЛЯ ---
-    last_name: str = Field(..., max_length=50, description="Фамилия")
-    first_name: str = Field(..., max_length=50, description="Имя")
+    last_name: str = Field(..., max_length=50, description='Фамилия')
+    first_name: str = Field(..., max_length=50, description='Имя')
 
     # --- ОПЦИОНАЛЬНЫЕ ПОЛЯ ---
-    employee_id: str | None = Field(None, max_length=50, description="Табельный номер")
+    employee_id: str | None = Field(None, max_length=50, description='Табельный номер')
     patronymic: str | None = Field(None, max_length=50)
     position: str | None = Field(None, max_length=255)
     email: EmailStr | None = None
@@ -108,13 +108,13 @@ class EmployeeCreate(BaseModel):
 
     # --- ВАЛИДАТОР ДЛЯ ПРЕОБРАЗОВАНИЯ ПУСТЫХ СТРОК В NONE ---
     @field_validator(
-        "employee_id",
-        "patronymic",
-        "position",
-        "email",
-        "phone_number",
-        "department_id",
-        mode="before",
+        'employee_id',
+        'patronymic',
+        'position',
+        'email',
+        'phone_number',
+        'department_id',
+        mode='before',
     )
     @classmethod
     def empty_str_to_none(cls, v):
@@ -123,7 +123,7 @@ class EmployeeCreate(BaseModel):
         Это позволяет опциональным полям (включая EmailStr)
         корректно проходить валидацию, если они не заполнены.
         """
-        if v == "":
+        if v == '':
             return None
         return v
 
@@ -160,8 +160,8 @@ class DeviceModelResponse(BaseModel):
     id: int
     name: str
     description: str | None = None
-    manufacturer: "DictionarySimpleResponse"
-    asset_type: "DictionarySimpleResponse"
+    manufacturer: 'DictionarySimpleResponse'
+    asset_type: 'DictionarySimpleResponse'
 
     model_config = ConfigDict(from_attributes=True)
 

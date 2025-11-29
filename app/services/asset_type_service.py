@@ -25,8 +25,8 @@ class AssetTypeService(
         self, db: AsyncSession, obj_in: AssetTypeCreate, user_id: int
     ) -> AssetType:
         # Уникальная логика: проверка дубликатов по двум полям
-        await self._check_duplicate(db, "name", obj_in.name)
-        await self._check_duplicate(db, "prefix", obj_in.prefix)
+        await self._check_duplicate(db, 'name', obj_in.name)
+        await self._check_duplicate(db, 'prefix', obj_in.prefix)
         # Вызов базового метода для создания, логирования и коммита
         return await super().create(db, obj_in, user_id)
 
@@ -35,9 +35,9 @@ class AssetTypeService(
     ) -> AssetType | None:
         # Уникальная логика: проверка дубликатов по двум полям с учетом ID текущего объекта
         if obj_in.name:
-            await self._check_duplicate(db, "name", obj_in.name, current_id=obj_id)
+            await self._check_duplicate(db, 'name', obj_in.name, current_id=obj_id)
         if obj_in.prefix:
-            await self._check_duplicate(db, "prefix", obj_in.prefix, current_id=obj_id)
+            await self._check_duplicate(db, 'prefix', obj_in.prefix, current_id=obj_id)
         # Вызов базового метода для обновления, логирования и коммита
         return await super().update(db, obj_id, obj_in, user_id)
 
@@ -46,9 +46,9 @@ class AssetTypeService(
     ) -> AssetType | None:
         # Уникальная логика: проверка зависимостей в двух таблицах
         await self._check_dependencies(
-            db, DeviceModel.asset_type_id, obj_id, "моделей устройств"
+            db, DeviceModel.asset_type_id, obj_id, 'моделей устройств'
         )
-        await self._check_dependencies(db, Device.asset_type_id, obj_id, "активов")
+        await self._check_dependencies(db, Device.asset_type_id, obj_id, 'активов')
 
         # Если зависимостей нет, вызываем базовый метод для удаления
         return await super().delete(db, obj_id, user_id)

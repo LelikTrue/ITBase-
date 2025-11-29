@@ -23,7 +23,7 @@ class ManufacturerService(
         self, db: AsyncSession, obj_in: DictionarySimpleCreate, user_id: int
     ) -> Manufacturer:
         # Уникальная логика: проверка дубликата по имени
-        await self._check_duplicate(db, "name", obj_in.name)
+        await self._check_duplicate(db, 'name', obj_in.name)
         # Вызов базового метода
         return await super().create(db, obj_in, user_id)
 
@@ -36,7 +36,7 @@ class ManufacturerService(
     ) -> Manufacturer | None:
         # Уникальная логика: проверка дубликата по имени
         if obj_in.name:
-            await self._check_duplicate(db, "name", obj_in.name, current_id=obj_id)
+            await self._check_duplicate(db, 'name', obj_in.name, current_id=obj_id)
         # Вызов базового метода
         return await super().update(db, obj_id, obj_in, user_id)
 
@@ -45,7 +45,7 @@ class ManufacturerService(
     ) -> Manufacturer | None:
         # Уникальная логика: проверка зависимостей в DeviceModel
         await self._check_dependencies(
-            db, DeviceModel.manufacturer_id, obj_id, "моделей устройств"
+            db, DeviceModel.manufacturer_id, obj_id, 'моделей устройств'
         )
         # Вызов базового метода
         return await super().delete(db, obj_id, user_id)

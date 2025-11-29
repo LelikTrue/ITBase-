@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 
 class DeviceModel(BaseMixin, Base):
-    __tablename__ = "devicemodels"
+    __tablename__ = 'devicemodels'
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -27,21 +27,21 @@ class DeviceModel(BaseMixin, Base):
 
     # --- > РЕШЕНИЕ ПРОБЛЕМЫ: НЕДОСТАЮЩИЕ ВНЕШНИЕ КЛЮЧИ < ---
     manufacturer_id: Mapped[int] = mapped_column(
-        ForeignKey("manufacturers.id"), nullable=False
+        ForeignKey('manufacturers.id'), nullable=False
     )
     asset_type_id: Mapped[int] = mapped_column(
-        ForeignKey("assettypes.id"), nullable=False
+        ForeignKey('assettypes.id'), nullable=False
     )
 
     # --- > ЧИСТЫЕ СВЯЗИ (RELATIONSHIPS) < ---
-    manufacturer: Mapped["Manufacturer"] = relationship(back_populates="device_models")
-    asset_type: Mapped["AssetType"] = relationship(back_populates="device_models")
-    devices: Mapped[list["Device"]] = relationship(back_populates="device_model")
+    manufacturer: Mapped['Manufacturer'] = relationship(back_populates='device_models')
+    asset_type: Mapped['AssetType'] = relationship(back_populates='device_models')
+    devices: Mapped[list['Device']] = relationship(back_populates='device_model')
 
     # --- НАЧАЛО ИЗМЕНЕНИЙ ---
     __table_args__ = (
         UniqueConstraint(
-            "name", "manufacturer_id", name="uq_devicemodel_name_manufacturer"
+            'name', 'manufacturer_id', name='uq_devicemodel_name_manufacturer'
         ),
     )
     # --- КОНЕЦ ИЗМЕНЕНИЙ ---

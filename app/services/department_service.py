@@ -22,7 +22,7 @@ class DepartmentService(
     async def create(
         self, db: AsyncSession, obj_in: DictionarySimpleCreate, user_id: int
     ) -> Department:
-        await self._check_duplicate(db, "name", obj_in.name)
+        await self._check_duplicate(db, 'name', obj_in.name)
         return await super().create(db, obj_in, user_id)
 
     async def update(
@@ -33,13 +33,13 @@ class DepartmentService(
         user_id: int,
     ) -> Department | None:
         if obj_in.name:
-            await self._check_duplicate(db, "name", obj_in.name, current_id=obj_id)
+            await self._check_duplicate(db, 'name', obj_in.name, current_id=obj_id)
         return await super().update(db, obj_id, obj_in, user_id)
 
     async def delete(
         self, db: AsyncSession, obj_id: int, user_id: int
     ) -> Department | None:
-        await self._check_dependencies(db, Device.department_id, obj_id, "активов")
+        await self._check_dependencies(db, Device.department_id, obj_id, 'активов')
         return await super().delete(db, obj_id, user_id)
 
 
