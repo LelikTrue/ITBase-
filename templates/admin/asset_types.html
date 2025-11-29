@@ -23,9 +23,11 @@
             <a href="{{ url_for('dictionaries_dashboard') }}" class="btn btn-outline-secondary me-2">
                 <i class="bi bi-arrow-left"></i> Назад
             </a>
+            {% if request.session.get('is_superuser') %}
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
                 <i class="bi bi-plus-circle"></i> Добавить тип актива
             </button>
+            {% endif %}
         </div>
     </div>
 
@@ -53,7 +55,9 @@
                             <th style="width: 25%;">Название</th>
                             <th style="width: 15%;">Префикс</th>
                             <th style="width: 45%;">Описание</th>
+                            {% if request.session.get('is_superuser') %}
                             <th style="width: 10%;" class="text-end">Действия</th>
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody>
@@ -63,6 +67,8 @@
                             <td>{{ item.name }}</td>
                             <td><span class="badge bg-secondary">{{ item.prefix }}</span></td>
                             <td>{{ item.description or '-' }}</td>
+                            <td>{{ item.description or '-' }}</td>
+                            {% if request.session.get('is_superuser') %}
                             <td class="text-end">
                                 <button type="button" class="btn btn-sm btn-outline-primary"
                                         data-bs-toggle="modal"
@@ -81,6 +87,7 @@
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </td>
+                            {% endif %}
                         </tr>
                         {% else %}
                         <tr>

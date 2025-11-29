@@ -156,12 +156,14 @@
                                     <span class="text-muted">-</span>
                                 {% endif %}
                                 
+                                {% if request.session.get('is_superuser') %}
                                 <button class="btn btn-sm btn-outline-danger delete-log"
                                         type="button"
                                         data-log-id="{{ log.id }}"
                                         title="Удалить запись">
                                     <i class="bi bi-trash"></i>
                                 </button>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>

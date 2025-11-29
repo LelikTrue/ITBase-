@@ -115,13 +115,13 @@ function renderRisksTable(risks) {
 
         // XSS Protection via escapeHtml
         tr.innerHTML = `
-            <td><a href="/assets/${risk.id}" class="text-decoration-none">${escapeHtml(risk.inventory_number)}</a></td>
+            <td><a href="/edit/${risk.id}" class="text-decoration-none">${escapeHtml(risk.inventory_number)}</a></td>
             <td>${escapeHtml(risk.name)}</td>
             <td><span class="badge ${badgeClass}">${issueText}</span></td>
             <td class="text-center">${risk.criticality === 'HIGH' ? '🔴' : '🟡'}</td>
             <td>${risk.date_val ? new Date(risk.date_val).toLocaleDateString('ru-RU') : '-'}</td>
             <td>
-                <a href="/assets/${risk.id}/edit" class="btn btn-sm btn-outline-primary">
+                <a href="/edit/${risk.id}" class="btn btn-sm btn-outline-primary">
                     <i class="bi bi-pencil"></i>
                 </a>
             </td>

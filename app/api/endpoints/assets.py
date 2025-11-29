@@ -15,7 +15,10 @@ from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_user_from_session
+from app.api.deps import (
+    get_current_superuser_from_session,
+    get_current_user_from_session,
+)
 from app.db.database import get_db
 from app.flash import flash, get_flashed_messages
 from app.models.user import User
@@ -56,6 +59,7 @@ async def read_assets(
     manufacturer_id: str | None = Query(None),
     sort_by: str | None = Query(None),
     sort_order: str = Query('asc'),
+    current_user: User = Depends(get_current_user_from_session),
 ):
     """Отображает список активов с фильтрацией, сортировкой и пагинацией."""
     try:
@@ -117,6 +121,7 @@ async def read_assets(
 async def dashboard(
     request: Request,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_session),
 ):
     """Отображает аналитический дашборд."""
     return templates.TemplateResponse(
@@ -136,6 +141,7 @@ async def export_assets_csv(
     department_id: str | None = Query(None),
     location_id: str | None = Query(None),
     manufacturer_id: str | None = Query(None),
+    current_user: User = Depends(get_current_user_from_session),
 ):
     """Экспортирует отфильтрованный список активов в CSV файл."""
     try:
@@ -212,6 +218,7 @@ async def add_asset_form(
     request: Request,
     db: AsyncSession = Depends(get_db),
     device_service: DeviceService = Depends(get_device_service),
+    current_user: User = Depends(get_current_user_from_session),
 ):
     submitted_data = {}
     validation_errors = {}
@@ -253,7 +260,7 @@ async def create_asset(
     request: Request,
     db: AsyncSession = Depends(get_db),
     device_service: DeviceService = Depends(get_device_service),
-    current_user: User = Depends(get_current_user_from_session),
+    current_user: User = Depends(get_current_superuser_from_session),
 ):
     form_data = await request.form()
     form_dict = dict(form_data)
@@ -322,6 +329,7 @@ async def edit_asset(
     device_id: int,
     db: AsyncSession = Depends(get_db),
     device_service: DeviceService = Depends(get_device_service),
+    current_user: User = Depends(get_current_user_from_session),
 ):
     device = await device_service.get_device_with_relations(db, device_id)
     if not device:
@@ -358,7 +366,7 @@ async def update_asset(
     device_id: int,
     db: AsyncSession = Depends(get_db),
     device_service: DeviceService = Depends(get_device_service),
-    current_user: User = Depends(get_current_user_from_session),
+    current_user: User = Depends(get_current_superuser_from_session),
 ):
     form_data = await request.form()
     form_dict = dict(form_data)
@@ -405,7 +413,7 @@ async def delete_asset(
     device_id: int,
     db: AsyncSession = Depends(get_db),
     device_service: DeviceService = Depends(get_device_service),
-    current_user: User = Depends(get_current_user_from_session),
+    current_user: User = Depends(get_current_superuser_from_session),
 ) -> Response:
     try:
         await device_service.delete_device_with_audit(
@@ -431,7 +439,7 @@ async def bulk_delete_assets(
     request: Request,
     db: AsyncSession = Depends(get_db),
     device_service: DeviceService = Depends(get_device_service),
-    current_user: User = Depends(get_current_user_from_session),
+    current_user: User = Depends(get_current_superuser_from_session),
 ) -> Response:
     form_data = await request.form()
     device_ids = [int(id) for id in form_data.getlist('device_ids')]
@@ -460,7 +468,7 @@ async def bulk_update_assets(
     device_ids_json: str = Form(..., alias='device_ids_json'),
     db: AsyncSession = Depends(get_db),
     device_service: DeviceService = Depends(get_device_service),
-    current_user: User = Depends(get_current_user_from_session),
+    current_user: User = Depends(get_current_superuser_from_session),
     status_id: int | None = Form(None),
     department_id: int | None = Form(None),
     location_id: int | None = Form(None),

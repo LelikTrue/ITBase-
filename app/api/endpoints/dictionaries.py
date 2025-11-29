@@ -5,6 +5,11 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import (
+    get_current_superuser_from_session,
+    get_current_user_from_session,
+)
+
 from app.db.database import get_db
 from app.models import (
     AssetType,
@@ -16,6 +21,7 @@ from app.models import (
     Manufacturer,
     Supplier,
     Tag,
+    User,
 )
 from app.schemas.dictionary import (
     AssetTypeCreate,
@@ -237,6 +243,7 @@ async def create_dictionary_entry(
     dict_name: str,
     db: AsyncSession = Depends(get_db),
     service: DictionaryService = Depends(get_dictionary_service),
+    current_user: User = Depends(get_current_superuser_from_session),
 ):
     if dict_name not in DICTIONARY_CONFIG:
         raise HTTPException(
@@ -278,6 +285,7 @@ async def get_dictionary_entries(
     dict_name: str,
     db: AsyncSession = Depends(get_db),
     service: DictionaryService = Depends(get_dictionary_service),
+    current_user: User = Depends(get_current_user_from_session),
 ) -> list[dict[str, Any]]:
     if dict_name not in DICTIONARY_CONFIG:
         raise HTTPException(
@@ -309,6 +317,7 @@ async def delete_dictionary_entry(
     dict_name: str,
     item_id: int,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_superuser_from_session),
 ) -> None:
     """Удаляет запись из справочника через API."""
     if dict_name not in DICTIONARY_CONFIG:
@@ -349,9 +358,8 @@ async def delete_dictionary_entry(
         )
 
     try:
-        # Для API используем фиктивный user_id=1 (системный пользователь)
-        # В будущем можно добавить аутентификацию для API
-        deleted_item = await service.delete(db, obj_id=item_id, user_id=1)
+        # Используем ID текущего суперпользователя
+        deleted_item = await service.delete(db, obj_id=item_id, user_id=current_user.id)
         if not deleted_item:
             raise HTTPException(
                 status_code=404, detail='Запись не найдена.'

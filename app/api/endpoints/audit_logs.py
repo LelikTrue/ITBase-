@@ -6,8 +6,13 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import (
+    get_current_superuser_from_session,
+    get_current_user_from_session,
+)
 from app.db.database import get_db
 from app.models.action_log import ActionLog
+from app.models.user import User
 from app.templating import templates
 
 logger = logging.getLogger(__name__)
@@ -21,6 +26,7 @@ router = APIRouter(tags=['Audit Logs'])
 async def view_audit_logs_page(
     request: Request,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_session),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     action_type: str | None = Query(None),
@@ -108,7 +114,11 @@ async def view_audit_logs_page(
 # API Эндпоинт для удаления записи лога (используется JS)
 # ===============================================================
 @router.delete('/api/audit-logs/{log_id}', status_code=204)
-async def delete_log_entry(log_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_log_entry(
+    log_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_superuser_from_session),
+):
     log_entry = await db.get(ActionLog, log_id)
     if not log_entry:
         return JSONResponse(status_code=404, content={'detail': 'Log entry not found'})

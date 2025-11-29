@@ -165,7 +165,7 @@ async def create_dictionary_item(
     request: Request,
     dictionary_type: str,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user_from_session),
+    current_user: User = Depends(deps.get_current_superuser_from_session),
 ):
     if dictionary_type not in DICTIONARY_CONFIG:
         return RedirectResponse(
@@ -218,7 +218,7 @@ async def edit_dictionary_item(
     dictionary_type: str,
     item_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user_from_session),
+    current_user: User = Depends(deps.get_current_superuser_from_session),
 ):
     if dictionary_type not in DICTIONARY_CONFIG:
         return RedirectResponse(
@@ -271,7 +271,7 @@ async def delete_dictionary_item(
     dictionary_type: str,
     item_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user_from_session),
+    current_user: User = Depends(deps.get_current_superuser_from_session),
 ):
     if dictionary_type not in DICTIONARY_CONFIG:
         return RedirectResponse(
