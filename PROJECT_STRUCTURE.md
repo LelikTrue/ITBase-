@@ -119,12 +119,6 @@ ITBase-/
 │   │   │   ├── __init__.py
 │   │   │   ├── dependency_check_mixin.py
 │   │   │   ├── duplicate_check_mixin.py
-│   ├── static/
-│   │   ├── css/
-│   │   │   ├── dashboard.css
-│   │   ├── js/
-│   │   │   ├── dashboard.js
-│   │   │   ├── vendor/
 │   ├── templates/
 │   ├── utils/
 │   │   ├── __init__.py
@@ -140,11 +134,13 @@ ITBase-/
 ├── static/
 │   ├── styles.css
 │   ├── css/
+│   │   ├── dashboard.css
 │   │   ├── dictionary_modals.css
 │   │   ├── styles.css
 │   │   ├── vendor/
 │   │   │   ├── tom-select.bootstrap5.css
 │   ├── js/
+│   │   ├── dashboard.js
 │   │   ├── dictionary_modals.js
 │   │   ├── tom-select-init.js
 │   │   ├── vendor/
