@@ -1,113 +1,152 @@
 {% extends "base.html" %}
 
-{% block title %}{{ title | default('Дашборд') }}{% endblock %}
+{% block title %}Аналитика - IT Asset Tracker{% endblock %}
 
-{% block extra_js %}
-<!-- Дашборд не требует дополнительного JavaScript -->
+{% block head_extra %}
+<!-- Chart.js -->
+<script src="{{ url_for('static', path='js/vendor/chart.umd.min.js') }}"></script>
+<!-- Dashboard CSS -->
+<link rel="stylesheet" href="{{ url_for('static', path='css/dashboard.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>IT Asset Tracker - Дашборд</h1>
-        <div class="btn-group">
-            <a href="{{ request.url_for('add_asset_form') }}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Добавить актив
-            </a>
-            <a href="{{ request.url_for('read_assets') }}" class="btn btn-outline-primary">
-                <i class="bi bi-list-ul"></i> Список активов
-            </a>
+        <h1 class="h2">Аналитическая панель</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+                <i class="bi bi-printer"></i> Печать
+            </button>
         </div>
     </div>
 
-    {# Секции для сводной статистики #}
-    <div class="row mt-4">
-        <!-- Блок типов устройств -->
-        <div class="col-md-6 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-dark bg-gradient text-white rounded-top">
-                    <i class="bi bi-tags-fill me-2"></i>Типы устройств
-                    <span class="badge bg-light text-dark float-end">{{ device_types_count|sum(attribute='count') }} всего</span>
-                </div>
-                <div class="card-body p-0">
-                    <div class="list-group list-group-flush">
-                        {% if device_types_count and device_types_count|length > 0 %}
-                            {% for item in device_types_count %}
-                            <div class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                <div class="d-flex align-items-center">
-                                    <i class="bi 
-                                        {% if item.name == 'Компьютер' %}bi-pc-display
-                                        {% elif item.name == 'Ноутбук' %}bi-laptop
-                                        {% elif item.name == 'Монитор' %}bi-display
-                                        {% elif item.name == 'Принтер' %}bi-printer
-                                        {% else %}bi-hdd{% endif %} 
-                                        me-3 text-primary dashboard-icon-small"></i>
-                                    <span class="fw-medium">{{ item.name }}</span>
-                                </div>
-                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2">
-                                    {{ item.count }} шт.
-                                </span>
-                            </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="p-4 text-muted text-center">
-                                <i class="bi bi-inbox text-muted dashboard-icon-medium"></i>
-                                <p class="mt-2 mb-0">Нет данных о типах устройств</p>
-                            </div>
-                        {% endif %}
+    <!-- Финансовые метрики -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Общая стоимость</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-cost">Loading...</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-currency-dollar fa-2x text-gray-300" style="font-size: 2rem;"></i>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <!-- Блок статусов устройств -->
-        <div class="col-md-6 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-dark bg-gradient text-white rounded-top">
-                    <i class="bi bi-info-circle-fill me-2"></i>Статусы устройств
-                    <span class="badge bg-light text-dark float-end">{{ device_statuses_count|sum(attribute='count') }} всего</span>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                В эксплуатации</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="cost-in-use">Loading...</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-pc-display fa-2x text-gray-300" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body p-0">
-                    <div class="list-group list-group-flush">
-                        {% if device_statuses_count and device_statuses_count|length > 0 %}
-                            {% for item in device_statuses_count %}
-                            <div class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                <div class="d-flex align-items-center">
-                                    <i class="bi 
-                                        {% if item.name == 'В эксплуатации' %}bi-check-circle
-                                        {% elif item.name == 'На складе' %}bi-box-seam
-                                        {% elif item.name == 'В ремонте' %}bi-tools
-                                        {% elif item.name == 'Списано' %}bi-trash
-                                        {% else %}bi-info-circle{% endif %} 
-                                        me-3
-                                        {% if item.name == 'В эксплуатации' %}text-success
-                                        {% elif item.name == 'На складе' %}text-info
-                                        {% elif item.name == 'В ремонте' %}text-warning
-                                        {% elif item.name == 'Списано' %}text-secondary
-                                        {% else %}text-primary{% endif %}" 
-                                        dashboard-icon-small"></i>
-                                    <span class="fw-medium">{{ item.name }}</span>
-                                </div>
-                                <span class="badge 
-                                    {% if item.name == 'В эксплуатации' %}bg-success bg-opacity-10 text-success
-                                    {% elif item.name == 'На складе' %}bg-info bg-opacity-10 text-info
-                                    {% elif item.name == 'В ремонте' %}bg-warning bg-opacity-10 text-warning
-                                    {% elif item.name == 'Списано' %}bg-secondary bg-opacity-10 text-secondary
-                                    {% else %}bg-primary bg-opacity-10 text-primary{% endif %} 
-                                    rounded-pill px-3 py-2">
-                                    {{ item.count }} шт.
-                                </span>
-                            </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="p-4 text-muted text-center">
-                                <i class="bi bi-inbox text-muted dashboard-icon-medium"></i>
-                                <p class="mt-2 mb-0">Нет данных о статусах устройств</p>
-                            </div>
-                        {% endif %}
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                На складе</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="cost-in-stock">Loading...</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-box-seam fa-2x text-gray-300" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Средний износ</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="avg-wear">Loading...</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-activity fa-2x text-gray-300" style="font-size: 2rem;"></i>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Графики -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Распределение по статусам</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4 pb-2">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Распределение по типам</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-bar">
+                        <canvas id="typeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Таблица рисков -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-danger">Проблемные активы (Топ-20)</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="riskTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Инв. номер</th>
+                            <th>Название</th>
+                            <th>Проблема</th>
+                            <th>Критичность</th>
+                            <th>Дата (Гарантия/Покупка)</th>
+                            <th>Действие</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data will be populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='js/dashboard.js') }}"></script>
 {% endblock %}

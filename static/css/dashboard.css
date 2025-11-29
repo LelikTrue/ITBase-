@@ -1,0 +1,70 @@
+/* Dashboard Cards */
+.card-stat {
+    border-left: 4px solid #4e73df;
+    padding: 1.25rem;
+}
+
+.card-stat .text-primary {
+    color: #4e73df !important;
+}
+
+.card-stat .text-success {
+    color: #1cc88a !important;
+}
+
+.card-stat .text-info {
+    color: #36b9cc !important;
+}
+
+.card-stat .text-warning {
+    color: #f6c23e !important;
+}
+
+.card-stat h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0;
+}
+
+.card-stat p {
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 0;
+}
+
+/* Chart Cards */
+.chart-container {
+    position: relative;
+    height: 320px;
+    padding: 1rem;
+}
+
+/* Risk Table */
+#riskTable td {
+    vertical-align: middle;
+    padding: 0.75rem;
+}
+
+#riskTable .badge {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .chart-container {
+        height: 250px;
+    }
+}
+
+/* --- Dashboard Specific Dark Mode Fixes --- */
+
+/* Специфичный стиль для таблицы рисков на дашборде */
+#riskTable thead th {
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+}
+
