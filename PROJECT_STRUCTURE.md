@@ -56,6 +56,7 @@ ITBase-/
 │   │   ├── endpoints/
 │   │   │   ├── __init__.py
 │   │   │   ├── admin.py
+│   │   │   ├── analytics.py
 │   │   │   ├── assets.py
 │   │   │   ├── audit_logs.py
 │   │   │   ├── auth.py
@@ -70,6 +71,8 @@ ITBase-/
 │   │   ├── __init__.py
 │   │   ├── database.py
 │   │   ├── initial_data_storage.py
+│   │   ├── repositories/
+│   │   │   ├── analytics_repo.py
 │   ├── models/
 │   │   ├── __init__.py
 │   │   ├── action_log.py
@@ -89,6 +92,7 @@ ITBase-/
 │   │   ├── user.py
 │   ├── schemas/
 │   │   ├── __init__.py
+│   │   ├── analytics.py
 │   │   ├── asset.py
 │   │   ├── audit_log.py
 │   │   ├── dictionary.py
@@ -115,6 +119,13 @@ ITBase-/
 │   │   │   ├── __init__.py
 │   │   │   ├── dependency_check_mixin.py
 │   │   │   ├── duplicate_check_mixin.py
+│   ├── static/
+│   │   ├── css/
+│   │   │   ├── dashboard.css
+│   │   ├── js/
+│   │   │   ├── dashboard.js
+│   │   │   ├── vendor/
+│   ├── templates/
 │   ├── utils/
 │   │   ├── __init__.py
 │   │   ├── helpers.py
@@ -137,6 +148,8 @@ ITBase-/
 │   │   ├── dictionary_modals.js
 │   │   ├── tom-select-init.js
 │   │   ├── vendor/
+│   │   │   ├── chart.js
+│   │   │   ├── chart.umd.min.js
 │   │   │   ├── tom-select.complete.min.js
 │   ├── test_data/
 │   │   ├── device_fixture.json
@@ -183,4 +196,4 @@ ITBase-/
 - **Total DB Models:** 14
   - List: department, device, user, attachment, network, device_status, asset_type, location, supplier, manufacturer, device_model, action_log, tag, employee
 - **Total Services:** 13
-- **Total API Modules:** 9
+- **Total API Modules:** 10

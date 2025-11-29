@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class Tag(BaseMixin, Base):
-    __tablename__ = "tags"
+    __tablename__ = 'tags'
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(
@@ -21,8 +21,8 @@ class Tag(BaseMixin, Base):
     # Простое текстовое поле для категории. Позволит в будущем добавлять новые.
     category: Mapped[str | None] = mapped_column(String(50))
 
-    devices: Mapped[list["Device"]] = relationship(
-        secondary="device_tags", back_populates="tags"
+    devices: Mapped[list['Device']] = relationship(
+        secondary='device_tags', back_populates='tags'
     )
 
     def __repr__(self) -> str:

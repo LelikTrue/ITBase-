@@ -29,12 +29,12 @@ def form_body(cls: type) -> type:
 
 
 class BaseFormModel(BaseModel):
-    @model_validator(mode="before")
+    @model_validator(mode='before')
     @classmethod
     def empty_str_to_none(cls, data: Any) -> Any:
         if isinstance(data, dict):
             for key, value in data.items():
-                if value == "":
+                if value == '':
                     data[key] = None
         return data
 
@@ -52,10 +52,10 @@ class AssetBase(BaseModel):
     price: float | None = Field(None, ge=0)
     supplier_id: int | None = None
     current_wear_percentage: int | None = Field(
-        None, ge=0, le=100, description="Процент износа от 0 до 100"
+        None, ge=0, le=100, description='Процент износа от 0 до 100'
     )
     expected_lifespan_years: int | None = Field(
-        None, ge=0, description="Ожидаемый срок службы в годах"
+        None, ge=0, description='Ожидаемый срок службы в годах'
     )
 
     # Связи через ID

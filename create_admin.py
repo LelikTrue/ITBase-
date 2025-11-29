@@ -14,25 +14,25 @@ from app.models.user import User
 
 async def create_superuser():
     """Create a superuser interactively"""
-    print("=== Создание администратора ===\n")
+    print('=== Создание администратора ===\n')
 
     # Get user input
-    email = input("Email: ").strip()
+    email = input('Email: ').strip()
     if not email:
-        print("❌ Email обязателен!")
+        print('❌ Email обязателен!')
         return
 
-    full_name = input("Полное имя (опционально): ").strip() or None
+    full_name = input('Полное имя (опционально): ').strip() or None
 
-    password = getpass.getpass("Пароль: ")
-    password_confirm = getpass.getpass("Подтвердите пароль: ")
+    password = getpass.getpass('Пароль: ')
+    password_confirm = getpass.getpass('Подтвердите пароль: ')
 
     if password != password_confirm:
-        print("❌ Пароли не совпадают!")
+        print('❌ Пароли не совпадают!')
         return
 
     if len(password) < 6:
-        print("❌ Пароль должен быть минимум 6 символов!")
+        print('❌ Пароль должен быть минимум 6 символов!')
         return
 
     # Create database engine
@@ -47,7 +47,7 @@ async def create_superuser():
         existing_user = result.scalars().first()
 
         if existing_user:
-            print(f"❌ Пользователь с email {email} уже существует!")
+            print(f'❌ Пользователь с email {email} уже существует!')
             return
 
         # Create superuser
@@ -63,14 +63,14 @@ async def create_superuser():
         await session.commit()
         await session.refresh(user)
 
-        print("\n✅ Администратор успешно создан!")
-        print(f"   ID: {user.id}")
-        print(f"   Email: {user.email}")
+        print('\n✅ Администратор успешно создан!')
+        print(f'   ID: {user.id}')
+        print(f'   Email: {user.email}')
         print(f"   Имя: {user.full_name or 'Не указано'}")
-        print("   Суперпользователь: Да")
+        print('   Суперпользователь: Да')
 
     await engine.dispose()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     asyncio.run(create_superuser())

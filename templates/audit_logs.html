@@ -90,7 +90,7 @@
         </div>
         <div class="table-responsive">
             <table class="table table-hover mb-0">
-                <thead class="table-light">
+                <thead>
                     <tr>
                         <th>ID</th>
                         <th>Время</th>
@@ -106,7 +106,7 @@
                     <tr>
                         <td>{{ log.id }}</td>
                         <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                        <td>{% if log.user_id %}{{ log.user_id }}{% else %}-{% endif %}</td>
+                        <td>{% if log.user %}{{ log.user.full_name or log.user.email }}{% else %}System{% endif %}</td>
                         <td>
                             {% if log.action_type == 'create' %}
                                 <span class="badge bg-success">Создание</span>

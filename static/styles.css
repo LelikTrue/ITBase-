@@ -118,3 +118,88 @@ body[data-bs-theme="dark"] .footer .text-muted {
 .dashboard-icon-small {
     font-size: 1.2rem;
 }
+
+/* =========================================
+   GLOBAL DARK MODE TABLE FIXES
+   Применяется ко всем таблицам на сайте
+   ========================================= */
+
+/* 1. Глобальные стили для всех таблиц + Bootstrap 5 CSS Variables */
+.table {
+    color: #e0e0e0 !important;             /* Светло-серый текст */
+    border-color: #444 !important;         /* Темные границы */
+    --bs-table-color: #e0e0e0;             /* Переопределение переменных Bootstrap 5 */
+    --bs-table-bg: transparent;
+    --bs-table-border-color: #444;
+    --bs-table-striped-color: #e0e0e0;
+    --bs-table-striped-bg: rgba(255, 255, 255, 0.05);
+    --bs-table-active-color: #ffffff;
+    --bs-table-active-bg: rgba(255, 255, 255, 0.1);
+    --bs-table-hover-color: #ffffff;
+    --bs-table-hover-bg: #3a3b45;
+}
+
+/* 2. Шапка таблицы (Thead) - Убираем белый фон */
+.table thead th {
+    background-color: #2c2c2c !important; /* Темно-серый фон */
+    color: #ffffff !important;             /* Белый текст */
+    border-bottom: 2px solid #555 !important;
+    border-top: none !important;
+}
+
+/* 3. Границы ячеек */
+.table-bordered td, 
+.table-bordered th {
+    border: 1px solid #444 !important;
+}
+
+/* 4. Эффект наведения (Hover) */
+.table-hover tbody tr:hover {
+    color: #ffffff !important;
+    background-color: #3a3b45 !important;  /* Подсветка строки */
+}
+
+/* 5. Исправление для полосатых таблиц (Striped), если используются */
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+    color: #e0e0e0;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* 6. Текст внутри tbody */
+.table tbody {
+    color: #e0e0e0;
+}
+
+/* 7. Исправление diff-таблицы для audit logs */
+.diff-table th {
+    background-color: #2c2c2c !important;
+    color: #ffffff !important;
+}
+
+.diff-table .bg-light {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* ============================================= */
+/*          DARK MODE CARD FIXES                 */
+/* ============================================= */
+
+/* Карточки в темной теме */
+.card {
+    background-color: #1f1f1f;
+    border: 1px solid #333;
+}
+
+.card-header {
+    background-color: #2c2c2c;
+    border-bottom: 1px solid #333;
+}
+
+/* Цвет текста внутри карточек */
+.text-gray-800 {
+    color: #f8f9fa !important;
+}
+
+.text-gray-300 {
+    color: #6c757d !important;
+}

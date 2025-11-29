@@ -16,9 +16,9 @@ def get_tag_service() -> TagService:
     return tag_service
 
 
-@router.get("/search", response_model=list[TagResponse])
+@router.get('/search', response_model=list[TagResponse])
 async def search_tags_api(
-    q: str = Query(..., min_length=1, description="Поисковый запрос для тегов"),
+    q: str = Query(..., min_length=1, description='Поисковый запрос для тегов'),
     db: AsyncSession = Depends(get_db),
     tag_service: TagService = Depends(get_tag_service),
 ):

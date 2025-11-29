@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class DeviceStatus(BaseMixin, Base):
-    __tablename__ = "devicestatuses"
+    __tablename__ = 'devicestatuses'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(
@@ -22,8 +22,8 @@ class DeviceStatus(BaseMixin, Base):
     description: Mapped[str | None] = mapped_column(String(500))
 
     # Связь с Device
-    devices: Mapped[list["Device"]] = relationship("Device", back_populates="status")
+    devices: Mapped[list['Device']] = relationship('Device', back_populates='status')
 
     # --- ДОБАВЬ ЭТОТ БЛОК ---
-    __table_args__ = (UniqueConstraint("name", name="uq_devicestatuses_name"),)
+    __table_args__ = (UniqueConstraint('name', name='uq_devicestatuses_name'),)
     # -----------------------

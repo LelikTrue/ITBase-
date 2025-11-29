@@ -39,9 +39,9 @@ class DeviceModelService(
     ):
         """Проверяет, что производитель и тип актива существуют."""
         if not await db.get(Manufacturer, manufacturer_id):
-            raise NotFoundError(f"Производитель с ID {manufacturer_id} не найден.")
+            raise NotFoundError(f'Производитель с ID {manufacturer_id} не найден.')
         if not await db.get(AssetType, asset_type_id):
-            raise NotFoundError(f"Тип актива с ID {asset_type_id} не найден.")
+            raise NotFoundError(f'Тип актива с ID {asset_type_id} не найден.')
 
     async def _check_composite_duplicate(
         self,
@@ -90,7 +90,7 @@ class DeviceModelService(
         related_count = await self._count_related(db, Device.device_model_id, obj_id)
         if related_count > 0:
             raise DeletionError(
-                f"Невозможно удалить модель, так как с ней связано {related_count} активов."
+                f'Невозможно удалить модель, так как с ней связано {related_count} активов.'
             )
         return await super().delete(db, obj_id, user_id)
 

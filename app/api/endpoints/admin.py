@@ -36,131 +36,131 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 DICTIONARY_CONFIG = {
-    "asset-types": {
-        "service": asset_type_service,
-        "title": "Типы активов",
-        "icon": "bi-box-seam",
-        "description": "Категории оборудования",
-        "list_variable_name": "asset_types",
-        "template": "admin/asset_types.html",
+    'asset-types': {
+        'service': asset_type_service,
+        'title': 'Типы активов',
+        'icon': 'bi-box-seam',
+        'description': 'Категории оборудования',
+        'list_variable_name': 'asset_types',
+        'template': 'admin/asset_types.html',
     },
-    "device-models": {
-        "service": device_model_service,
-        "title": "Модели устройств",
-        "icon": "bi-laptop",
-        "description": "Конкретные модели техники",
-        "list_variable_name": "device_models",
-        "template": "admin/device_models.html",
+    'device-models': {
+        'service': device_model_service,
+        'title': 'Модели устройств',
+        'icon': 'bi-laptop',
+        'description': 'Конкретные модели техники',
+        'list_variable_name': 'device_models',
+        'template': 'admin/device_models.html',
     },
-    "device-statuses": {
-        "service": device_status_service,
-        "title": "Статусы устройств",
-        "icon": "bi-check-circle",
-        "description": "Состояния активов",
-        "list_variable_name": "device_statuses",
-        "template": "admin/device_statuses.html",
+    'device-statuses': {
+        'service': device_status_service,
+        'title': 'Статусы устройств',
+        'icon': 'bi-check-circle',
+        'description': 'Состояния активов',
+        'list_variable_name': 'device_statuses',
+        'template': 'admin/device_statuses.html',
     },
-    "manufacturers": {
-        "service": manufacturer_service,
-        "title": "Производители",
-        "icon": "bi-building",
-        "description": "Бренды оборудования",
-        "list_variable_name": "manufacturers",
-        "template": "admin/manufacturers.html",
+    'manufacturers': {
+        'service': manufacturer_service,
+        'title': 'Производители',
+        'icon': 'bi-building',
+        'description': 'Бренды оборудования',
+        'list_variable_name': 'manufacturers',
+        'template': 'admin/manufacturers.html',
     },
-    "suppliers": {
-        "service": supplier_service,
-        "title": "Поставщики",
-        "icon": "bi-truck",
-        "description": "Компании-поставщики",
-        "list_variable_name": "suppliers",
-        "template": "admin/suppliers.html",
+    'suppliers': {
+        'service': supplier_service,
+        'title': 'Поставщики',
+        'icon': 'bi-truck',
+        'description': 'Компании-поставщики',
+        'list_variable_name': 'suppliers',
+        'template': 'admin/suppliers.html',
     },
-    "departments": {
-        "service": department_service,
-        "title": "Отделы",
-        "icon": "bi-diagram-3",
-        "description": "Структурные подразделения",
-        "list_variable_name": "departments",
-        "template": "admin/departments.html",
+    'departments': {
+        'service': department_service,
+        'title': 'Отделы',
+        'icon': 'bi-diagram-3',
+        'description': 'Структурные подразделения',
+        'list_variable_name': 'departments',
+        'template': 'admin/departments.html',
     },
-    "locations": {
-        "service": location_service,
-        "title": "Местоположения",
-        "icon": "bi-geo-alt",
-        "description": "Кабинеты, офисы, склады",
-        "list_variable_name": "locations",
-        "template": "admin/locations.html",
+    'locations': {
+        'service': location_service,
+        'title': 'Местоположения',
+        'icon': 'bi-geo-alt',
+        'description': 'Кабинеты, офисы, склады',
+        'list_variable_name': 'locations',
+        'template': 'admin/locations.html',
     },
-    "employees": {
-        "service": employee_service,
-        "title": "Сотрудники",
-        "icon": "bi-people",
-        "description": "Персонал организации",
-        "list_variable_name": "employees",
-        "template": "admin/employees.html",
+    'employees': {
+        'service': employee_service,
+        'title': 'Сотрудники',
+        'icon': 'bi-people',
+        'description': 'Персонал организации',
+        'list_variable_name': 'employees',
+        'template': 'admin/employees.html',
     },
-    "tags": {
-        "service": tag_service,
-        "title": "Теги",
-        "icon": "bi-tags",
-        "description": "Метки и свойства активов",
-        "list_variable_name": "tags",
-        "template": "admin/tags.html",
+    'tags': {
+        'service': tag_service,
+        'title': 'Теги',
+        'icon': 'bi-tags',
+        'description': 'Метки и свойства активов',
+        'list_variable_name': 'tags',
+        'template': 'admin/tags.html',
     },
 }
 
 
-@router.get("/dictionaries", response_class=HTMLResponse, name="dictionaries_dashboard")
+@router.get('/dictionaries', response_class=HTMLResponse, name='dictionaries_dashboard')
 async def dictionaries_dashboard(request: Request, db: AsyncSession = Depends(get_db)):
     stats = {}
     for name, config in DICTIONARY_CONFIG.items():
-        stats[name.replace("-", "_")] = await config["service"].get_count(db)
+        stats[name.replace('-', '_')] = await config['service'].get_count(db)
     return templates.TemplateResponse(
-        "admin/dictionaries_dashboard.html",
+        'admin/dictionaries_dashboard.html',
         {
-            "request": request,
-            "stats": stats,
-            "dictionaries": DICTIONARY_CONFIG,
-            "title": "Управление справочниками",
+            'request': request,
+            'stats': stats,
+            'dictionaries': DICTIONARY_CONFIG,
+            'title': 'Управление справочниками',
         },
     )
 
 
 @router.get(
-    "/dictionaries/{dictionary_type}",
+    '/dictionaries/{dictionary_type}',
     response_class=HTMLResponse,
-    name="manage_dictionary",
+    name='manage_dictionary',
 )
 async def manage_dictionary(
     request: Request, dictionary_type: str, db: AsyncSession = Depends(get_db)
 ):
     if dictionary_type not in DICTIONARY_CONFIG:
         return templates.TemplateResponse(
-            "error.html",
-            {"request": request, "error": "Справочник не найден."},
+            'error.html',
+            {'request': request, 'error': 'Справочник не найден.'},
             status_code=404,
         )
 
     config = DICTIONARY_CONFIG[dictionary_type]
-    items = await config["service"].get_all(db)
+    items = await config['service'].get_all(db)
     context = {
-        "request": request,
-        "title": config["title"],
-        config["list_variable_name"]: items,
+        'request': request,
+        'title': config['title'],
+        config['list_variable_name']: items,
     }
 
-    if dictionary_type == "device-models":
-        context["manufacturers"] = await manufacturer_service.get_all(db)
-        context["asset_types"] = await asset_type_service.get_all(db)
+    if dictionary_type == 'device-models':
+        context['manufacturers'] = await manufacturer_service.get_all(db)
+        context['asset_types'] = await asset_type_service.get_all(db)
 
-    if dictionary_type == "employees":
-        context["departments"] = await department_service.get_all(db)
+    if dictionary_type == 'employees':
+        context['departments'] = await department_service.get_all(db)
 
-    return templates.TemplateResponse(config["template"], context)
+    return templates.TemplateResponse(config['template'], context)
 
 
-@router.post("/dictionaries/{dictionary_type}/add", name="create_dictionary_item")
+@router.post('/dictionaries/{dictionary_type}/add', name='create_dictionary_item')
 async def create_dictionary_item(
     request: Request,
     dictionary_type: str,
@@ -169,20 +169,20 @@ async def create_dictionary_item(
 ):
     if dictionary_type not in DICTIONARY_CONFIG:
         return RedirectResponse(
-            url=request.url_for("dictionaries_dashboard"), status_code=303
+            url=request.url_for('dictionaries_dashboard'), status_code=303
         )
 
     config = DICTIONARY_CONFIG[dictionary_type]
-    service = config["service"]
+    service = config['service']
     form_data = await request.form()
     user_id = current_user.id
 
     try:
-        if dictionary_type == "asset-types":
+        if dictionary_type == 'asset-types':
             schema = AssetTypeCreate.model_validate(form_data)
-        elif dictionary_type == "device-models":
+        elif dictionary_type == 'device-models':
             schema = DeviceModelCreate.model_validate(form_data)
-        elif dictionary_type == "employees":
+        elif dictionary_type == 'employees':
             schema = EmployeeCreate.model_validate(form_data)
         else:
             schema = DictionarySimpleCreate.model_validate(form_data)
@@ -191,27 +191,27 @@ async def create_dictionary_item(
         flash(
             request,
             f"Запись в справочнике '{config['title']}' успешно создана.",
-            "success",
+            'success',
         )
 
     except ValidationError as e:
         errors = e.errors()
-        error_message = "; ".join(
+        error_message = '; '.join(
             [f"Поле '{err['loc'][0]}': {err['msg']}" for err in errors]
         )
-        flash(request, f"Ошибка валидации: {error_message}", "danger")
+        flash(request, f'Ошибка валидации: {error_message}', 'danger')
 
     except DuplicateError as e:
-        flash(request, str(e), "danger")
+        flash(request, str(e), 'danger')
 
     return RedirectResponse(
-        url=request.url_for("manage_dictionary", dictionary_type=dictionary_type),
+        url=request.url_for('manage_dictionary', dictionary_type=dictionary_type),
         status_code=303,
     )
 
 
 @router.post(
-    "/dictionaries/{dictionary_type}/{item_id}/edit", name="edit_dictionary_item"
+    '/dictionaries/{dictionary_type}/{item_id}/edit', name='edit_dictionary_item'
 )
 async def edit_dictionary_item(
     request: Request,
@@ -222,20 +222,20 @@ async def edit_dictionary_item(
 ):
     if dictionary_type not in DICTIONARY_CONFIG:
         return RedirectResponse(
-            url=request.url_for("dictionaries_dashboard"), status_code=303
+            url=request.url_for('dictionaries_dashboard'), status_code=303
         )
 
     config = DICTIONARY_CONFIG[dictionary_type]
-    service = config["service"]
+    service = config['service']
     form_data = await request.form()
     user_id = current_user.id
 
     try:
-        if dictionary_type == "asset-types":
+        if dictionary_type == 'asset-types':
             schema = AssetTypeUpdate.model_validate(form_data)
-        elif dictionary_type == "device-models":
+        elif dictionary_type == 'device-models':
             schema = DeviceModelUpdate.model_validate(form_data)
-        elif dictionary_type == "employees":
+        elif dictionary_type == 'employees':
             schema = EmployeeUpdate.model_validate(form_data)
         else:
             schema = DictionarySimpleUpdate.model_validate(form_data)
@@ -244,27 +244,27 @@ async def edit_dictionary_item(
         flash(
             request,
             f"Запись в справочнике '{config['title']}' успешно обновлена.",
-            "success",
+            'success',
         )
 
     except ValidationError as e:
         errors = e.errors()
-        error_message = "; ".join(
+        error_message = '; '.join(
             [f"Поле '{err['loc'][0]}': {err['msg']}" for err in errors]
         )
-        flash(request, f"Ошибка валидации: {error_message}", "danger")
+        flash(request, f'Ошибка валидации: {error_message}', 'danger')
 
     except DuplicateError as e:
-        flash(request, str(e), "danger")
+        flash(request, str(e), 'danger')
 
     return RedirectResponse(
-        url=request.url_for("manage_dictionary", dictionary_type=dictionary_type),
+        url=request.url_for('manage_dictionary', dictionary_type=dictionary_type),
         status_code=303,
     )
 
 
 @router.post(
-    "/dictionaries/{dictionary_type}/{item_id}/delete", name="delete_dictionary_item"
+    '/dictionaries/{dictionary_type}/{item_id}/delete', name='delete_dictionary_item'
 )
 async def delete_dictionary_item(
     request: Request,
@@ -275,11 +275,11 @@ async def delete_dictionary_item(
 ):
     if dictionary_type not in DICTIONARY_CONFIG:
         return RedirectResponse(
-            url=request.url_for("dictionaries_dashboard"), status_code=303
+            url=request.url_for('dictionaries_dashboard'), status_code=303
         )
 
     config = DICTIONARY_CONFIG[dictionary_type]
-    service = config["service"]
+    service = config['service']
     user_id = current_user.id
 
     try:
@@ -288,12 +288,12 @@ async def delete_dictionary_item(
             flash(
                 request,
                 f"Запись '{getattr(deleted_item, 'name', getattr(deleted_item, 'full_name', ''))}' успешно удалена.",
-                "success",
+                'success',
             )
     except DeletionError as e:
-        flash(request, str(e), "danger")
+        flash(request, str(e), 'danger')
 
     return RedirectResponse(
-        url=request.url_for("manage_dictionary", dictionary_type=dictionary_type),
+        url=request.url_for('manage_dictionary', dictionary_type=dictionary_type),
         status_code=303,
     )

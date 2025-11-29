@@ -20,7 +20,7 @@ async_engine = create_async_engine(
     pool_size=5,
     max_overflow=10,
     pool_timeout=10,
-    connect_args={"timeout": 10},
+    connect_args={'timeout': 10},
 )
 
 # Создание фабрики сессий

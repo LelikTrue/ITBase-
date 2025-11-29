@@ -20,10 +20,10 @@ from app.schemas.dictionary import (
     ManufacturerCreate,
     SupplierCreate,
 )
+from app.schemas.tag import TagCreate
 
 # --- ИЗМЕНЕНИЕ 2: Импортируем наше кастомное исключение ---
 from app.services.exceptions import DuplicateError
-from app.schemas.tag import TagCreate
 
 logger = logging.getLogger(__name__)
 
@@ -45,14 +45,14 @@ class DictionaryService:
         except IntegrityError as e:
             await db.rollback()
             logger.warning(
-                f"Ошибка уникальности при создании записи в {model.__name__}: {e}"
+                f'Ошибка уникальности при создании записи в {model.__name__}: {e}'
             )
             # Превращаем ошибку БД в наше исключение бизнес-логики
-            raise DuplicateError("Запись с таким названием уже существует.")
+            raise DuplicateError('Запись с таким названием уже существует.')
         except SQLAlchemyError as e:
             await db.rollback()
             logger.error(
-                f"Ошибка базы данных при создании записи в {model.__name__}: {e}",
+                f'Ошибка базы данных при создании записи в {model.__name__}: {e}',
                 exc_info=True,
             )
             # Пробрасываем остальные ошибки БД как есть
@@ -61,9 +61,10 @@ class DictionaryService:
     async def get_all(self, db: AsyncSession, model: type[Base]) -> list[Any]:
         """Получает все записи из указанной таблицы-справочника."""
         from sqlalchemy.orm import selectinload
+
         from app.models import DeviceModel
 
-        stmt = select(model).order_by(getattr(model, "name", model.id))
+        stmt = select(model).order_by(getattr(model, 'name', model.id))
 
         # Для DeviceModel загружаем связь с manufacturer
         if model == DeviceModel:
