@@ -5,19 +5,18 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from faker import Faker
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import joinedload
 
 # Настройка путей
 project_root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(project_root))
 
-from app.db.database import AsyncSessionFactory
-from app.models import Department, DeviceModel, DeviceStatus, Employee, Location, Tag, AssetType, User
-from app.schemas.asset import AssetCreate
-from app.services.device_service import DeviceService
-# Для создания хеша пароля (если пользователь не существует)
-from app.core.security import get_password_hash 
+from app.core.security import get_password_hash  # noqa: E402
+from app.db.database import AsyncSessionFactory  # noqa: E402
+from app.models import AssetType, Department, DeviceModel, DeviceStatus, Employee, Location, Tag, User  # noqa: E402
+from app.schemas.asset import AssetCreate  # noqa: E402
+from app.services.device_service import DeviceService  # noqa: E402 
 
 # ID администратора для логов
 ADMIN_USER_ID = 1
@@ -189,7 +188,10 @@ async def ensure_admin_exists(db):
         )
         db.add(admin)
         await db.commit()
-        print("✅ Администратор создан.")
+        # Обновляем последовательность ID, чтобы следующий созданный пользователь получил ID=2
+        await db.execute(text("SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT MAX(id) FROM users));"))
+        await db.commit()
+        print("✅ Администратор создан (admin@example.com / admin).")
     else:
         print("✅ Администратор найден.")
 
@@ -299,7 +301,7 @@ async def seed_devices():
                         "warranty_end_date": warranty_end,
                         "price": round(price, 2),
                         "expected_lifespan_years": scenario['lifespan'],
-                        "current_wear_percentage": round(wear, 2),
+                        "current_wear_percentage": int(wear),
                         "asset_type_id": target_type.id,
                         "device_model_id": model.id,
                         "status_id": status_obj.id,
@@ -314,13 +316,18 @@ async def seed_devices():
                     print('.', end='', flush=True)
 
                 except Exception as e:
-                    print(f'x', end='', flush=True)
+                    print(f'x ({e})', end='', flush=True)
             
             total_created += batch_created
             print(f" OK ({batch_created}/{scenario['count']})")
 
     print(f'\n\n✅ ВСЕГО СОЗДАНО: {total_created} активов.')
     print('Дашборд теперь отражает реальную структуру компании.')
+    print('\n' + '=' * 50)
+    print('🔐 ДАННЫЕ ДЛЯ ВХОДА:')
+    print('   Email: admin@example.com')
+    print('   Пароль: admin')
+    print('=' * 50 + '\n')
 
 if __name__ == '__main__':
     asyncio.run(seed_devices())

@@ -14,3 +14,6 @@ httptools==0.6.1
 
 # Security headers
 secure==0.3.0
+
+# Data seeding
+Faker==24.11.0

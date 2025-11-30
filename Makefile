@@ -9,6 +9,7 @@ SHELL := /bin/bash
 # --- Переменные ---
 # По умолчанию используем dev-окружение
 COMPOSE_FILE ?= -f docker-compose.yml -f docker-compose.dev.yml
+PROD_COMPOSE_FILE := -f docker-compose.yml -f docker-compose.prod.yml
 APP_SERVICE_NAME := backend
 # Используем порт из .env, если он есть, иначе - 8002
 APP_PORT := $(shell grep APP_PORT .env 2>/dev/null | cut -d '=' -f2 || echo 8002)
@@ -41,9 +42,9 @@ help:
 
 # --- Управление окружением ---
 
-## up: Собрать образы и запустить сервисы в фоновом режиме (dev)
+## up: Собрать образы и запустить сервисы в фоновом режиме
 up: check-env
-	@echo "${YELLOW}Запуск окружения разработки...${RESET}"
+	@echo "${YELLOW}Запуск сервисов...${RESET}"
 	docker compose $(COMPOSE_FILE) up --build -d
 
 ## dev: Запуск в режиме разработки (с hot reload и логами)
@@ -51,11 +52,7 @@ dev: check-env
 	@echo "${YELLOW}Запуск в режиме разработки (с логами)...${RESET}"
 	docker compose $(COMPOSE_FILE) up --build
 
-## prod: Запуск в продакшн режиме (оптимизированный образ)
-prod: COMPOSE_FILE := -f docker-compose.yml -f docker-compose.prod.yml
-prod: check-env
-	@echo "${YELLOW}Запуск в продакшн режиме...${RESET}"
-	docker compose $(COMPOSE_FILE) up --build -d
+
 
 ## ps: Показать статус всех сервисов
 ps:
@@ -148,28 +145,22 @@ create-admin: wait-ready
 	@echo "${YELLOW}Создание администратора...${RESET}"
 	docker compose $(COMPOSE_FILE) exec $(APP_SERVICE_NAME) python create_admin.py
 
-## dev-full: Полный запуск: миграции + справочники + демо-активы
-dev-full: up migrate init-data seed-devices
+## full: Полный запуск: миграции + справочники + демо-активы
+full: up migrate init-data seed-devices
 	@echo "\n${GREEN}Готово! Открывай: http://localhost:$(APP_PORT)/dashboard${RESET}"
 
-# --- Продакшн команды (шорткаты) ---
+## dev-full: Алиас для full
+dev-full: full
 
-## prod-migrate: Применить миграции в prod
-prod-migrate: COMPOSE_FILE := -f docker-compose.yml -f docker-compose.prod.yml
-prod-migrate: migrate
+# --- Продакшн команды ---
+# Используем паттерн prod-% для запуска любой команды в продакшн режиме
+# Например: make prod-migrate, make prod-full, make prod-logs
 
-## prod-init-data: Заполнить справочники в prod
-prod-init-data: COMPOSE_FILE := -f docker-compose.yml -f docker-compose.prod.yml
-prod-init-data: init-data
+## prod: Запуск в продакшн режиме
+prod: prod-up
 
-## prod-seed-devices: Создать демо-активы в prod
-prod-seed-devices: COMPOSE_FILE := -f docker-compose.yml -f docker-compose.prod.yml
-prod-seed-devices: seed-devices
-
-## prod-full: Полный запуск prod: сборка + запуск + миграции + справочники + демо-активы
-prod-full: COMPOSE_FILE := -f docker-compose.yml -f docker-compose.prod.yml
-prod-full: prod migrate init-data seed-devices
-	@echo "\n${GREEN}Продакшн запущен и инициализирован!${RESET}"
+prod-%:
+	@$(MAKE) $* COMPOSE_FILE="$(PROD_COMPOSE_FILE)"
 
 
 # --- Инструменты разработки ---
