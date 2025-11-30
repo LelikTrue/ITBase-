@@ -106,6 +106,9 @@ COPY --chown=appuser:appuser alembic ./alembic
 COPY --chown=appuser:appuser alembic.ini .
 COPY --chown=appuser:appuser openapi-assets.yaml .
 COPY --chown=appuser:appuser static ./static
+COPY --chown=appuser:appuser init_data.py .
+COPY --chown=appuser:appuser seed_devices.py .
+COPY --chown=appuser:appuser create_admin.py .
 
 USER appuser
 
