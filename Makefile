@@ -152,6 +152,25 @@ create-admin: wait-ready
 dev-full: up migrate init-data seed-devices
 	@echo "\n${GREEN}Готово! Открывай: http://localhost:$(APP_PORT)/dashboard${RESET}"
 
+# --- Продакшн команды (шорткаты) ---
+
+## prod-migrate: Применить миграции в prod
+prod-migrate: COMPOSE_FILE := -f docker-compose.yml -f docker-compose.prod.yml
+prod-migrate: migrate
+
+## prod-init-data: Заполнить справочники в prod
+prod-init-data: COMPOSE_FILE := -f docker-compose.yml -f docker-compose.prod.yml
+prod-init-data: init-data
+
+## prod-seed-devices: Создать демо-активы в prod
+prod-seed-devices: COMPOSE_FILE := -f docker-compose.yml -f docker-compose.prod.yml
+prod-seed-devices: seed-devices
+
+## prod-full: Полный запуск prod: сборка + запуск + миграции + справочники + демо-активы
+prod-full: COMPOSE_FILE := -f docker-compose.yml -f docker-compose.prod.yml
+prod-full: prod migrate init-data seed-devices
+	@echo "\n${GREEN}Продакшн запущен и инициализирован!${RESET}"
+
 
 # --- Инструменты разработки ---
 
