@@ -12,11 +12,20 @@ from sqlalchemy.orm import joinedload
 project_root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(project_root))
 
-from app.core.security import get_password_hash  # noqa: E402
-from app.db.database import AsyncSessionFactory  # noqa: E402
-from app.models import AssetType, Department, DeviceModel, DeviceStatus, Employee, Location, Tag, User  # noqa: E402
-from app.schemas.asset import AssetCreate  # noqa: E402
-from app.services.device_service import DeviceService  # noqa: E402 
+from app.core.security import get_password_hash
+from app.db.database import AsyncSessionFactory
+from app.models import (
+    AssetType,
+    Department,
+    DeviceModel,
+    DeviceStatus,
+    Employee,
+    Location,
+    Tag,
+    User,
+)
+from app.schemas.asset import AssetCreate
+from app.services.device_service import DeviceService
 
 # ID администратора для логов
 ADMIN_USER_ID = 1
@@ -175,7 +184,7 @@ async def ensure_admin_exists(db):
     print("👤 Проверка существования администратора...")
     result = await db.execute(select(User).where(User.id == ADMIN_USER_ID))
     admin = result.scalars().first()
-    
+
     if not admin:
         print(f"⚠️ Администратор (ID={ADMIN_USER_ID}) не найден. Создаем технического пользователя...")
         admin = User(
@@ -226,27 +235,27 @@ async def seed_devices():
         # --- ЗАПУСК СЦЕНАРИЕВ ---
         for scenario in SCENARIOS:
             print(f"\n⚙️  Партия: {scenario['name']} ({scenario['count']} шт.)")
-            
+
             # 1. Определяем Тип Актива
             target_type = None
             for hint in scenario['type_hint']:
                 target_type = next((t for t in all_types if hint.lower() in t.name.lower()), None)
                 if target_type: break
-            
+
             if not target_type:
-                target_type = all_types[0] 
+                target_type = all_types[0]
                 print(f"   ⚠️ Тип '{scenario['type_hint'][0]}' не найден, используем '{target_type.name}'")
 
             # 2. Ищем подходящую модель
             suitable_models = [
-                m for m in all_models 
-                if m.asset_type_id == target_type.id 
+                m for m in all_models
+                if m.asset_type_id == target_type.id
                 and (scenario['brand_hint'].lower() in m.manufacturer.name.lower() if m.manufacturer else True)
             ]
-            
+
             if not suitable_models:
                 suitable_models = [m for m in all_models if m.asset_type_id == target_type.id]
-            
+
             if not suitable_models:
                 suitable_models = all_models
 
@@ -255,16 +264,16 @@ async def seed_devices():
             for _ in range(scenario['count']):
                 try:
                     model = random.choice(suitable_models)
-                    
+
                     # Даты
                     if "2021" in str(scenario['date_range']):
                         purchase_date = faker.date_between(start_date=date(2021, 1, 1), end_date=date(2021, 12, 31))
                     else:
                         purchase_date = faker.date_between(start_date=scenario['date_range'][0], end_date=scenario['date_range'][1])
-                    
+
                     warranty_end = purchase_date + timedelta(days=365 * random.choice([1, 2, 3]))
                     price = random.uniform(scenario['price_range'][0], scenario['price_range'][1])
-                    
+
                     lifespan_days = scenario['lifespan'] * 365
                     days_used = (date.today() - purchase_date).days
                     wear = (days_used / lifespan_days) * 100
@@ -277,14 +286,14 @@ async def seed_devices():
                     status_obj = status_map.get(chosen_status_name, all_statuses[0])
 
                     emp_id, dept_id, loc_id = None, None, None
-                    
+
                     if chosen_status_name == "В эксплуатации":
                         if all_emps: emp_id = random.choice(all_emps).id
                         if all_depts: dept_id = random.choice(all_depts).id
                         if all_locs: loc_id = random.choice(all_locs).id
                     elif chosen_status_name == "На складе":
                         if all_locs: loc_id = random.choice(all_locs).id
-                    
+
                     final_name = f"{scenario['brand_hint']} {scenario['model_name']}"
                     notes = scenario.get('notes_prefix', '') + " " + faker.sentence(nb_words=5)
 
@@ -317,7 +326,7 @@ async def seed_devices():
 
                 except Exception as e:
                     print(f'x ({e})', end='', flush=True)
-            
+
             total_created += batch_created
             print(f" OK ({batch_created}/{scenario['count']})")
 

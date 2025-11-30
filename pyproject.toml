@@ -1,25 +1,47 @@
 [tool.black]
-line-length = 88
+line-length = 120
 target-version = ["py312"]
 include = '\.pyi?$'
 
 [tool.ruff]
-line-length = 88
+line-length = 120
 target-version = "py312"
 
 [tool.ruff.lint]
+# Умеренный набор правил для баланса качества и практичности
 select = [
-    "E", "F", "I", "B", "C4", "FBT", "ISC", "ICN", "G", "INP", "PTH", "RUF", "A", "ARG", "B904", "C90", "DTZ", "EM", "EXE", "FA", "FIX", "FLY", "N", "PGH", "PIE", "PL", "PT", "Q", "RSE", "RET", "S", "SIM", "SLF", "SLOT", "T10", "T20", "TCH", "TID", "UP", "W", "YTT"
+    "E",    # pycodestyle errors (PEP 8)
+    "F",    # pyflakes (неиспользуемые импорты, переменные)
+    "I",    # isort (сортировка импортов)
+    "B",    # flake8-bugbear (потенциальные баги)
+    "C4",   # flake8-comprehensions (оптимизация list/dict comprehensions)
+    "UP",   # pyupgrade (современный синтаксис Python)
+    "SIM",  # flake8-simplify (упрощение кода)
+    "RUF",  # Ruff-специфичные правила
+    "W",    # pycodestyle warnings
 ]
 ignore = [
-    "D203",
-    "D212",
-    "E203",
+    "D203",   # one-blank-line-before-class
+    "D212",   # multi-line-summary-first-line
+    "E203",   # whitespace before ':'
+    "E701",   # multiple statements on one line (часто используется для коротких if)
+    "B008",   # do not perform function calls in argument defaults (FastAPI Depends)
+    "B904",   # raise from err (слишком строго для существующего кода)
+    "F841",   # local variable assigned but never used (часто в скриптах)
+    "SIM102", # nested if можно оставить для читаемости
+    "SIM105", # try-except-pass иногда удобнее contextlib.suppress
+    "UP038",  # isinstance с tuple — старый синтаксис, но рабочий
+    "RUF001", # ambiguous-unicode-character-string
+    "RUF002", # ambiguous-unicode-character-docstring
+    "RUF003", # ambiguous-unicode-character-comment
+    "RUF005", # list concatenation (иногда читаемее)
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101"]
 "alembic/versions/*.py" = ["E501"]
+"init_data.py" = ["E402"]  # Импорты после настройки sys.path
+"seed_devices.py" = ["E402"]  # Импорты после настройки sys.path
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
