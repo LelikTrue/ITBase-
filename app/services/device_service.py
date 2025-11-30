@@ -216,7 +216,7 @@ class DeviceService:
                 db_device.tags = new_tags
 
             update_dict_simple_fields = {
-                k: v for k, v in new_data_dict.items() if k != 'tag_ids'
+                k: v for k, v in new_data_dict.items() if k not in ('tag_ids', 'manufacturer_id')
             }
             for key, value in update_dict_simple_fields.items():
                 setattr(db_device, key, value)
@@ -306,7 +306,7 @@ class DeviceService:
                 tag_stmt = select(Tag).where(Tag.id.in_(asset_data.tag_ids))
                 tags = (await db.execute(tag_stmt)).scalars().all()
 
-            device_dict = asset_data.model_dump(exclude={'tag_ids'})
+            device_dict = asset_data.model_dump(exclude={'tag_ids', 'manufacturer_id'})
             device_dict['inventory_number'] = inventory_number
 
             device = Device(**device_dict)

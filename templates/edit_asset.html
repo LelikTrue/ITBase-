@@ -45,11 +45,21 @@
                                     </div>
                                 </div>
                                 <div class="mb-3">
+                                    <label for="manufacturer_id" class="form-label">Производитель <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <select id="manufacturer_id" name="manufacturer_id" class="form-select" required>
+                                            <option value="">Выберите производителя...</option>
+                                            {% for manufacturer in manufacturers %}<option value="{{ manufacturer.id }}" {% if device.device_model.manufacturer_id == manufacturer.id %}selected{% endif %}>{{ manufacturer.name }}</option>{% endfor %}
+                                        </select>
+                                        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#manufacturersModal" title="Добавить нового производителя"><i class="bi bi-plus-lg"></i></button>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
                                     <label for="device_model_id" class="form-label">Модель <span class="text-danger">*</span></label>
                                     <div class="input-group">
                                         <select id="device_model_id" name="device_model_id" class="form-select" required>
                                             <option value="">Выберите модель...</option>
-                                            {% for model in device_models %}<option value="{{ model.id }}" {% if device.device_model_id == model.id %}selected{% endif %}>{{ model.name }} ({{ model.manufacturer.name }})</option>{% endfor %}
+                                            {% for model in device_models %}<option value="{{ model.id }}" data-manufacturer-id="{{ model.manufacturer.id }}" {% if device.device_model_id == model.id %}selected{% endif %}>{{ model.name }} ({{ model.manufacturer.name }})</option>{% endfor %}
                                         </select>
                                         <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#device-modelsModal" title="Добавить новую модель"><i class="bi bi-plus-lg"></i></button>
                                     </div>
@@ -195,4 +205,52 @@
 {% block scripts %}
     <script src="{{ url_for('static', path='js/tom-select-init.js') }}"></script>
     <script src="{{ url_for('static', path='js/dictionary_modals.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Синхронизация полей "Производитель" и "Модель"
+            const manufacturerSelect = document.getElementById('manufacturer_id');
+            const modelSelect = document.getElementById('device_model_id');
+            const allModels = Array.from(modelSelect.options).slice(1); // Сохраняем все модели (кроме placeholder)
+            
+            // При изменении производителя → фильтруем модели
+            manufacturerSelect.addEventListener('change', async function() {
+                const manufacturerId = this.value;
+                
+                if (!manufacturerId) {
+                    // Если производитель не выбран, показываем все модели
+                    modelSelect.innerHTML = '<option value="">Выберите модель...</option>';
+                    allModels.forEach(opt => modelSelect.appendChild(opt.cloneNode(true)));
+                    return;
+                }
+                
+                // Загружаем модели для выбранного производителя
+                try {
+                    const response = await fetch(`/dictionaries/api/models/by-manufacturer/${manufacturerId}`);
+                    const models = await response.json();
+                    
+                    modelSelect.innerHTML = '<option value="">Выберите модель...</option>';
+                    models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model.id;
+                        option.textContent = model.name;
+                        option.setAttribute('data-manufacturer-id', manufacturerId);
+                        modelSelect.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('Ошибка загрузки моделей:', error);
+                }
+            });
+            
+            // При выборе модели → автоматически выбираем производителя
+            modelSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                if (!selectedOption.value) return;
+                
+                const manufacturerId = selectedOption.getAttribute('data-manufacturer-id');
+                if (manufacturerId) {
+                    manufacturerSelect.value = manufacturerId;
+                }
+            });
+        });
+    </script>
 {% endblock %}

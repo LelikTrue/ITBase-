@@ -42,15 +42,15 @@ class Settings(BaseSettings):
 
     # --- URL для БД ---
     @property
-    def DATABASE_URL_ASYNC(self) -> str:  # noqa: N802
+    def DATABASE_URL_ASYNC(self) -> str:
         return f'postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}'
 
     @property
-    def DATABASE_URL_SYNC(self) -> str:  # noqa: N802
+    def DATABASE_URL_SYNC(self) -> str:
         return f'postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}'
 
     @property
-    def REDIS_URL(self) -> str:  # noqa: N802
+    def REDIS_URL(self) -> str:
         auth = f':{self.REDIS_PASSWORD}@' if self.REDIS_PASSWORD else ''
         return f'redis://{auth}{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}'
 

@@ -9,7 +9,6 @@ from app.api.deps import (
     get_current_superuser_from_session,
     get_current_user_from_session,
 )
-
 from app.db.database import get_db
 from app.models import (
     AssetType,
@@ -368,3 +367,24 @@ async def delete_dictionary_entry(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail=str(e)
         )
+
+
+@router.get('/api/models/by-manufacturer/{manufacturer_id}', name='get_models_by_manufacturer')
+async def get_models_by_manufacturer(
+    manufacturer_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_session),
+):
+    """Возвращает список моделей устройств для указанного производителя."""
+    from sqlalchemy import select
+
+    stmt = (
+        select(DeviceModel)
+        .where(DeviceModel.manufacturer_id == manufacturer_id)
+        .order_by(DeviceModel.name)
+    )
+    result = await db.execute(stmt)
+    models = result.scalars().all()
+
+    return [{'id': m.id, 'name': m.name} for m in models]
+

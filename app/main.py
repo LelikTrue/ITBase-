@@ -31,7 +31,15 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
 from app import models  # noqa: F401  # Важно для Alembic
-from app.api.endpoints import admin, analytics, assets, audit_logs, dictionaries, health, tags
+from app.api.endpoints import (
+    admin,
+    analytics,
+    assets,
+    audit_logs,
+    dictionaries,
+    health,
+    tags,
+)
 from app.config import BASE_DIR
 from app.flash import flash
 from app.logging_config import EndpointFilter

@@ -12,9 +12,9 @@ from sqlalchemy.orm import joinedload
 project_root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(project_root))
 
-from app.core.security import get_password_hash
-from app.db.database import AsyncSessionFactory
-from app.models import (
+from app.core.security import get_password_hash  # noqa: E402
+from app.db.database import AsyncSessionFactory  # noqa: E402
+from app.models import (  # noqa: E402
     AssetType,
     Department,
     DeviceModel,
@@ -24,8 +24,8 @@ from app.models import (
     Tag,
     User,
 )
-from app.schemas.asset import AssetCreate
-from app.services.device_service import DeviceService
+from app.schemas.asset import AssetCreate  # noqa: E402
+from app.services.device_service import DeviceService  # noqa: E402
 
 # ID администратора для логов
 ADMIN_USER_ID = 1
@@ -179,6 +179,7 @@ SCENARIOS = [
     }
 ]
 
+
 async def ensure_admin_exists(db):
     """Проверяет существование админа и создает его при необходимости."""
     print("👤 Проверка существования администратора...")
@@ -204,16 +205,152 @@ async def ensure_admin_exists(db):
     else:
         print("✅ Администратор найден.")
 
+
+def find_asset_type(scenario, all_types):
+    """Находит подходящий тип актива по подсказкам из сценария."""
+    for hint in scenario['type_hint']:
+        target_type = next((t for t in all_types if hint.lower() in t.name.lower()), None)
+        if target_type:
+            return target_type
+    return all_types[0]
+
+
+def find_suitable_models(scenario, all_models, target_type):
+    """Находит подходящие модели устройств для сценария."""
+    suitable_models = [
+        m for m in all_models
+        if m.asset_type_id == target_type.id
+        and (scenario['brand_hint'].lower() in m.manufacturer.name.lower() if m.manufacturer else True)
+    ]
+
+    if not suitable_models:
+        suitable_models = [m for m in all_models if m.asset_type_id == target_type.id]
+
+    if not suitable_models:
+        suitable_models = all_models
+
+    return suitable_models
+
+
+def generate_purchase_date(faker, scenario):
+    """Генерирует дату покупки на основе сценария."""
+    if "2021" in str(scenario['date_range']):
+        return faker.date_between(start_date=date(2021, 1, 1), end_date=date(2021, 12, 31))
+    return faker.date_between(start_date=scenario['date_range'][0], end_date=scenario['date_range'][1])
+
+
+def calculate_wear(purchase_date, lifespan_years):
+    """Рассчитывает процент износа актива."""
+    lifespan_days = lifespan_years * 365
+    days_used = (date.today() - purchase_date).days
+    wear = (days_used / lifespan_days) * 100
+    wear += random.uniform(-5, 10)
+    return max(0, min(100, wear))
+
+
+def determine_status(scenario, status_map, all_statuses):
+    """Определяет статус актива на основе распределения в сценарии."""
+    status_names = list(scenario['status_dist'].keys())
+    status_weights = list(scenario['status_dist'].values())
+    chosen_status_name = random.choices(status_names, weights=status_weights, k=1)[0]
+    return chosen_status_name, status_map.get(chosen_status_name, all_statuses[0])
+
+
+def assign_relations(chosen_status_name, all_emps, all_depts, all_locs):
+    """Назначает связи с сотрудниками, отделами и локациями в зависимости от статуса."""
+    emp_id, dept_id, loc_id = None, None, None
+
+    if chosen_status_name == "В эксплуатации":
+        if all_emps:
+            emp_id = random.choice(all_emps).id
+        if all_depts:
+            dept_id = random.choice(all_depts).id
+        if all_locs:
+            loc_id = random.choice(all_locs).id
+    elif chosen_status_name == "На складе":
+        if all_locs:
+            loc_id = random.choice(all_locs).id
+
+    return emp_id, dept_id, loc_id
+
+
+def create_asset_data(scenario, model, target_type, purchase_date, wear, status_obj, emp_id, dept_id, loc_id, faker):
+    """Создает словарь данных для нового актива."""
+    warranty_end = purchase_date + timedelta(days=365 * random.choice([1, 2, 3]))
+    price = random.uniform(scenario['price_range'][0], scenario['price_range'][1])
+    final_name = f"{scenario['brand_hint']} {scenario['model_name']}"
+    notes = scenario.get('notes_prefix', '') + " " + faker.sentence(nb_words=5)
+
+    return {
+        "name": final_name,
+        "inventory_number": f"INV-{purchase_date.year}-{faker.unique.random_number(digits=5)}",
+        "serial_number": faker.bothify(text='??-#######').upper(),
+        "mac_address": faker.mac_address() if target_type.name in ["ПК", "Ноутбук", "Сервер", "Сетевое оборудование"] else None,
+        "ip_address": faker.ipv4() if target_type.name in ["Сервер", "Сетевое оборудование", "Принтер"] else None,
+        "notes": notes.strip(),
+        "source": "Initial Seed (Scenario)",
+        "manufacturer_id": model.manufacturer_id,
+        "purchase_date": purchase_date,
+        "warranty_end_date": warranty_end,
+        "price": round(price, 2),
+        "expected_lifespan_years": scenario['lifespan'],
+        "current_wear_percentage": int(wear),
+        "asset_type_id": target_type.id,
+        "device_model_id": model.id,
+        "status_id": status_obj.id,
+        "department_id": dept_id,
+        "location_id": loc_id,
+        "employee_id": emp_id,
+        "tag_ids": []
+    }
+
+
+async def process_scenario_batch(scenario, all_types, all_models, all_statuses, all_emps, all_depts, all_locs, service, db, faker):
+    """Обрабатывает один сценарий и создает активы."""
+    target_type = find_asset_type(scenario, all_types)
+    if target_type != all_types[0] or scenario['type_hint'][0].lower() in target_type.name.lower():
+        pass
+    else:
+        print(f"   ⚠️ Тип '{scenario['type_hint'][0]}' не найден, используем '{target_type.name}'")
+
+    suitable_models = find_suitable_models(scenario, all_models, target_type)
+    status_map = {s.name: s for s in all_statuses}
+    batch_created = 0
+
+    for _ in range(scenario['count']):
+        try:
+            model = random.choice(suitable_models)
+            purchase_date = generate_purchase_date(faker, scenario)
+            wear = calculate_wear(purchase_date, scenario['lifespan'])
+            chosen_status_name, status_obj = determine_status(scenario, status_map, all_statuses)
+            emp_id, dept_id, loc_id = assign_relations(chosen_status_name, all_emps, all_depts, all_locs)
+
+            asset_data = create_asset_data(
+                scenario, model, target_type, purchase_date, wear,
+                status_obj, emp_id, dept_id, loc_id, faker
+            )
+
+            await service.create_device(db, AssetCreate(**asset_data), user_id=ADMIN_USER_ID)
+            batch_created += 1
+            print('.', end='', flush=True)
+
+        except Exception as e:
+            print(f'x ({e})', end='', flush=True)
+
+    print(f" OK ({batch_created}/{scenario['count']})")
+    return batch_created
+
+
 async def seed_devices():
+    """Главная функция генерации активов по сценариям."""
     print('--- 🏭 Начало генерации активов по сценарию компании ---')
     faker = Faker('ru_RU')
     faker.unique.clear()
 
     async with AsyncSessionFactory() as db:
-        # 0. Гарантируем наличие пользователя для логов
         await ensure_admin_exists(db)
 
-        # 1. Загрузка справочников
+        # Загрузка справочников
         all_types = (await db.execute(select(AssetType))).scalars().all()
         all_models = (await db.execute(select(DeviceModel).options(joinedload(DeviceModel.manufacturer)))).scalars().all()
         all_statuses = (await db.execute(select(DeviceStatus))).scalars().all()
@@ -229,106 +366,14 @@ async def seed_devices():
         service = DeviceService()
         total_created = 0
 
-        # Хелпер для поиска статуса по имени
-        status_map = {s.name: s for s in all_statuses}
-
-        # --- ЗАПУСК СЦЕНАРИЕВ ---
+        # Запуск сценариев
         for scenario in SCENARIOS:
             print(f"\n⚙️  Партия: {scenario['name']} ({scenario['count']} шт.)")
-
-            # 1. Определяем Тип Актива
-            target_type = None
-            for hint in scenario['type_hint']:
-                target_type = next((t for t in all_types if hint.lower() in t.name.lower()), None)
-                if target_type: break
-
-            if not target_type:
-                target_type = all_types[0]
-                print(f"   ⚠️ Тип '{scenario['type_hint'][0]}' не найден, используем '{target_type.name}'")
-
-            # 2. Ищем подходящую модель
-            suitable_models = [
-                m for m in all_models
-                if m.asset_type_id == target_type.id
-                and (scenario['brand_hint'].lower() in m.manufacturer.name.lower() if m.manufacturer else True)
-            ]
-
-            if not suitable_models:
-                suitable_models = [m for m in all_models if m.asset_type_id == target_type.id]
-
-            if not suitable_models:
-                suitable_models = all_models
-
-            # 3. Генерация
-            batch_created = 0
-            for _ in range(scenario['count']):
-                try:
-                    model = random.choice(suitable_models)
-
-                    # Даты
-                    if "2021" in str(scenario['date_range']):
-                        purchase_date = faker.date_between(start_date=date(2021, 1, 1), end_date=date(2021, 12, 31))
-                    else:
-                        purchase_date = faker.date_between(start_date=scenario['date_range'][0], end_date=scenario['date_range'][1])
-
-                    warranty_end = purchase_date + timedelta(days=365 * random.choice([1, 2, 3]))
-                    price = random.uniform(scenario['price_range'][0], scenario['price_range'][1])
-
-                    lifespan_days = scenario['lifespan'] * 365
-                    days_used = (date.today() - purchase_date).days
-                    wear = (days_used / lifespan_days) * 100
-                    wear += random.uniform(-5, 10)
-                    wear = max(0, min(100, wear))
-
-                    status_names = list(scenario['status_dist'].keys())
-                    status_weights = list(scenario['status_dist'].values())
-                    chosen_status_name = random.choices(status_names, weights=status_weights, k=1)[0]
-                    status_obj = status_map.get(chosen_status_name, all_statuses[0])
-
-                    emp_id, dept_id, loc_id = None, None, None
-
-                    if chosen_status_name == "В эксплуатации":
-                        if all_emps: emp_id = random.choice(all_emps).id
-                        if all_depts: dept_id = random.choice(all_depts).id
-                        if all_locs: loc_id = random.choice(all_locs).id
-                    elif chosen_status_name == "На складе":
-                        if all_locs: loc_id = random.choice(all_locs).id
-
-                    final_name = f"{scenario['brand_hint']} {scenario['model_name']}"
-                    notes = scenario.get('notes_prefix', '') + " " + faker.sentence(nb_words=5)
-
-                    asset_data = {
-                        "name": final_name,
-                        "inventory_number": f"INV-{purchase_date.year}-{faker.unique.random_number(digits=5)}",
-                        "serial_number": faker.bothify(text='??-#######').upper(),
-                        "mac_address": faker.mac_address() if target_type.name in ["ПК", "Ноутбук", "Сервер", "Сетевое оборудование"] else None,
-                        "ip_address": faker.ipv4() if target_type.name in ["Сервер", "Сетевое оборудование", "Принтер"] else None,
-                        "notes": notes.strip(),
-                        "source": "Initial Seed (Scenario)",
-                        "manufacturer_id": model.manufacturer_id,
-                        "purchase_date": purchase_date,
-                        "warranty_end_date": warranty_end,
-                        "price": round(price, 2),
-                        "expected_lifespan_years": scenario['lifespan'],
-                        "current_wear_percentage": int(wear),
-                        "asset_type_id": target_type.id,
-                        "device_model_id": model.id,
-                        "status_id": status_obj.id,
-                        "department_id": dept_id,
-                        "location_id": loc_id,
-                        "employee_id": emp_id,
-                        "tag_ids": []
-                    }
-
-                    await service.create_device(db, AssetCreate(**asset_data), user_id=ADMIN_USER_ID)
-                    batch_created += 1
-                    print('.', end='', flush=True)
-
-                except Exception as e:
-                    print(f'x ({e})', end='', flush=True)
-
+            batch_created = await process_scenario_batch(
+                scenario, all_types, all_models, all_statuses,
+                all_emps, all_depts, all_locs, service, db, faker
+            )
             total_created += batch_created
-            print(f" OK ({batch_created}/{scenario['count']})")
 
     print(f'\n\n✅ ВСЕГО СОЗДАНО: {total_created} активов.')
     print('Дашборд теперь отражает реальную структуру компании.')

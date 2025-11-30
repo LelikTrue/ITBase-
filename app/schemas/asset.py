@@ -47,7 +47,7 @@ class AssetBase(BaseModel):
     ip_address: str | None = Field(None, max_length=255)
     notes: str | None = None
     source: str | None = Field(None, max_length=50)  #!# ИЗМЕНЕНО: Сделано опциональным
-    purchase_date: date | None = None
+    purchase_date: date | None = None #!# ИЗМЕНЕНО: Сделано опциональным
     warranty_end_date: date | None = None
     price: float | None = Field(None, ge=0)
     supplier_id: int | None = None
@@ -61,6 +61,9 @@ class AssetBase(BaseModel):
     # Связи через ID
     asset_type_id: int
     device_model_id: int
+    manufacturer_id: int | None = Field(
+        None, description='Производитель (для фильтрации моделей в UI)'
+    )
     status_id: int
     department_id: int | None = None
     location_id: int | None = None
@@ -101,6 +104,9 @@ class AssetUpdate(BaseFormModel):
     expected_lifespan_years: int | None = Field(None, ge=0)
     asset_type_id: int | None = None
     device_model_id: int | None = None
+    manufacturer_id: int | None = Field(
+        None, description='Производитель (для фильтрации моделей в UI)'
+    )
     status_id: int | None = None
     department_id: int | None = None
     location_id: int | None = None
