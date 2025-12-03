@@ -52,3 +52,7 @@ generate_structure.py
 
 Спец.tsv
 .trae/rules/project_rules.md
+.agent/rules/ai-context-itbase.md
+.agent/workflows/ai-context-itbase.md
+AI_CONTEXT.md
+

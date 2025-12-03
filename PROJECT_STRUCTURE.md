@@ -7,6 +7,7 @@ ITBase-/
 ├── .editorconfig
 ├── .env
 ├── .env.example
+├── .env.prod
 ├── .gitignore
 ├── .pre-commit-config.yaml
 ├── 01_initial_database_seeding.md
@@ -34,7 +35,6 @@ ITBase-/
 ├── pyproject.toml
 ├── requirements.txt
 ├── run_dev.py
-├── seed_assets.py
 ├── seed_devices.py
 ├── setup.cfg
 ├── setup.py

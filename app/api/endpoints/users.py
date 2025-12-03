@@ -89,21 +89,21 @@ async def toggle_superuser(
         flash(
             request, 'Вы не можете изменить свои собственные права', category='warning'
         )
-        return RedirectResponse(url='/admin/users', status_code=303)
+        return RedirectResponse(url='/users/admin/users', status_code=303)
 
     result = await db.execute(select(User).filter(User.id == user_id))
     user = result.scalars().first()
 
     if not user:
         flash(request, 'Пользователь не найден', category='danger')
-        return RedirectResponse(url='/admin/users', status_code=303)
+        return RedirectResponse(url='/users/admin/users', status_code=303)
 
     user.is_superuser = not user.is_superuser
     await db.commit()
 
     status = 'администратором' if user.is_superuser else 'обычным пользователем'
     flash(request, f'Пользователь {user.email} теперь {status}', category='success')
-    return RedirectResponse(url='/admin/users', status_code=303)
+    return RedirectResponse(url='/users/admin/users', status_code=303)
 
 
 @router.post('/admin/users/{user_id}/toggle-active')
@@ -120,18 +120,18 @@ async def toggle_active(
             'Вы не можете деактивировать свой собственный аккаунт',
             category='warning',
         )
-        return RedirectResponse(url='/admin/users', status_code=303)
+        return RedirectResponse(url='/users/admin/users', status_code=303)
 
     result = await db.execute(select(User).filter(User.id == user_id))
     user = result.scalars().first()
 
     if not user:
         flash(request, 'Пользователь не найден', category='danger')
-        return RedirectResponse(url='/admin/users', status_code=303)
+        return RedirectResponse(url='/users/admin/users', status_code=303)
 
     user.is_active = not user.is_active
     await db.commit()
 
     status = 'активирован' if user.is_active else 'деактивирован'
     flash(request, f'Пользователь {user.email} {status}', category='success')
-    return RedirectResponse(url='/admin/users', status_code=303)
+    return RedirectResponse(url='/users/admin/users', status_code=303)
