@@ -9,6 +9,15 @@ from .action_log import ActionLog
 from .asset_type import AssetType
 from .attachment import Attachment
 from .base import BaseMixin
+from .component import (
+    Component,
+    ComponentCPU,
+    ComponentGPU,
+    ComponentHistory,
+    ComponentMotherboard,
+    ComponentRAM,
+    ComponentStorage,
+)
 from .department import Department
 from .device import Device
 from .device_model import DeviceModel
@@ -37,4 +46,11 @@ __all__ = [
     'ActionLog',
     'Tag',
     'Supplier',
+    'Component',
+    'ComponentCPU',
+    'ComponentRAM',
+    'ComponentStorage',
+    'ComponentGPU',
+    'ComponentMotherboard',
+    'ComponentHistory',
 ]

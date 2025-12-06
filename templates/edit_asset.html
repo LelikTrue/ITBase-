@@ -18,6 +18,9 @@
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="financial-tab" data-bs-toggle="tab" data-bs-target="#financial-tab-pane" type="button" role="tab" aria-controls="financial-tab-pane" aria-selected="false">Финансы и эксплуатация</button>
                     </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="components-tab" data-bs-toggle="tab" data-bs-target="#components-tab-pane" type="button" role="tab" aria-controls="components-tab-pane" aria-selected="false">Компоненты</button>
+                    </li>
                 </ul>
 
                 <div class="tab-content" id="assetTabContent">
@@ -185,6 +188,105 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Вкладка "Компоненты" -->
+                    <div class="tab-pane fade" id="components-tab-pane" role="tabpanel" aria-labelledby="components-tab" tabindex="0">
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h5>Загрузка компонентов</h5>
+                                <div class="mb-3">
+                                    <label for="components-file" class="form-label">JSON файл с компонентами</label>
+                                    <input type="file" id="components-file" class="form-control" accept=".json">
+                                    <small class="form-text text-muted">Загрузите JSON файл с информацией о компонентах</small>
+                                </div>
+                                <button type="button" id="upload-components-btn" class="btn btn-primary"><i class="bi bi-upload"></i> Загрузить компоненты</button>
+                                <hr class="my-4">
+                                <h5>Текущая конфигурация</h5>
+                                {% if device.components %}
+                                <table class="table table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Тип</th>
+                                            <th>Модель</th>
+                                            <th>Серийный номер</th>
+                                            <th>Характеристики</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for comp in device.components %}
+                                        <tr>
+                                            <td>
+                                                {% if comp.component_type == 'cpu' %}
+                                                    <i class="bi bi-cpu"></i> CPU
+                                                {% elif comp.component_type == 'ram' %}
+                                                    <i class="bi bi-memory"></i> RAM
+                                                {% elif comp.component_type == 'storage' %}
+                                                    <i class="bi bi-device-hdd"></i> Storage
+                                                {% elif comp.component_type == 'gpu' %}
+                                                    <i class="bi bi-gpu-card"></i> GPU
+                                                {% elif comp.component_type == 'motherboard' %}
+                                                    <i class="bi bi-motherboard"></i> Motherboard
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ comp.name }}</td>
+                                            <td>{{ comp.serial_number or '-' }}</td>
+                                            <td>
+                                                {% if comp.component_type == 'cpu' %}
+                                                    Cores: {{ comp.cores }}, Threads: {{ comp.threads }}{% if comp.base_clock_mhz %}, {{ comp.base_clock_mhz }} MHz{% endif %}
+                                                {% elif comp.component_type == 'ram' %}
+                                                    Size: {{ comp.size_mb }} MB{% if comp.speed_mhz %}, {{ comp.speed_mhz }} MHz{% endif %}{% if comp.form_factor %}, {{ comp.form_factor }}{% endif %}
+                                                {% elif comp.component_type == 'storage' %}
+                                                    Type: {{ comp.type_label }}, {{ comp.capacity_gb }} GB{% if comp.interface %}, {{ comp.interface }}{% endif %}
+                                                {% elif comp.component_type == 'gpu' %}
+                                                    {% if comp.memory_mb %}Memory: {{ comp.memory_mb }} MB{% endif %}
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                {% else %}
+                                <p class="text-muted">Компоненты не загружены</p>
+                                {% endif %}
+                                <hr class="my-4">
+                                <h5>История изменений</h5>
+                                {% if device.component_history %}
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Дата</th>
+                                            <th>Тип изменения</th>
+                                            <th>Данные</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for history in device.component_history | reverse %}
+                                        <tr>
+                                            <td>{{ history.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                                            <td>
+                                                {% if history.change_type == 'ADD' %}
+                                                    <span class="badge bg-success">Добавлено</span>
+                                                {% elif history.change_type == 'UPDATE' %}
+                                                    <span class="badge bg-warning">Обновлено</span>
+                                                {% elif history.change_type == 'REMOVE' %}
+                                                    <span class="badge bg-danger">Удалено</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-secondary view-json-btn"
+                                                        data-json='{{ history.component_snapshot | tojson | forceescape }}'>
+                                                    <i class="bi bi-file-code"></i> Показать данные
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                {% else %}
+                                <p class="text-muted">История изменений пуста</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="mt-4 d-flex justify-content-between">
@@ -252,5 +354,47 @@
                 }
             });
         });
+
+        // JavaScript для загрузки компонентов
+        const uploadBtn = document.getElementById('upload-components-btn');
+        const fileInput = document.getElementById('components-file');
+        
+        if (uploadBtn && fileInput) {
+            uploadBtn.addEventListener('click', async function() {
+                const file = fileInput.files[0];
+                if (!file) {
+                    alert('Пожалуйста, выберите JSON файл');
+                    return;
+                }
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                try {
+                    uploadBtn.disabled = true;
+                    uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Загрузка...';
+                    
+                    const response = await fetch('/{{ device.id }}/components/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        alert(`Успешно загружено ${result.count} компонентов`);
+                        location.reload();
+                    } else {
+                        const error = await response.json();
+                        alert('Ошибка: ' + (error.detail || 'Неизвестная ошибка'));
+                    }
+                } catch (error) {
+                    console.error('Ошибка при загрузке:', error);
+                    alert('Ошибка при загрузке файла');
+                } finally {
+                    uploadBtn.disabled = false;
+                    uploadBtn.innerHTML = '<i class="bi bi-upload"></i> Загрузить компоненты';
+                }
+            });
+        }
     </script>
 {% endblock %}

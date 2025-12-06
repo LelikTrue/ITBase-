@@ -4,14 +4,14 @@ import json
 import logging
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile, status
 from fastapi.responses import (
     HTMLResponse,
     RedirectResponse,
     Response,
     StreamingResponse,
 )
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,6 +23,8 @@ from app.db.database import get_db
 from app.flash import flash, get_flashed_messages
 from app.models.user import User
 from app.schemas.asset import AssetCreate, AssetResponse, AssetUpdate
+from app.schemas.component import ComponentItem
+from app.services.component_service import ComponentService
 from app.services.device_service import DeviceService
 from app.services.exceptions import (
     DeletionError,
@@ -496,3 +498,60 @@ async def bulk_update_assets(
         logger.error(f'Ошибка при массовом обновлении: {e}', exc_info=True)
         flash(request, f'Произошла ошибка при обновлении: {e}', 'danger')
     return RedirectResponse(referer, status_code=status.HTTP_303_SEE_OTHER)
+
+
+def _normalize_component_data(data: dict | list) -> list[dict]:
+    """Нормализует входящие данные в плоский список."""
+    normalized_items = []
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if isinstance(value, list):
+                for item in value:
+                    if isinstance(item, dict):
+                        if 'type' not in item:
+                            if key in ('cpu', 'ram', 'storage', 'gpu', 'motherboard'):
+                                item['type'] = key
+                        normalized_items.append(item)
+    elif isinstance(data, list):
+        normalized_items = data
+    return normalized_items
+
+
+@router.post('/{asset_id}/components/upload', name='upload_components')
+async def upload_components(
+    asset_id: int,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_superuser_from_session),
+):
+    """
+    Загружает список компонентов из JSON файла.
+    """
+    if not file.filename.endswith('.json'):
+        raise HTTPException(status_code=400, detail='Файл должен быть JSON')
+
+    try:
+        content = await file.read()
+        data = json.loads(content)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail='Некорректный JSON')
+
+    if not isinstance(data, (dict, list)):
+        raise HTTPException(status_code=400, detail='JSON должен быть объектом или списком')
+
+    normalized_items = _normalize_component_data(data)
+
+    try:
+        adapter = TypeAdapter(list[ComponentItem])
+        items = adapter.validate_python(normalized_items)
+    except ValidationError as e:
+        errors = []
+        for err in e.errors():
+            loc = '->'.join(str(x) for x in err['loc'])
+            errors.append(f"{loc}: {err['msg']}")
+        raise HTTPException(status_code=422, detail=f'Ошибка валидации: {"; ".join(errors)}')
+
+    await ComponentService.sync_components(db, asset_id, items)
+    await db.commit()
+
+    return {'status': 'ok', 'count': len(items)}

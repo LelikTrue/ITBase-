@@ -56,3 +56,9 @@ generate_structure.py
 .agent/workflows/ai-context-itbase.md
 AI_CONTEXT.md
 
+# Agent Build artifacts
+ITBase_Agent.exe
+ITBase_Agent.spec
+agent_venv/
+agent_build_temp/
+

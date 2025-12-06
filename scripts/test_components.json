@@ -1,0 +1,19 @@
+{
+  "components": [
+    {
+      "type": "cpu",
+      "name": "Intel Core i7-12700K",
+      "cores": 12,
+      "threads": 20,
+      "base_clock_mhz": 3600,
+      "manufacturer": "Intel"
+    },
+    {
+      "type": "ram",
+      "name": "Kingston Fury DDR4",
+      "size_mb": 16384,
+      "speed_mhz": 3200,
+      "form_factor": "DIMM"
+    }
+  ]
+}

@@ -144,11 +144,23 @@
                                                 {% endfor %}
                                                 </ul>
                                             {% elif log.action_type == 'create' and log.details %}
-                                                <pre class="mb-0">{{ log.details|to_pretty_json }}</pre>
+                                                <button class="btn btn-sm btn-outline-secondary view-json-btn"
+                                                        data-json='{{ log.details | tojson | forceescape }}'
+                                                        title="Просмотр JSON">
+                                                    <i class="bi bi-file-code"></i> JSON
+                                                </button>
                                             {% elif log.action_type == 'delete' and log.details %}
-                                                <pre class="mb-0">{{ log.details|to_pretty_json }}</pre>
+                                                <button class="btn btn-sm btn-outline-secondary view-json-btn"
+                                                        data-json='{{ log.details | tojson | forceescape }}'
+                                                        title="Просмотр JSON">
+                                                    <i class="bi bi-file-code"></i> JSON
+                                                </button>
                                             {% else %}
-                                                <pre class="mb-0">{{ log.details|to_pretty_json }}</pre>
+                                                <button class="btn btn-sm btn-outline-secondary view-json-btn"
+                                                        data-json='{{ log.details | tojson | forceescape }}'
+                                                        title="Просмотр JSON">
+                                                    <i class="bi bi-file-code"></i> JSON
+                                                </button>
                                             {% endif %}
                                         </div>
                                     </div>

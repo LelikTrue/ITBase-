@@ -26,6 +26,7 @@
       rel="stylesheet"
       href="{{ url_for('static', path='css/styles.css') }}"
     />
+    <link rel="stylesheet" href="{{ url_for('static', path='css/json_viewer.css') }}">
     {% block head_extra %}{% endblock %}
   </head>
   <body>
@@ -202,6 +203,22 @@
 
     <!-- 2. Локальный Tom Select JS (ВАЖНО: перед блоком scripts) -->
     <script src="{{ url_for('static', path='js/vendor/tom-select.complete.min.js') }}"></script>
+    <script src="{{ url_for('static', path='js/json_viewer.js') }}"></script>
+
+    <!-- JSON Viewer Modal -->
+    <div class="modal fade" id="jsonViewerModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Детали (JSON)</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body bg-dark">
+            <pre id="jsonViewerContent" class="json-viewer-container mb-0"></pre>
+          </div>
+        </div>
+      </div>
+    </div>
 
     {% block scripts %}{% endblock %}
   </body>

@@ -9,6 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from app.models import (
     AssetType,
+    Component,
     Department,
     Device,
     DeviceModel,
@@ -40,6 +41,15 @@ class DeviceService:
     async def get_device_with_relations(
         self, db: AsyncSession, device_id: int
     ) -> Device | None:
+        from sqlalchemy.orm import with_polymorphic
+
+        from app.models.component import ComponentCPU, ComponentGPU, ComponentRAM, ComponentStorage
+
+        # Создаем полиморфную сущность для загрузки всех типов компонентов
+        poly_component = with_polymorphic(
+            Component, [ComponentCPU, ComponentRAM, ComponentStorage, ComponentGPU]
+        )
+
         stmt = (
             select(Device)
             .options(
@@ -53,6 +63,8 @@ class DeviceService:
                 selectinload(Device.employee),
                 selectinload(Device.tags),
                 selectinload(Device.supplier),
+                selectinload(Device.components.of_type(poly_component)),  # Polymorphic eager load
+                selectinload(Device.component_history),  # Eager load history
             )
             .where(Device.id == device_id)
         )

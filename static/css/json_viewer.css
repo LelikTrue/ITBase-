@@ -1,0 +1,17 @@
+/* Dark theme JSON highlighting */
+.json-viewer-container {
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    padding: 15px;
+    border-radius: 6px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.85rem;
+    overflow: auto;
+    max-height: 70vh;
+}
+
+.json-key { color: #9cdcfe; }      /* Light Blue */
+.json-string { color: #ce9178; }   /* Orange */
+.json-number { color: #b5cea8; }   /* Light Green */
+.json-boolean { color: #569cd6; }  /* Blue */
+.json-null { color: #569cd6; }     /* Blue */

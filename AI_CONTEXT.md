@@ -41,6 +41,9 @@
 - **`ActionLog` (Audit):**
     - **Logic:** Automatically records changes to sensitive entities.
     - **Rule:** Never delete logs (except maybe Superuser).
+- **`Component` (Polymorphic):**
+    - Subtypes: `CPU`, `RAM`, `Storage`, `GPU`, `Motherboard`.
+    - **Logic:** Tracks hardware parts linked to Device.
 - **Dictionaries:**
     - `DeviceModel` (linked to `Manufacturer`, `AssetType`).
     - `Manufacturer`, `AssetType`, `DeviceStatus`, `Department`, `Location`.
@@ -85,6 +88,7 @@
   /templates      # Jinja2 HTML
   /utils          # Helpers
   main.py         # App Entry Point
+/agent_builder    # Windows Inventory Agent (Isolated Build)
 /migrations       # Alembic versions
 Makefile          # Task runner
 docker-compose.yml

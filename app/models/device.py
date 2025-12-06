@@ -23,6 +23,7 @@ from .base import BaseMixin
 if TYPE_CHECKING:
     from .asset_type import AssetType
     from .attachment import Attachment
+    from .component import Component, ComponentHistory
     from .department import Department
     from .device_model import DeviceModel
     from .device_status import DeviceStatus
@@ -141,4 +142,12 @@ class Device(BaseMixin, Base):
     # 4. Добавляем новую связь "многие-ко-многим" с тегами
     tags: Mapped[list['Tag']] = relationship(
         secondary=device_tags_table, back_populates='devices'
+    )
+
+    components: Mapped[list['Component']] = relationship(
+        'Component', back_populates='device', cascade='all, delete-orphan'
+    )
+
+    component_history: Mapped[list['ComponentHistory']] = relationship(
+        'ComponentHistory', back_populates='device', cascade='all, delete-orphan'
     )

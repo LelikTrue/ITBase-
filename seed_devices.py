@@ -12,9 +12,9 @@ from sqlalchemy.orm import joinedload
 project_root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(project_root))
 
-from app.core.security import get_password_hash  # noqa: E402
-from app.db.database import AsyncSessionFactory  # noqa: E402
-from app.models import (  # noqa: E402
+from app.core.security import get_password_hash
+from app.db.database import AsyncSessionFactory
+from app.models import (
     AssetType,
     Department,
     DeviceModel,
@@ -24,8 +24,8 @@ from app.models import (  # noqa: E402
     Tag,
     User,
 )
-from app.schemas.asset import AssetCreate  # noqa: E402
-from app.services.device_service import DeviceService  # noqa: E402
+from app.schemas.asset import AssetCreate
+from app.services.device_service import DeviceService
 
 # ID администратора для логов
 ADMIN_USER_ID = 1
