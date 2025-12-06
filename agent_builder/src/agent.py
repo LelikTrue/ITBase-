@@ -1,25 +1,30 @@
-import wmi
+import ctypes
 import json
+
 import platform
 import sys
-import os
 import winreg
-import ctypes
+
+import wmi
+
 
 def is_admin():
     try:
         return ctypes.windll.shell32.IsUserAnAdmin()
-    except:
+    except Exception:
         return False
+
 
 def run_as_admin():
     """Перезапускает скрипт с правами администратора"""
     ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
 
+
 def pause_exit(code=0):
     print("\nНажмите Enter, чтобы выйти...")
     input()
     sys.exit(code)
+
 
 print("=== ITBase Inventory Agent v4.0 (Admin) ===")
 
@@ -29,11 +34,12 @@ if not is_admin():
     print("[*] Попытка перезапуска с правами Администратора...")
     try:
         run_as_admin()
-        sys.exit(0) # Завершаем текущий процесс, так как запустился новый
+        sys.exit(0)  # Завершаем текущий процесс, так как запустился новый
     except Exception as e:
         print(f"[ERROR] Не удалось получить права админа: {e}")
         print("Пожалуйста, запустите EXE файл правой кнопкой мыши -> 'Запуск от имени администратора'.")
         pause_exit(1)
+
 
 # --- Инициализация WMI ---
 try:
@@ -44,14 +50,16 @@ except Exception as e:
     print(f"FAIL: {e}")
     pause_exit(1)
 
+
 # Теперь, с правами админа, это должно сработать
 try:
     print("[*] WMI (Storage)...", end=" ")
     wmi_storage = wmi.WMI(namespace="root/Microsoft/Windows/Storage")
     print("OK")
-except:
+except Exception:
     print("SKIP (Not found)")
     wmi_storage = None
+
 
 hostname = platform.node()
 # ВАЖНО: Структура должна быть словарем, а не списком!
@@ -59,6 +67,7 @@ inventory = {
     "hostname": hostname,
     "components": []
 }
+
 
 # --- 1. Motherboard ---
 print("1. Motherboard...", end=" ")
@@ -76,6 +85,7 @@ try:
 except Exception as e:
     print(f"ERR: {e}")
 
+
 # --- 2. CPU ---
 print("2. CPU...", end=" ")
 try:
@@ -92,6 +102,7 @@ try:
     print("OK")
 except Exception as e:
     print(f"ERR: {e}")
+
 
 # --- 3. RAM ---
 print("3. RAM...", end=" ")
@@ -111,6 +122,7 @@ try:
 except Exception as e:
     print(f"ERR: {e}")
 
+
 # --- 4. Storage (Modern) ---
 print("4. Storage...", end=" ")
 try:
@@ -119,17 +131,19 @@ try:
             # MediaType: 3=HDD, 4=SSD, 5=SCM
             media_type = getattr(disk, 'MediaType', 0)
             disk_type = "HDD"
-            if media_type == 4: disk_type = "SSD"
-            
+            if media_type == 4:
+                disk_type = "SSD"
+
             # BusType: 17=NVMe, 11=SATA
             bus_type = getattr(disk, 'BusType', 0)
-            if bus_type == 17: disk_type = "SSD" # NVMe is always SSD
-            
+            if bus_type == 17:
+                disk_type = "SSD"  # NVMe is always SSD
+
             interface_map = {17: "NVMe", 11: "SATA", 7: "USB"}
             interface = interface_map.get(bus_type, "Unknown")
 
             size_gb = int(int(disk.Size) / (1024**3))
-            
+
             inventory["components"].append({
                 "type": "storage",
                 "name": disk.FriendlyName.strip(),
@@ -156,53 +170,76 @@ try:
 except Exception as e:
     print(f"ERR: {e}")
 
+
 # --- 5. GPU (Registry + Fixes) ---
 print("5. GPU...", end=" ")
-def get_gpu_vram(gpu_name):
+
+
+def _check_video_subkey(key_path, subkey_name, gpu_name):
     try:
-        key_path = r"SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}"
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, f"{key_path}\\{subkey_name}") as sk:
+            desc = winreg.QueryValueEx(sk, "DriverDesc")[0]
+            if gpu_name in desc or desc in gpu_name:
+                vram = winreg.QueryValueEx(sk, "HardwareInformation.qwMemorySize")[0]
+                if isinstance(vram, bytes):
+                    vram = int.from_bytes(vram, 'little')
+                mb = int(vram / (1024**2))
+                if mb > 128:
+                    return mb
+    except Exception:
+        pass
+    return None
+
+
+def get_gpu_vram(gpu_name):
+    key_path = r"SYSTEM\ControlSet001\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}"
+    try:
         with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path) as key:
             i = 0
             while True:
                 try:
                     sub = winreg.EnumKey(key, i)
-                    with winreg.OpenKey(key, sub) as sk:
-                        try:
-                            desc = winreg.QueryValueEx(sk, "DriverDesc")[0]
-                            # Грубое сравнение имен
-                            if gpu_name in desc or desc in gpu_name:
-                                vram = winreg.QueryValueEx(sk, "HardwareInformation.qwMemorySize")[0]
-                                if isinstance(vram, bytes): vram = int.from_bytes(vram, 'little')
-                                mb = int(vram / (1024**2))
-                                if mb > 128: return mb # Фильтруем мусорные значения типа 1MB
-                        except: pass
+                    vram = _check_video_subkey(key_path, sub, gpu_name)
+                    if vram:
+                        return vram
                     i += 1
-                except: break
-    except: pass
+                except Exception:
+                    break
+    except Exception:
+        pass
     return None
 
-try:
+
+def collect_gpu_info(wmi_client):
+    """Сбор информации о видеокартах с учетом проверок VRAM."""
+    components = []
     count = 0
-    for gpu in c.Win32_VideoController():
+
+    for gpu in wmi_client.Win32_VideoController():
         name = str(gpu.Name)
-        if any(x in name for x in ["RDP", "VNC", "Remote", "Virtual", "Citrix", "Microsoft"]): continue
-        
+        # Игнорируем виртуальные адаптеры и RDP
+        if any(x in name for x in ["RDP", "VNC", "Remote", "Virtual", "Citrix", "Microsoft"]):
+            continue
+
         mem_mb = get_gpu_vram(name)
-        
+
         # Fallback to WMI if Registry failed
         if not mem_mb and hasattr(gpu, 'AdapterRAM') and gpu.AdapterRAM:
             try:
                 raw = int(gpu.AdapterRAM)
-                if raw < 0: raw += 2**32
+                if raw < 0:
+                    raw += 2**32
                 calc_mb = int(raw / (1024**2))
-                if calc_mb > 128: mem_mb = calc_mb
-            except: pass
-        
-        # Если память все равно кривая, ставим None (Pydantic пропустит)
-        if mem_mb is not None and mem_mb < 128: 
+                if calc_mb > 128:
+                    mem_mb = calc_mb
+            except Exception:
+                pass
+
+        # Если память все равно кривая или слишком мала, ставим None
+        if mem_mb is not None and mem_mb < 128:
             mem_mb = None
 
-        inventory["components"].append({
+        components.append({
             "type": "gpu",
             "name": name.strip(),
             "memory_mb": mem_mb,
@@ -210,9 +247,17 @@ try:
             "manufacturer": getattr(gpu, 'AdapterCompatibility', None)
         })
         count += 1
+
+    return components, count
+
+
+try:
+    gpu_list, count = collect_gpu_info(c)
+    inventory["components"].extend(gpu_list)
     print(f"Found: {count}")
 except Exception as e:
     print(f"ERR: {e}")
+
 
 # --- Save ---
 filename = f"inventory_{hostname}.json"
