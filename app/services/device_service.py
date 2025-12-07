@@ -6,6 +6,7 @@ from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from fastapi import UploadFile
 
 from app.models import (
     AssetType,
@@ -38,16 +39,173 @@ class DeviceService:
     def __init__(self):
         pass
 
+    async def create_from_agent_data(
+        self, file: UploadFile, session: AsyncSession, user_id: int
+    ) -> Device:
+        """
+        Создает актив на основе JSON-отчета агента.
+        Автоматически создает/находит производителя и модель по материнской плате.
+        """
+        import json
+        from fastapi import HTTPException
+        from app.schemas.component import ComponentUploadRequest
+        from app.services.component_service import ComponentService
+
+        # 1. Парсинг и валидация JSON
+        content = await file.read()
+        try:
+            raw_data = json.loads(content)
+            # В агенте может быть плоский список или объект.
+            # Если это список компонентов, нам нужен hostname.
+            # Предположим структуру {hostname: "...", components: [...]}
+            # или если агент шлет просто список, то hostname придется генерить или брать из имени файла?
+            # User request implied JSON structure matching ComponentUploadRequest (hostname + components)
+            
+            # Если пришел список (старый формат?), заворачиваем (но по ТЗ агент шлет структуру)
+            if isinstance(raw_data, list):
+                 # Fallback: try to find hostname in components or use default
+                 dto = ComponentUploadRequest(hostname="Imported-Host", components=raw_data)
+            else:
+                 dto = ComponentUploadRequest(**raw_data)
+                 
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid JSON: {str(e)}")
+
+        # 2. Извлечение ключевых данных
+        hostname = dto.hostname
+        
+        # Ищем материнскую плату для определения модели
+        mb_info = next((c for c in dto.components if c.type == 'motherboard'), None)
+        
+        mb_manufacturer = mb_info.manufacturer if mb_info and mb_info.manufacturer else "Unknown"
+        mb_product = mb_info.name if mb_info and mb_info.name else "Generic PC"
+
+        # 3. Работа со справочниками (Get or Create)
+        
+        # 3.1 Производитель
+        stmt = select(Manufacturer).where(Manufacturer.name == mb_manufacturer)
+        m_result = await session.execute(stmt)
+        manufacturer = m_result.scalars().first()
+        if not manufacturer:
+            manufacturer = Manufacturer(name=mb_manufacturer)
+            session.add(manufacturer)
+            await session.flush()
+
+        # 3.2 Тип актива (По умолчанию "Системный блок" или создаем)
+        DEFAULT_TYPE = "Системный блок"
+        DEFAULT_PREFIX = "PC"
+
+        # Пытаемся найти по имени ИЛИ по префиксу, чтобы избежать дублирования префикса
+        stmt = select(AssetType).where(
+            or_(
+                AssetType.name == DEFAULT_TYPE,
+                AssetType.prefix == DEFAULT_PREFIX
+            )
+        )
+        t_result = await session.execute(stmt)
+        candidates = t_result.scalars().all()
+
+        # Приоритет 1: Сопадение по имени
+        asset_type = next((x for x in candidates if x.name == DEFAULT_TYPE), None)
+        
+        # Приоритет 2: Сопадение по префиксу (если имени нет, но префикс занят - берем тот тип)
+        if not asset_type:
+             asset_type = next((x for x in candidates if x.prefix == DEFAULT_PREFIX), None)
+
+        if not asset_type:
+            asset_type = AssetType(name=DEFAULT_TYPE, prefix=DEFAULT_PREFIX)
+            session.add(asset_type)
+            await session.flush()
+
+        # 3.3 Модель устройства
+        stmt = select(DeviceModel).where(
+            DeviceModel.name == mb_product,
+            DeviceModel.manufacturer_id == manufacturer.id
+        )
+        dm_result = await session.execute(stmt)
+        device_model = dm_result.scalars().first()
+        if not device_model:
+            device_model = DeviceModel(
+                name=mb_product,
+                manufacturer_id=manufacturer.id,
+                asset_type_id=asset_type.id
+            )
+            session.add(device_model)
+            await session.flush()
+
+        # 3.4 Статус (По умолчанию "На складе" или первый попавшийся)
+        # Try finding 'На складе' first
+        stmt = select(DeviceStatus).where(DeviceStatus.name == "На складе")
+        s_result = await session.execute(stmt)
+        status = s_result.scalars().first()
+        
+        if not status:
+            # Fallback to any status
+            stmt = select(DeviceStatus).limit(1)
+            s_result = await session.execute(stmt)
+            status = s_result.scalars().first()
+            
+        if not status:
+             raise HTTPException(status_code=500, detail="No Device Statuses found in DB. Please create at least one status.")
+
+        # 4. Создание Устройства
+        # Генерация инвентарного номера
+        prefix = asset_type.prefix or "DEV"
+        date_str = datetime.utcnow().strftime('%Y%m%d')
+        search_prefix = f'{prefix}-{date_str}-'
+        last_device_stmt = (
+            select(Device.inventory_number)
+            .where(Device.inventory_number.like(f'{search_prefix}%'))
+            .order_by(Device.inventory_number.desc())
+            .limit(1)
+        )
+        last_inv_number = (await session.execute(last_device_stmt)).scalar_one_or_none()
+        new_seq = int(last_inv_number.split('-')[-1]) + 1 if last_inv_number else 1
+        inventory_number = f'{search_prefix}{new_seq:03d}'
+
+        new_device = Device(
+            name=hostname, 
+            inventory_number=inventory_number,
+            serial_number=mb_info.serial_number if mb_info else None,
+            asset_type_id=asset_type.id,
+            device_model_id=device_model.id,
+            status_id=status.id,
+            location_id=None, 
+            notes="Автоматически импортировано из агента"
+        )
+        session.add(new_device)
+        await session.flush()
+
+        # Логируем создание
+        await log_action(
+            db=session,
+            user_id=user_id,
+            action_type='create',
+            entity_type='Device',
+            entity_id=new_device.id,
+            details={
+                'inventory_number': new_device.inventory_number,
+                'name': new_device.name,
+                'source': 'agent_import'
+            },
+        )
+
+        # 5. Синхронизация компонентов
+        await ComponentService.sync_components(session, new_device.id, dto.components)
+
+        return new_device
+
+
     async def get_device_with_relations(
         self, db: AsyncSession, device_id: int
     ) -> Device | None:
         from sqlalchemy.orm import with_polymorphic
 
-        from app.models.component import ComponentCPU, ComponentGPU, ComponentRAM, ComponentStorage
+        from app.models.component import ComponentCPU, ComponentGPU, ComponentRAM, ComponentStorage, ComponentMotherboard
 
         # Создаем полиморфную сущность для загрузки всех типов компонентов
         poly_component = with_polymorphic(
-            Component, [ComponentCPU, ComponentRAM, ComponentStorage, ComponentGPU]
+            Component, [ComponentCPU, ComponentRAM, ComponentStorage, ComponentGPU, ComponentMotherboard]
         )
 
         stmt = (

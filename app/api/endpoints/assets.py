@@ -325,6 +325,35 @@ async def create_asset(
     )
 
 
+@router.post('/import', name='import_asset_from_agent')
+async def import_asset_from_agent(
+    file: UploadFile,
+    db: AsyncSession = Depends(get_db),
+    device_service: DeviceService = Depends(get_device_service),
+    current_user: User = Depends(get_current_superuser_from_session),
+):
+    """
+    Создает актив на основе JSON-отчета агента.
+    """
+    try:
+        new_device = await device_service.create_from_agent_data(
+            file=file, session=db, user_id=current_user.id
+        )
+        await db.commit()
+        return {
+            'status': 'success',
+            'device_id': new_device.id,
+            'redirect_url': f'/edit/{new_device.id}?tab=components',
+        }
+    except Exception as e:
+        logger.error(f'Ошибка при импорте актива: {e}', exc_info=True)
+        # Если это HTTPException, прокидываем его, иначе 500
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=f'Ошибка импорта: {str(e)}')
+
+
+
 @router.get('/edit/{device_id}', response_class=HTMLResponse, name='edit_asset')
 async def edit_asset(
     request: Request,

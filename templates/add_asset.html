@@ -17,6 +17,9 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="financial-tab" data-bs-toggle="tab" data-bs-target="#financial-tab-pane" type="button" role="tab" aria-controls="financial-tab-pane" aria-selected="false">Финансы и эксплуатация</button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="import-tab" data-bs-toggle="tab" data-bs-target="#import-pane" type="button" role="tab" aria-controls="import-pane" aria-selected="false">Импорт из Агента</button>
+            </li>
         </ul>
 
         <div class="tab-content" id="assetTabContent">
@@ -166,6 +169,25 @@
                 </div>
             </div>
         </div>
+            
+            <!-- Вкладка "Импорт" -->
+            <div class="tab-pane fade" id="import-pane" role="tabpanel" aria-labelledby="import-tab" tabindex="0">
+                <div class="text-center py-5">
+                    <i class="bi bi-robot fs-1 text-primary mb-3"></i>
+                    <h4>Автоматическое создание</h4>
+                    <p class="text-muted">Загрузите JSON-файл, сгенерированный агентом (ITBase_Agent.exe).<br>Система автоматически создаст модель, производителя и заполнит компоненты.</p>
+                    
+                    <div class="row justify-content-center mt-4">
+                        <div class="col-md-6">
+                            <input type="file" id="agent-file" class="form-control" accept=".json">
+                            <button id="btn-import" type="button" class="btn btn-primary mt-3 w-100">
+                                <i class="bi bi-upload"></i> Загрузить и создать
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="mt-4">
             <button type="submit" class="btn btn-primary">Сохранить</button>
@@ -265,6 +287,51 @@
                 const manufacturerId = selectedOption.getAttribute('data-manufacturer-id');
                 if (manufacturerId) {
                     manufacturerSelect.value = manufacturerId;
+                }
+            });
+
+            // --- IMPORT LOGIC ---
+            document.getElementById('btn-import').addEventListener('click', async function() {
+                const fileInput = document.getElementById('agent-file');
+                const btn = this;
+                
+                if (!fileInput.files[0]) {
+                    alert("Выберите файл!");
+                    return;
+                }
+            
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+            
+                try {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Создание...';
+            
+                    const response = await fetch('/import', {
+                        method: 'POST',
+                        body: formData
+                    });
+            
+                    if (response.ok) {
+                        const data = await response.json();
+                        // РЕДИРЕКТ на страницу редактирования созданного актива
+                        if (data.redirect_url) {
+                             window.location.href = data.redirect_url;
+                        } else {
+                             alert("Успешно, но нет URL для редиректа");
+                             btn.disabled = false;
+                        }
+                    } else {
+                        const err = await response.json();
+                        alert("Ошибка: " + (err.detail || "Unknown error"));
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="bi bi-upload"></i> Загрузить и создать';
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert("Ошибка сети");
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-upload"></i> Загрузить и создать';
                 }
             });
         });

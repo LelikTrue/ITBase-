@@ -43,3 +43,9 @@ ComponentItem = Annotated[
     CpuItem | RamItem | StorageItem | GpuItem | MotherboardCreate,
     Field(discriminator='type')
 ]
+
+
+class ComponentUploadRequest(BaseModel):
+    hostname: str
+    components: list[ComponentItem]
+
