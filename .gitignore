@@ -54,7 +54,7 @@ generate_structure.py
 .trae/rules/project_rules.md
 .agent/rules/ai-context-itbase.md
 .agent/workflows/ai-context-itbase.md
-AI_CONTEXT.md
+
 
 # Agent Build artifacts
 ITBase_Agent.exe

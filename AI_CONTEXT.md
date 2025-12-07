@@ -29,7 +29,7 @@
     *   **Rule:** Changes here require `make migration`.
 4.  **`app/schemas/` (DTOs):**
     *   **Responsibility:** Pydantic models for API input/output validation.
-5.  **`app/templates/` (UI):**
+5.  **`templates/` (UI):**
     *   **Responsibility:** Jinja2 HTML templates.
 
 ## 4. Key Entities & Relationships
@@ -85,9 +85,9 @@
   /models         # SQLAlchemy Models
   /schemas        # Pydantic Schemas
   /services       # Business Logic (CRUD, complex ops)
-  /templates      # Jinja2 HTML
   /utils          # Helpers
   main.py         # App Entry Point
+/templates        # Jinja2 HTML
 /agent_builder    # Windows Inventory Agent (Isolated Build)
 /migrations       # Alembic versions
 Makefile          # Task runner

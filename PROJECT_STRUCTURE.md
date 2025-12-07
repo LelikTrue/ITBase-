@@ -41,6 +41,18 @@ ITBase-/
 ├── setup.sh
 ├── test_db_connection.py
 ├── test_pretty_errors.py
+├── .agent/
+│   ├── rules/
+│   │   ├── ai-context-itbase.md
+│   ├── workflows/
+│   │   ├── ai-context-itbase.md
+├── agent_builder/
+│   ├── .gitignore
+│   ├── README.md
+│   ├── build.bat
+│   ├── src/
+│   │   ├── agent.py
+│   │   ├── requirements.txt
 ├── app/
 │   ├── __init__.py
 │   ├── config.py
@@ -79,6 +91,7 @@ ITBase-/
 │   │   ├── asset_type.py
 │   │   ├── attachment.py
 │   │   ├── base.py
+│   │   ├── component.py
 │   │   ├── department.py
 │   │   ├── device.py
 │   │   ├── device_model.py
@@ -95,6 +108,7 @@ ITBase-/
 │   │   ├── analytics.py
 │   │   ├── asset.py
 │   │   ├── audit_log.py
+│   │   ├── component.py
 │   │   ├── dictionary.py
 │   │   ├── supplier.py
 │   │   ├── tag.py
@@ -104,6 +118,7 @@ ITBase-/
 │   │   ├── asset_type_service.py
 │   │   ├── audit_log_service.py
 │   │   ├── base_service.py
+│   │   ├── component_service.py
 │   │   ├── department_service.py
 │   │   ├── device_model_service.py
 │   │   ├── device_service.py
@@ -131,17 +146,23 @@ ITBase-/
 │   ├── base.txt
 │   ├── dev.txt
 │   ├── prod.txt
+├── scripts/
+│   ├── Agent.ps1
+│   ├── test_components.json
+│   ├── Запустить_Инвентаризацию.bat
 ├── static/
 │   ├── styles.css
 │   ├── css/
 │   │   ├── dashboard.css
 │   │   ├── dictionary_modals.css
+│   │   ├── json_viewer.css
 │   │   ├── styles.css
 │   │   ├── vendor/
 │   │   │   ├── tom-select.bootstrap5.css
 │   ├── js/
 │   │   ├── dashboard.js
 │   │   ├── dictionary_modals.js
+│   │   ├── json_viewer.js
 │   │   ├── tom-select-init.js
 │   │   ├── vendor/
 │   │   │   ├── chart.js
@@ -189,7 +210,7 @@ ITBase-/
 
 # 📊 Quick Stats (AI Context)
 
-- **Total DB Models:** 14
-  - List: department, device, user, attachment, network, device_status, asset_type, location, supplier, manufacturer, device_model, action_log, tag, employee
-- **Total Services:** 13
+- **Total DB Models:** 15
+  - List: department, device, user, component, attachment, network, device_status, asset_type, location, supplier, manufacturer, device_model, action_log, tag, employee
+- **Total Services:** 14
 - **Total API Modules:** 10
