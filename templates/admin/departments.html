@@ -13,8 +13,7 @@
         </ol>
     </nav>
 
-    <!-- === НАЧАЛО ИЗМЕНЕНИЙ === -->
-    <!-- Заголовок и кнопки действий -->
+    <!-- Заголовок и кнопки -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0 text-nowrap">
             <i class="bi bi-diagram-3 text-primary me-2"></i>
@@ -29,14 +28,13 @@
             </button>
         </div>
     </div>
-    <!-- === КОНЕЦ ИЗМЕНЕНИЙ === -->
 
     <!-- Поиск -->
     <div class="card mb-4">
         <div class="card-body">
             <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <input type="text" class="form-control" id="searchInput" placeholder="Поиск по названию или описанию...">
+                <input type="text" class="form-control" id="searchInput" placeholder="Поиск по названию, слагу или описанию...">
             </div>
         </div>
     </div>
@@ -51,9 +49,10 @@
                 <table class="table table-hover mb-0" id="itemsTable">
                     <thead>
                         <tr>
-                            <th style="width: 10%;">ID</th>
-                            <th style="width: 35%;">Название</th>
-                            <th style="width: 45%;">Описание</th>
+                            <th style="width: 5%;">ID</th>
+                            <th style="width: 20%;">Slug (Код)</th>
+                            <th style="width: 30%;">Название</th>
+                            <th style="width: 35%;">Описание</th>
                             <th style="width: 10%;" class="text-end">Действия</th>
                         </tr>
                     </thead>
@@ -61,6 +60,7 @@
                         {% for item in departments %}
                         <tr>
                             <td>{{ item.id }}</td>
+                            <td><code class="text-primary">{{ item.slug }}</code></td>
                             <td>{{ item.name }}</td>
                             <td>{{ item.description or '-' }}</td>
                             <td class="text-end">
@@ -68,6 +68,7 @@
                                         data-bs-toggle="modal"
                                         data-bs-target="#editModal"
                                         data-item-id="{{ item.id }}"
+                                        data-item-slug="{{ item.slug }}" 
                                         data-item-name="{{ item.name }}"
                                         data-item-description="{{ item.description or '' }}">
                                     <i class="bi bi-pencil"></i>
@@ -83,7 +84,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="4" class="text-center text-muted py-4">
+                            <td colspan="5" class="text-center text-muted py-4">
                                 <i class="bi bi-inbox display-4 d-block mb-2"></i>
                                 Отделы не найдены
                             </td>
@@ -109,8 +110,19 @@
                     <div class="mb-3">
                         <label for="addName" class="form-label">Название <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="addName" name="name" required minlength="1" maxlength="100">
+                        <div class="form-text">Например: IT Отдел</div>
                     </div>
-                    <div>
+                    <div class="mb-3">
+                        <label for="addSlug" class="form-label">Slug (Системный код) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="text" class="form-control font-monospace" id="addSlug" name="slug" required minlength="1" maxlength="50">
+                            <button class="btn btn-outline-secondary" type="button" id="generateSlugBtn" title="Сгенерировать из названия">
+                                <i class="bi bi-magic"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Только латинские буквы, цифры и подчеркивание. Например: <code>it_dept</code></div>
+                    </div>
+                    <div class="mb-3">
                         <label for="addDescription" class="form-label">Описание</label>
                         <textarea class="form-control" id="addDescription" name="description" rows="3" maxlength="255"></textarea>
                     </div>
@@ -138,7 +150,12 @@
                         <label for="editName" class="form-label">Название <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="editName" name="name" required minlength="1" maxlength="100">
                     </div>
-                    <div>
+                    <div class="mb-3">
+                        <label for="editSlug" class="form-label">Slug (Системный код) <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control font-monospace" id="editSlug" name="slug" required minlength="1" maxlength="50">
+                        <div class="form-text text-warning"><i class="bi bi-exclamation-triangle"></i> Изменение кода может повлиять на импорт данных!</div>
+                    </div>
+                    <div class="mb-3">
                         <label for="editDescription" class="form-label">Описание</label>
                         <textarea class="form-control" id="editDescription" name="description" rows="3" maxlength="255"></textarea>
                     </div>
@@ -178,16 +195,49 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // --- Клиентский поиск по таблице ---
+    // --- Helper: Transliteration ---
+    function generateSlug(text) {
+        const ru = {
+            'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 
+            'е': 'e', 'ё': 'e', 'ж': 'zh', 'з': 'z', 'и': 'i', 
+            'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 
+            'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 
+            'у': 'u', 'ф': 'f', 'х': 'h', 'ц': 'ts', 'ч': 'ch', 
+            'ш': 'sh', 'щ': 'sch', 'ъ': '', 'ы': 'y', 'ь': '', 
+            'э': 'e', 'ю': 'yu', 'я': 'ya', ' ': '_'
+        };
+        
+        return text.toLowerCase().split('').map(char => {
+            return ru[char] || char;
+        }).join('').replace(/[^a-z0-9_]/g, '');
+    }
+
+    // --- Auto-generate slug logic ---
+    const addNameInput = document.getElementById('addName');
+    const addSlugInput = document.getElementById('addSlug');
+    const generateBtn = document.getElementById('generateSlugBtn');
+
+    generateBtn.addEventListener('click', function() {
+        addSlugInput.value = generateSlug(addNameInput.value);
+    });
+
+    addNameInput.addEventListener('blur', function() {
+        if (!addSlugInput.value) {
+            addSlugInput.value = generateSlug(this.value);
+        }
+    });
+
+    // --- Клиентский поиск ---
     const searchInput = document.getElementById('searchInput');
     const tableRows = document.querySelectorAll('#itemsTable tbody tr');
 
     searchInput.addEventListener('input', function() {
         const searchTerm = this.value.toLowerCase();
         tableRows.forEach(row => {
-            const name = row.cells[1]?.textContent.toLowerCase() || '';
-            const description = row.cells[2]?.textContent.toLowerCase() || '';
-            if (name.includes(searchTerm) || description.includes(searchTerm)) {
+            const slug = row.cells[1]?.textContent.toLowerCase() || '';
+            const name = row.cells[2]?.textContent.toLowerCase() || '';
+            const description = row.cells[3]?.textContent.toLowerCase() || '';
+            if (name.includes(searchTerm) || description.includes(searchTerm) || slug.includes(searchTerm)) {
                 row.style.display = '';
             } else {
                 row.style.display = 'none';
@@ -195,28 +245,29 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // --- Логика модального окна редактирования ---
+    // --- Модальное окно редактирования ---
     const editModal = document.getElementById('editModal');
     editModal.addEventListener('show.bs.modal', function (event) {
         const button = event.relatedTarget;
         const id = button.getAttribute('data-item-id');
+        const slug = button.getAttribute('data-item-slug');
         const name = button.getAttribute('data-item-name');
         const description = button.getAttribute('data-item-description');
 
         const form = document.getElementById('editForm');
         const nameInput = document.getElementById('editName');
+        const slugInput = document.getElementById('editSlug');
         const descriptionInput = document.getElementById('editDescription');
         
-        // Формируем URL для отправки формы
         const url = "{{ url_for('edit_dictionary_item', dictionary_type='departments', item_id='__ITEM_ID__') }}".replace('__ITEM_ID__', id);
         form.action = url;
 
-        // Заполняем поля формы
         nameInput.value = name;
+        slugInput.value = slug;
         descriptionInput.value = description;
     });
 
-    // --- Логика модального окна удаления ---
+    // --- Модальное окно удаления ---
     const deleteModal = document.getElementById('deleteModal');
     deleteModal.addEventListener('show.bs.modal', function (event) {
         const button = event.relatedTarget;
@@ -225,21 +276,18 @@ document.addEventListener('DOMContentLoaded', function () {
         
         const form = document.getElementById('deleteForm');
         const itemNameSpan = document.getElementById('deleteItemName');
-
-        // Формируем URL и подставляем имя для подтверждения
+        
         const url = "{{ url_for('delete_dictionary_item', dictionary_type='departments', item_id='__ITEM_ID__') }}".replace('__ITEM_ID__', id);
         form.action = url;
         itemNameSpan.textContent = name;
     });
 
-    // --- Очистка форм при закрытии модальных окон ---
-    const addModal = document.getElementById('addModal');
-    addModal.addEventListener('hidden.bs.modal', function() {
-        this.querySelector('form').reset();
-    });
-
-    editModal.addEventListener('hidden.bs.modal', function() {
-        this.querySelector('form').reset();
+    // --- Очистка форм ---
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('hidden.bs.modal', function() {
+            const form = this.querySelector('form');
+            if(form) form.reset();
+        });
     });
 });
 </script>

@@ -35,9 +35,6 @@ from app.services.exceptions import (
 from app.templating import templates
 from app.utils.helpers import safe_int
 
-# ИМПОРТИРУЕМ НАШУ КОНФИГУРАЦИЮ ИЗ СОСЕДНЕГО ФАЙЛА
-from .dictionaries import DICTIONARY_CONFIG
-
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
@@ -251,8 +248,6 @@ async def add_asset_form(
         'all_tags': all_tags,
         'asset': asset,
         'errors': validation_errors,
-        # --- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Передаем конфигурацию в шаблон ---
-        'dictionary_config': DICTIONARY_CONFIG,
     }
     return templates.TemplateResponse('add_asset.html', context)
 
@@ -350,8 +345,7 @@ async def import_asset_from_agent(
         # Если это HTTPException, прокидываем его, иначе 500
         if isinstance(e, HTTPException):
             raise e
-        raise HTTPException(status_code=500, detail=f'Ошибка импорта: {str(e)}')
-
+        raise HTTPException(status_code=500, detail=f'Ошибка импорта: {e!s}')
 
 
 @router.get('/edit/{device_id}', response_class=HTMLResponse, name='edit_asset')
@@ -383,8 +377,6 @@ async def edit_asset(
             **form_data,
             'existing_tags_data': existing_tags_data,
             'title': f'Редактировать актив #{device.id}',
-            # --- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Передаем конфигурацию и в форму редактирования ---
-            'dictionary_config': DICTIONARY_CONFIG,
         },
     )
 

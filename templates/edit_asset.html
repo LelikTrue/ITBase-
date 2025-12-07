@@ -10,7 +10,7 @@
             <a href="{{ url_for('read_assets') }}" class="btn btn-secondary">Назад к списку</a>
         </div>
         <div class="card-body">
-            <form action="{{ url_for('update_asset', device_id=device.id) }}" method="post" novalidate>
+            <form action="{{ url_for('update_asset', device_id=device.id) }}" method="post" id="editAssetForm" class="persist-data" novalidate>
                 <ul class="nav nav-tabs" id="assetTab" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="main-tab" data-bs-toggle="tab" data-bs-target="#main-tab-pane" type="button" role="tab" aria-controls="main-tab-pane" aria-selected="true">Основная информация</button>
@@ -44,7 +44,7 @@
                                             <option value="">Выберите тип...</option>
                                             {% for type in asset_types %}<option value="{{ type.id }}" {% if device.asset_type_id == type.id %}selected{% endif %}>{{ type.name }}</option>{% endfor %}
                                         </select>
-                                        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#asset-typesModal" title="Добавить новый тип актива"><i class="bi bi-plus-lg"></i></button>
+                                        <a href="{{ url_for('quick_add_dictionary_item_page', dictionary_type='asset-types') }}?next={{ request.path }}" class="btn btn-outline-secondary save-state-link" title="Добавить новый тип актива"><i class="bi bi-plus-lg"></i></a>
                                     </div>
                                 </div>
                                 <div class="mb-3">
@@ -54,7 +54,7 @@
                                             <option value="">Выберите производителя...</option>
                                             {% for manufacturer in manufacturers %}<option value="{{ manufacturer.id }}" {% if device.device_model.manufacturer_id == manufacturer.id %}selected{% endif %}>{{ manufacturer.name }}</option>{% endfor %}
                                         </select>
-                                        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#manufacturersModal" title="Добавить нового производителя"><i class="bi bi-plus-lg"></i></button>
+                                        <a href="{{ url_for('quick_add_dictionary_item_page', dictionary_type='manufacturers') }}?next={{ request.path }}" class="btn btn-outline-secondary save-state-link" title="Добавить нового производителя"><i class="bi bi-plus-lg"></i></a>
                                     </div>
                                 </div>
                                 <div class="mb-3">
@@ -64,7 +64,7 @@
                                             <option value="">Выберите модель...</option>
                                             {% for model in device_models %}<option value="{{ model.id }}" data-manufacturer-id="{{ model.manufacturer.id }}" {% if device.device_model_id == model.id %}selected{% endif %}>{{ model.name }} ({{ model.manufacturer.name }})</option>{% endfor %}
                                         </select>
-                                        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#device-modelsModal" title="Добавить новую модель"><i class="bi bi-plus-lg"></i></button>
+                                        <a href="{{ url_for('manage_dictionary', dictionary_type='device-models') }}?next={{ request.path }}" class="btn btn-outline-secondary save-state-link" title="Добавить новую модель"><i class="bi bi-plus-lg"></i></a>
                                     </div>
                                 </div>
                                 <div class="mb-3">
@@ -89,7 +89,7 @@
                                             <option value="">Выберите статус...</option>
                                             {% for status in device_statuses %}<option value="{{ status.id }}" {% if device.status_id == status.id %}selected{% endif %}>{{ status.name }}</option>{% endfor %}
                                         </select>
-                                        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#device-statusesModal" title="Добавить новый статус"><i class="bi bi-plus-lg"></i></button>
+                                        <a href="{{ url_for('quick_add_dictionary_item_page', dictionary_type='device-statuses') }}?next={{ request.path }}" class="btn btn-outline-secondary save-state-link" title="Добавить новый статус"><i class="bi bi-plus-lg"></i></a>
                                     </div>
                                 </div>
                                 <div class="mb-3">
@@ -99,7 +99,7 @@
                                             <option value="">Выберите расположение...</option>
                                             {% for location in locations %}<option value="{{ location.id }}" {% if device.location_id == location.id %}selected{% endif %}>{{ location.name }}</option>{% endfor %}
                                         </select>
-                                        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#locationsModal" title="Добавить новое расположение"><i class="bi bi-plus-lg"></i></button>
+                                        <a href="{{ url_for('quick_add_dictionary_item_page', dictionary_type='locations') }}?next={{ request.path }}" class="btn btn-outline-secondary save-state-link" title="Добавить новое расположение"><i class="bi bi-plus-lg"></i></a>
                                     </div>
                                 </div>
                                 <div class="mb-3">
@@ -109,7 +109,7 @@
                                             <option value="">Не назначен</option>
                                             {% for department in departments %}<option value="{{ department.id }}" {% if device.department_id == department.id %}selected{% endif %}>{{ department.name }}</option>{% endfor %}
                                         </select>
-                                        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#departmentsModal" title="Добавить новый отдел"><i class="bi bi-plus-lg"></i></button>
+                                        <a href="{{ url_for('quick_add_dictionary_item_page', dictionary_type='departments') }}?next={{ request.path }}" class="btn btn-outline-secondary save-state-link" title="Добавить новый отдел"><i class="bi bi-plus-lg"></i></a>
                                     </div>
                                 </div>
                                 <div class="mb-3">
@@ -119,7 +119,7 @@
                                             <option value="">Не назначен</option>
                                             {% for employee in employees %}<option value="{{ employee.id }}" {% if device.employee_id == employee.id %}selected{% endif %}>{{ employee.last_name }} {{ employee.first_name }}</option>{% endfor %}
                                         </select>
-                                        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#employeesModal" title="Добавить нового сотрудника"><i class="bi bi-plus-lg"></i></button>
+                                        <a href="{{ url_for('manage_dictionary', dictionary_type='employees') }}?next={{ request.path }}" class="btn btn-outline-secondary save-state-link" title="Добавить нового сотрудника"><i class="bi bi-plus-lg"></i></a>
                                     </div>
                                 </div>
                                 <div class="mb-3">
@@ -150,7 +150,7 @@
                                             <option value="">Выберите поставщика...</option>
                                             {% for supplier in suppliers %}<option value="{{ supplier.id }}" {% if device.supplier_id == supplier.id %}selected{% endif %}>{{ supplier.name }}</option>{% endfor %}
                                         </select>
-                                        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#suppliersModal" title="Добавить нового поставщика"><i class="bi bi-plus-lg"></i></button>
+                                        <a href="{{ url_for('manage_dictionary', dictionary_type='suppliers') }}?next={{ request.path }}" class="btn btn-outline-secondary save-state-link" title="Добавить нового поставщика"><i class="bi bi-plus-lg"></i></a>
                                     </div>
                                 </div>
                                 <div class="mb-3">
@@ -301,12 +301,11 @@
     </div>
 </div>
 
-{% include "modals/dictionary_modals.html" %}
 {% endblock %}
 
 {% block scripts %}
     <script src="{{ url_for('static', path='js/tom-select-init.js') }}"></script>
-    <script src="{{ url_for('static', path='js/dictionary_modals.js') }}"></script>
+    <script src="{{ url_for('static', path='js/form_persistence.js') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Синхронизация полей "Производитель" и "Модель"

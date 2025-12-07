@@ -63,6 +63,12 @@ class Device(BaseMixin, Base):
     inventory_number: Mapped[str] = mapped_column(
         String(255), unique=True, nullable=False
     )
+    legacy_inventory_number: Mapped[str | None] = mapped_column(
+        String(100),
+        index=True,
+        nullable=True,
+        comment="Инвентарный номер из старой системы учета"
+    )
     # Серийные и MAC-адреса должны быть уникальными, если они указаны
     serial_number: Mapped[str | None] = mapped_column(
         String(255), unique=True, nullable=True

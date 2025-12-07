@@ -31,22 +31,56 @@ class DictionarySimpleUpdate(BaseModel):
     description: str | None = Field(None, max_length=255)
 
 
+# --- Базовые схемы со Slug ---
+
+
+class DictionaryWithSlugCreate(DictionarySimpleCreate):
+    """Схема для справочников со slug (Department, Location, DeviceStatus, AssetType)."""
+
+    slug: str = Field(..., min_length=1, max_length=50)
+
+
+class DictionaryWithSlugUpdate(DictionarySimpleUpdate):
+    """Схема для обновления справочников со slug."""
+
+    slug: str = Field(..., min_length=1, max_length=50)
+
+
 # --- Схемы для конкретных справочников ---
 
 
-class DeviceStatusCreate(DictionarySimpleCreate):
+class DeviceStatusCreate(DictionaryWithSlugCreate):
+    """Схема создания статуса устройства (со slug)."""
+    pass
+
+
+class DeviceStatusUpdate(DictionaryWithSlugUpdate):
+    """Схема обновления статуса устройства (со slug)."""
     pass
 
 
 class ManufacturerCreate(DictionarySimpleCreate):
+    """Схема создания производителя (без slug)."""
     pass
 
 
-class DepartmentCreate(DictionarySimpleCreate):
+class DepartmentCreate(DictionaryWithSlugCreate):
+    """Схема создания отдела (со slug)."""
     pass
 
 
-class LocationCreate(DictionarySimpleCreate):
+class DepartmentUpdate(DictionaryWithSlugUpdate):
+    """Схема обновления отдела (со slug)."""
+    pass
+
+
+class LocationCreate(DictionaryWithSlugCreate):
+    """Схема создания местоположения (со slug)."""
+    pass
+
+
+class LocationUpdate(DictionaryWithSlugUpdate):
+    """Схема обновления местоположения (со slug)."""
     pass
 
 
@@ -135,14 +169,16 @@ class EmployeeUpdate(EmployeeCreate):
 # ===============================================================
 # AssetType
 # ===============================================================
-class AssetTypeCreate(DictionarySimpleCreate):
-    """Схема для создания типа актива, включая префикс."""
+class AssetTypeCreate(DictionaryWithSlugCreate):
+    """Схема для создания типа актива (со slug и префиксом)."""
 
     prefix: str = Field(..., max_length=10)
 
 
-class AssetTypeUpdate(AssetTypeCreate):
-    """Схема для обновления типа актива. Наследует все поля от Create."""
+class AssetTypeUpdate(DictionaryWithSlugUpdate):
+    """Схема для обновления типа актива (со slug и префиксом)."""
+
+    prefix: str = Field(..., max_length=10)
 
 
 # ===============================================================

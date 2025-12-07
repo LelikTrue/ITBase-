@@ -13,7 +13,10 @@ if TYPE_CHECKING:
     from .device_model import DeviceModel
 
 
-class AssetType(BaseMixin, Base):
+from app.models.mixins import SlugMixin
+
+
+class AssetType(BaseMixin, Base, SlugMixin):
     __tablename__ = 'assettypes'
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)

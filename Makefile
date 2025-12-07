@@ -28,16 +28,45 @@ help:
 	@echo ""
 	@echo "Usage: make ${GREEN}<команда>${RESET}"
 	@echo ""
-	@echo "Основные команды:"
-	@awk '/^[a-zA-Z\.\-]+:/ { \
-		helpMessage = match(lastLine, /^## (.*)/); \
-		if (helpMessage) { \
-			helpCommand = substr($$1, 0, index($$1, ":")-1); \
-			helpMessage = substr(lastLine, RSTART + 3, RLENGTH); \
-			printf "  ${GREEN}%-20s${RESET} %s\n", helpCommand, helpMessage; \
-		} \
-	} \
-	{ lastLine = $$0 }' $(MAKEFILE_LIST) | sort
+	@echo "${WHITE}🚀 Запуск и остановка:${RESET}"
+	@echo "  ${GREEN}up${RESET}                   Собрать образы и запустить сервисы в фоновом режиме"
+	@echo "  ${GREEN}dev${RESET}                  Запуск в режиме разработки (с hot reload и логами)"
+	@echo "  ${GREEN}prod${RESET}                 Запуск в продакшн режиме"
+	@echo "  ${GREEN}full${RESET}                 Полный запуск: миграции + справочники + демо-активы"
+	@echo "  ${GREEN}dev-full${RESET}             Алиас для full"
+	@echo "  ${GREEN}restart${RESET}              Перезапустить приложение"
+	@echo "  ${GREEN}down${RESET}                 Остановить и удалить все сервисы"
+	@echo "  ${GREEN}down-clean${RESET}           Остановить, удалить контейнеры и volume (полная очистка)"
+	@echo "  ${GREEN}ps${RESET}                   Показать статус всех сервисов"
+	@echo "  ${GREEN}wait-ready${RESET}           Ожидание готовности PostgreSQL и приложения"
+	@echo ""
+	@echo "${WHITE}🗄️  База данных:${RESET}"
+	@echo "  ${GREEN}migrate${RESET}              Применить миграции Alembic к базе данных"
+	@echo "  ${GREEN}migration${RESET}            Создать новый файл миграции Alembic"
+	@echo "  ${GREEN}init-data${RESET}            Заполнить справочники (типы, модели, статусы, отделы)"
+	@echo "  ${GREEN}seed-devices${RESET}         Наполнить БД демо-активами (30 устройств)"
+	@echo "  ${GREEN}create-admin${RESET}         Создать администратора системы"
+	@echo "  ${GREEN}backup${RESET}               Создать резервную копию БД в папку backups/"
+	@echo "  ${GREEN}restore${RESET}              Восстановить БД из файла (make restore file=...)"
+	@echo "  ${GREEN}rebuild-db${RESET}           Пересоздать базу данных (⚠️ удалит все данные!)"
+	@echo ""
+	@echo "${WHITE}📋 Логи:${RESET}"
+	@echo "  ${GREEN}logs${RESET}                 Показать логи приложения (Ctrl+C для выхода)"
+	@echo "  ${GREEN}logs-db${RESET}              Показать логи базы данных"
+	@echo "  ${GREEN}logs-clear${RESET}           Очистить логи (пересоздание контейнеров)"
+	@echo ""
+	@echo "${WHITE}🔧 Инструменты разработки:${RESET}"
+	@echo "  ${GREEN}lint${RESET}                 Проверить стиль кода с помощью Ruff"
+	@echo "  ${GREEN}lint-fix${RESET}             Автоматически исправить ошибки стиля"
+	@echo "  ${GREEN}format${RESET}               Отформатировать код (Ruff format)"
+	@echo "  ${GREEN}type-check${RESET}           Проверить типы с помощью mypy"
+	@echo "  ${GREEN}test${RESET}                 Запустить тесты (pytest)"
+	@echo "  ${GREEN}clean${RESET}                Очистить кеш и временные файлы"
+	@echo ""
+	@echo "${WHITE}🐚 Консоли:${RESET}"
+	@echo "  ${GREEN}shell${RESET}                Открыть bash в контейнере приложения"
+	@echo "  ${GREEN}db-shell${RESET}             Подключиться к базе данных PostgreSQL"
+	@echo "  ${GREEN}redis-cli${RESET}            Подключиться к Redis"
 	@echo ""
 
 # --- Управление окружением ---
@@ -133,7 +162,7 @@ migration: wait-ready
 ## init-data: Заполнить справочники (типы, модели, статусы, отделы и т.д.)
 init-data: wait-ready
 	@echo "${YELLOW}Заполнение справочников...${RESET}"
-	docker compose $(COMPOSE_FILE) exec $(APP_SERVICE_NAME) python -m init_data
+	docker compose $(COMPOSE_FILE) exec $(APP_SERVICE_NAME) python init_data.py
 
 ## seed-devices: Наполнить БД демо-активами (30 устройств)
 seed-devices: wait-ready
@@ -144,6 +173,44 @@ seed-devices: wait-ready
 create-admin: wait-ready
 	@echo "${YELLOW}Создание администратора...${RESET}"
 	docker compose $(COMPOSE_FILE) exec $(APP_SERVICE_NAME) python create_admin.py
+
+# --- Backup & Restore ---
+
+BACKUP_DIR := backups
+TIMESTAMP := $(shell date +%Y-%m-%d_%H-%M-%S)
+DB_USER := $(shell grep POSTGRES_USER .env | cut -d '=' -f2)
+DB_NAME := $(shell grep POSTGRES_DB .env | cut -d '=' -f2)
+
+## backup: Создать резервную копию БД в папку backups/
+backup:
+	@mkdir -p $(BACKUP_DIR)
+	@echo "${YELLOW}Создание бэкапа базы данных $(DB_NAME)...${RESET}"
+	@docker compose $(COMPOSE_FILE) exec -T db pg_dump -U $(DB_USER) -d $(DB_NAME) -F c > $(BACKUP_DIR)/backup_$(TIMESTAMP).dump
+	@echo "${GREEN}✓ Бэкап сохранен: $(BACKUP_DIR)/backup_$(TIMESTAMP).dump${RESET}"
+
+## restore: Восстановить БД из файла (make restore file=backups/my_backup.dump)
+restore:
+	@if [ -z "$(file)" ]; then \
+		echo "${RED}Ошибка: Укажите файл бэкапа. Пример: make restore file=backups/backup_2023...dump${RESET}"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(file)" ]; then \
+		echo "${RED}Ошибка: Файл $(file) не найден.${RESET}"; \
+		exit 1; \
+	fi
+	@echo "${RED}⚠️  ВНИМАНИЕ! Текущая база данных будет УНИЧТОЖЕНА и перезаписана!${RESET}"
+	@read -p "Вы уверены? (yes/no): " confirm; \
+	if [ "$$confirm" = "yes" ]; then \
+		echo "${YELLOW}Остановка приложения (backend)...${RESET}"; \
+		docker compose $(COMPOSE_FILE) stop $(APP_SERVICE_NAME); \
+		echo "${YELLOW}Восстановление базы данных...${RESET}"; \
+		cat $(file) | docker compose $(COMPOSE_FILE) exec -T db pg_restore -U $(DB_USER) -d $(DB_NAME) --clean --if-exists; \
+		echo "${YELLOW}Запуск приложения...${RESET}"; \
+		docker compose $(COMPOSE_FILE) start $(APP_SERVICE_NAME); \
+		echo "${GREEN}✓ База данных успешно восстановлена.${RESET}"; \
+	else \
+		echo "${YELLOW}Отменено.${RESET}"; \
+	fi
 
 ## full: Полный запуск: миграции + справочники + демо-активы
 full: up migrate init-data seed-devices

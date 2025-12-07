@@ -1,6 +1,5 @@
 import ctypes
 import json
-
 import platform
 import sys
 import winreg

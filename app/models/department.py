@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 from sqlalchemy import String, UniqueConstraint  # <--- ИЗМЕНЕНИЕ
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.models.mixins import SlugMixin
+
 from ..db.database import Base
 from .base import BaseMixin
 
@@ -13,7 +15,7 @@ if TYPE_CHECKING:
     from .employee import Employee
 
 
-class Department(BaseMixin, Base):
+class Department(BaseMixin, Base, SlugMixin):
     __tablename__ = 'departments'
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
