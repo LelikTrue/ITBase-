@@ -56,6 +56,7 @@ COPY --chown=appuser:appuser templates ./templates
 COPY --chown=appuser:appuser init_data.py .
 COPY --chown=appuser:appuser seed_devices.py .
 COPY --chown=appuser:appuser create_admin.py .
+COPY --chown=appuser:appuser initial_data.yaml .
 
 # Переключаемся на нашего пользователя
 USER appuser

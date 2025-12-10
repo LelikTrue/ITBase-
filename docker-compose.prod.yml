@@ -14,7 +14,12 @@ services:
       redis:
         condition: service_healthy
     ports:
+    ports:
       - "8001:8000" # Используем порт 8001, чтобы не конфликтовать с dev (8002)
+    command: >
+      sh -c "alembic upgrade head &&
+             python init_data.py &&
+             gunicorn -k uvicorn.workers.UvicornWorker -w 4 -b 0.0.0.0:8000 app.main:app"
 
   db:
     image: postgres:16-alpine
