@@ -39,25 +39,25 @@
     <hr class="d-md-none my-2">
     {% endif %}
 
-    <div class="col-md-6 col-lg-3">
+    <div class="col-12 col-md-6 col-lg-3">
         <label for="search{{ id_suffix }}" class="form-label">Поиск</label>
         <input type="text" class="form-control" id="search{{ id_suffix }}" name="search" value="{{ filters.search or '' }}" placeholder="Инвентарный, серийный, MAC...">
     </div>
-    <div class="col-md-6 col-lg-3">
+    <div class="col-12 col-md-6 col-lg-3">
         <label for="asset_type_id{{ id_suffix }}" class="form-label">Тип</label>
         <select class="form-select" id="asset_type_id{{ id_suffix }}" name="asset_type_id">
             <option value="">Все</option>
             {% for item in asset_types %}<option value="{{ item.id }}" {% if filters.asset_type_id == item.id %}selected{% endif %}>{{ item.name }}</option>{% endfor %}
         </select>
     </div>
-    <div class="col-md-6 col-lg-3">
+    <div class="col-12 col-md-6 col-lg-3">
         <label for="status_id{{ id_suffix }}" class="form-label">Статус</label>
         <select class="form-select" id="status_id{{ id_suffix }}" name="status_id">
             <option value="">Все</option>
             {% for item in device_statuses %}<option value="{{ item.id }}" {% if filters.status_id == item.id %}selected{% endif %}>{{ item.name }}</option>{% endfor %}
         </select>
     </div>
-    <div class="col-md-6 col-lg-3">
+    <div class="col-12 col-md-6 col-lg-3">
         <label for="manufacturer_id{{ id_suffix }}" class="form-label">Производитель</label>
         <select class="form-select" id="manufacturer_id{{ id_suffix }}" name="manufacturer_id">
             <option value="">Все</option>
@@ -65,28 +65,28 @@
         </select>
     </div>
     
-    <div class="col-md-6 col-lg-3">
+    <div class="col-12 col-md-6 col-lg-3">
         <label for="department_id{{ id_suffix }}" class="form-label">Отдел</label>
         <select class="form-select" id="department_id{{ id_suffix }}" name="department_id">
             <option value="">Все</option>
             {% for item in departments %}<option value="{{ item.id }}" {% if filters.department_id == item.id %}selected{% endif %}>{{ item.name }}</option>{% endfor %}
         </select>
     </div>
-    <div class="col-md-6 col-lg-3">
+    <div class="col-12 col-md-6 col-lg-3">
         <label for="location_id{{ id_suffix }}" class="form-label">Локация</label>
         <select class="form-select" id="location_id{{ id_suffix }}" name="location_id">
             <option value="">Все</option>
             {% for item in locations %}<option value="{{ item.id }}" {% if filters.location_id == item.id %}selected{% endif %}>{{ item.name }}</option>{% endfor %}
         </select>
     </div>
-    <div class="col-md-6 col-lg-3">
+    <div class="col-12 col-md-6 col-lg-3">
         <label for="employee_id{{ id_suffix }}" class="form-label">Сотрудник</label>
         <select class="form-select" id="employee_id{{ id_suffix }}" name="employee_id">
             <option value="">Все</option>
             {% for item in employees %}<option value="{{ item.id }}" {% if filters.employee_id == item.id %}selected{% endif %}>{{ item.last_name }} {{ item.first_name }}</option>{% endfor %}
         </select>
     </div>
-    <div class="col-md-6 col-lg-3">
+    <div class="col-12 col-md-6 col-lg-3">
         <label for="supplier_id{{ id_suffix }}" class="form-label">Поставщик</label>
         <select class="form-select" id="supplier_id{{ id_suffix }}" name="supplier_id">
             <option value="">Все</option>
@@ -94,7 +94,7 @@
         </select>
     </div>
     
-    <div class="col-md-6 col-lg-3">
+    <div class="col-12 col-md-6 col-lg-3">
         <label for="tag_id{{ id_suffix }}" class="form-label">Тег</label>
         <select class="form-select" id="tag_id{{ id_suffix }}" name="tag_id">
             <option value="">Все</option>
@@ -102,13 +102,13 @@
         </select>
     </div>
 
-    <div class="col-md-6 col-lg-3 d-flex align-items-end">
+    <div class="col-12 col-md-6 col-lg-3 d-flex align-items-end">
         <button type="submit" class="btn btn-primary w-100">Применить</button>
     </div>
-    <div class="col-md-6 col-lg-3 d-flex align-items-end">
+    <div class="col-12 col-md-6 col-lg-3 d-flex align-items-end">
         <a href="{{ request.url_for('read_assets') }}" class="btn btn-secondary w-100">Сбросить</a>
     </div>
-    <div class="col-md-6 col-lg-3 d-flex align-items-end">
+    <div class="col-12 col-md-6 col-lg-3 d-flex align-items-end">
         <a href="{{ request.url_for('export_assets_csv') }}?{{ query_params|urlencode }}" class="btn btn-success w-100" title="Экспорт в CSV"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Экспорт</a>
     </div>
 {% endmacro %}
