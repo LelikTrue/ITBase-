@@ -4,6 +4,7 @@
     padding: 1.25rem;
 }
 
+/* Original overrides from dashboard.css - kept for reference, but we will use specific accesible classes */
 .card-stat .text-primary {
     color: #4e73df !important;
 }
@@ -59,7 +60,7 @@
     }
 }
 
-/* --- Dashboard Specific Dark Mode Fixes --- */
+/* --- Dashboard Specific All-Mode / Dark Mode Fixes --- */
 
 /* Специфичный стиль для таблицы рисков на дашборде */
 #riskTable thead th {
@@ -68,3 +69,20 @@
     text-transform: uppercase;
 }
 
+/* 
+   ACCESSIBILITY FIXES
+   High contrast colors for Dark Theme (#212529 bg)
+   Based on Bootstrap 5 Tint 300s
+*/
+.text-primary-d { color: #6ea8fe !important; }
+.text-success-d { color: #75b798 !important; }
+.text-info-d { color: #6edff6 !important; }
+.text-warning-d { color: #ffda6a !important; }
+.text-danger-d { color: #ea868f !important; }
+
+/* Accessible Borders corresponding to the colors */
+.border-left-primary { border-left: 0.25rem solid #6ea8fe !important; }
+.border-left-success { border-left: 0.25rem solid #75b798 !important; }
+.border-left-info { border-left: 0.25rem solid #6edff6 !important; }
+.border-left-warning { border-left: 0.25rem solid #ffda6a !important; }
+.border-left-danger { border-left: 0.25rem solid #ea868f !important; }

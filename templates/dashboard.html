@@ -14,7 +14,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h2">Аналитическая панель</h1>
         <div class="btn-toolbar mb-2 mb-md-0">
-            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+            <button type="button" class="btn btn-sm btn-outline-light" onclick="window.print()">
                 <i class="bi bi-printer"></i> Печать
             </button>
         </div>
@@ -27,9 +27,9 @@
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            <div class="text-xs font-weight-bold text-primary-d text-uppercase mb-1">
                                 Общая стоимость</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-cost">Loading...</div>
+                            <div class="h5 mb-0 font-weight-bold text-white" id="total-cost">Loading...</div>
                         </div>
                         <div class="col-auto">
                             <i class="bi bi-currency-dollar fa-2x text-gray-300" style="font-size: 2rem;"></i>
@@ -44,9 +44,9 @@
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            <div class="text-xs font-weight-bold text-success-d text-uppercase mb-1">
                                 В эксплуатации</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="cost-in-use">Loading...</div>
+                            <div class="h5 mb-0 font-weight-bold text-white" id="cost-in-use">Loading...</div>
                         </div>
                         <div class="col-auto">
                             <i class="bi bi-pc-display fa-2x text-gray-300" style="font-size: 2rem;"></i>
@@ -61,9 +61,9 @@
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            <div class="text-xs font-weight-bold text-info-d text-uppercase mb-1">
                                 На складе</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="cost-in-stock">Loading...</div>
+                            <div class="h5 mb-0 font-weight-bold text-white" id="cost-in-stock">Loading...</div>
                         </div>
                         <div class="col-auto">
                             <i class="bi bi-box-seam fa-2x text-gray-300" style="font-size: 2rem;"></i>
@@ -78,9 +78,9 @@
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            <div class="text-xs font-weight-bold text-warning-d text-uppercase mb-1">
                                 Средний износ</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="avg-wear">Loading...</div>
+                            <div class="h5 mb-0 font-weight-bold text-white" id="avg-wear">Loading...</div>
                         </div>
                         <div class="col-auto">
                             <i class="bi bi-activity fa-2x text-gray-300" style="font-size: 2rem;"></i>
@@ -96,7 +96,7 @@
         <div class="col-lg-6">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Распределение по статусам</h6>
+                    <h2 class="m-0 h6 font-weight-bold text-primary-d">Распределение по статусам</h2>
                 </div>
                 <div class="card-body">
                     <div class="chart-pie pt-4 pb-2">
@@ -108,7 +108,7 @@
         <div class="col-lg-6">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Распределение по типам</h6>
+                    <h2 class="m-0 h6 font-weight-bold text-primary-d">Распределение по типам</h2>
                 </div>
                 <div class="card-body">
                     <div class="chart-bar">
@@ -122,10 +122,10 @@
     <!-- Таблица рисков -->
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-danger">Проблемные активы (Топ-20)</h6>
+            <h2 class="m-0 h6 font-weight-bold text-danger-d">Проблемные активы (Топ-20)</h2>
         </div>
         <div class="card-body">
-            <div class="table-responsive">
+            <div class="table-responsive d-none d-md-block">
                 <table class="table table-bordered table-hover" id="riskTable" width="100%" cellspacing="0">
                     <thead>
                         <tr>
@@ -142,11 +142,14 @@
                     </tbody>
                 </table>
             </div>
+            
+            <!-- Mobile View (Cards) populated by JS -->
+            <div id="riskCards" class="d-md-none"></div>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', path='js/dashboard.js') }}"></script>
+<script src="{{ url_for('static', path='js/dashboard.js') }}?v=2"></script>
 {% endblock %}

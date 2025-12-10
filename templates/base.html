@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="{% block meta_description %}Система учета и управления ИТ-активами, оборудованием и лицензиями.{% endblock %}">
     <title>
       {% block title %}ITBase - Система управления ИТ-активами{% endblock %}
     </title>
@@ -138,31 +139,31 @@
     <main class="{% block main_container_class %}container{% endblock %} py-4">
         {# --- НАЧАЛО НОВОГО БЛОКА ДЛЯ FLASH-СООБЩЕНИЙ --- #}
         {# Используем переданные messages или получаем их из request #}
-        {% with messages = messages if messages is defined else get_flashed_messages(request) %}
-            {% if messages %}
-                {% for message in messages %}
+        {%- with messages = messages if messages is defined else get_flashed_messages(request) -%}
+            {%- if messages -%}
+                {%- for message in messages -%}
                     {# Проверяем, является ли сообщение словарем (для ошибок валидации) #}
-                    {% if message.category == 'validation' and message.message.errors %}
+                    {%- if message.category == 'validation' and message.message.errors -%}
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
                             <h4 class="alert-heading">Ошибка валидации!</h4>
                             <p>Пожалуйста, исправьте следующие ошибки:</p>
                             <ul class="mb-0">
-                                {% for field, error_msg in message.message.errors.items() %}
+                                {%- for field, error_msg in message.message.errors.items() -%}
                                     <li><strong>{{ field }}:</strong> {{ error_msg }}</li>
-                                {% endfor %}
+                                {%- endfor -%}
                             </ul>
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
-                    {% else %}
+                    {%- else -%}
                         {# Обычное текстовое сообщение #}
                         <div class="alert alert-{{ message.category or 'info' }} alert-dismissible fade show" role="alert">
                             {{ message.message }}
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
-                    {% endif %}
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+                    {%- endif -%}
+                {%- endfor -%}
+            {%- endif -%}
+        {%- endwith -%}
         {# --- КОНЕЦ НОВОГО БЛОКА --- #}
 
       {% block content %}{% endblock %}

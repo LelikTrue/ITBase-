@@ -28,9 +28,12 @@
                                     <i class="bi {{ config.icon }} text-primary fs-4 me-3"></i>
                                     <div>
                                         <h6 class="mb-1">{{ config.title }}</h6>
-                                        <small class="text-muted">
-                                            {{ config.description }} ({{ stats.get(key.replace('-', '_'), 0) }} записей)
-                                        </small>
+                                        <div class="text-muted small mb-1">{{ config.description }}</div>
+                                        <div>
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25">
+                                                {{ stats.get(key.replace('-', '_'), 0) }} записей
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                                 <a href="{{ url_for('manage_dictionary', dictionary_type=key) }}" class="btn btn-outline-primary btn-sm">

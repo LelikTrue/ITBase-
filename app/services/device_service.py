@@ -264,6 +264,12 @@ class DeviceService:
             query = query.filter(Device.location_id == filters["location_id"])
         if filters.get("manufacturer_id"):
             query = query.join(Device.device_model).filter(DeviceModel.manufacturer_id == filters["manufacturer_id"])
+        if filters.get("employee_id"):
+            query = query.filter(Device.employee_id == filters["employee_id"])
+        if filters.get("supplier_id"):
+            query = query.filter(Device.supplier_id == filters["supplier_id"])
+        if filters.get("tag_id"):
+            query = query.join(Device.tags).filter(Tag.id == filters["tag_id"])
 
         return query
 
@@ -277,6 +283,10 @@ class DeviceService:
             "location": Location.name,
             "updated_at": Device.updated_at,
             "tags": func.min(Tag.name),
+            "price": Device.price,
+            "purchase_date": Device.purchase_date,
+            "employee": Employee.last_name,
+            "supplier": Supplier.name,
         }
 
         if sort_by and sort_by in sortable_columns:
@@ -291,6 +301,10 @@ class DeviceService:
                 query = query.join(Device.location, isouter=True)
             elif sort_by == "tags":
                 query = query.outerjoin(Device.tags).group_by(Device.id)
+            elif sort_by == "employee":
+                query = query.join(Device.employee, isouter=True)
+            elif sort_by == "supplier":
+                query = query.join(Device.supplier, isouter=True)
 
             query = query.order_by(column_to_sort.desc() if sort_order == "desc" else column_to_sort.asc())
         else:
@@ -342,6 +356,7 @@ class DeviceService:
         employees_res = await db.execute(select(Employee).order_by(Employee.last_name))
         manufacturers_res = await db.execute(select(Manufacturer).order_by(Manufacturer.name))
         suppliers_res = await db.execute(select(Supplier).order_by(Supplier.name))
+        tags_res = await db.execute(select(Tag).order_by(Tag.name))
 
         return {
             "asset_types": asset_types_res.scalars().all(),
@@ -352,6 +367,7 @@ class DeviceService:
             "employees": employees_res.scalars().all(),
             "manufacturers": manufacturers_res.scalars().all(),
             "suppliers": suppliers_res.scalars().all(),
+            "tags": tags_res.scalars().all(),
         }
 
     # ... остальные методы без изменений ...

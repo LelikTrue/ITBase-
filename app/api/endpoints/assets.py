@@ -56,6 +56,9 @@ async def read_assets(
     department_id: str | None = Query(None),
     location_id: str | None = Query(None),
     manufacturer_id: str | None = Query(None),
+    employee_id: str | None = Query(None),
+    supplier_id: str | None = Query(None),
+    tag_id: str | None = Query(None),
     sort_by: str | None = Query(None),
     sort_order: str = Query('asc'),
     current_user: User = Depends(get_current_user_from_session),
@@ -69,6 +72,9 @@ async def read_assets(
             'department_id': safe_int(department_id),
             'location_id': safe_int(location_id),
             'manufacturer_id': safe_int(manufacturer_id),
+            'employee_id': safe_int(employee_id),
+            'supplier_id': safe_int(supplier_id),
+            'tag_id': safe_int(tag_id),
         }
 
         (

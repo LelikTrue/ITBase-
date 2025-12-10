@@ -14,13 +14,14 @@
     </nav>
 
     <!-- Заголовок и кнопки -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0 text-nowrap">
+    <!-- Заголовок и кнопки -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+        <h1 class="h3 mb-3 mb-md-0">
             <i class="bi bi-box-seam text-primary me-2"></i>
             Управление типами активов
         </h1>
-        <div>
-            <a href="{{ url_for('dictionaries_dashboard') }}" class="btn btn-outline-secondary me-2">
+        <div class="d-flex w-100 w-md-auto gap-2">
+            <a href="{{ url_for('dictionaries_dashboard') }}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Назад
             </a>
             {% if request.session.get('is_superuser') %}
@@ -47,7 +48,55 @@
             <h5 class="mb-0">Список типов активов ({{ asset_types|length }} записей)</h5>
         </div>
         <div class="card-body p-0">
-            <div class="table-responsive">
+            <!-- Mobile View: Cards -->
+            <div class="d-md-none">
+                {% for item in asset_types %}
+                <div class="card mb-3 border shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title text-primary fw-bold mb-0">{{ item.name }}</h5>
+                            <span class="badge bg-secondary">{{ item.prefix }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <span class="badge bg-secondary">{{ item.slug }}</span>
+                        </div>
+                        <p class="card-text text-muted small mb-3">
+                            {{ item.description or 'Нет описания' }}
+                        </p>
+                        
+                        {% if request.session.get('is_superuser') %}
+                        <div class="d-flex justify-content-end gap-2 border-top pt-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editModal"
+                                    data-item-id="{{ item.id }}"
+                                    data-item-slug="{{ item.slug }}"
+                                    data-item-name="{{ item.name }}"
+                                    data-item-prefix="{{ item.prefix }}"
+                                    data-item-description="{{ item.description or '' }}">
+                                <i class="bi bi-pencil"></i> Редактировать
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deleteModal"
+                                    data-item-id="{{ item.id }}"
+                                    data-item-name="{{ item.name }}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-inbox display-4 d-block mb-2"></i>
+                    Типы активов не найдены
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Desktop View: Table -->
+            <div class="table-responsive d-none d-md-block">
                 <table class="table table-hover mb-0" id="itemsTable">
                     <thead>
                         <tr>

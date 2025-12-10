@@ -25,9 +25,9 @@
         <div class="tab-content" id="assetTabContent">
             <!-- Вкладка "Основная информация" -->
             <div class="tab-pane fade show active" id="main-tab-pane" role="tabpanel" aria-labelledby="main-tab" tabindex="0">
-                <div class="row mt-3">
+                <div class="row mt-3 align-items-start">
                     <!-- Левая колонка -->
-                    <div class="col-md-6">
+                    <div class="col-12 col-md-6">
                         <div class="mb-3">
                             <label for="inventory_number" class="form-label">Инвентарный номер</label>
                             <input type="text" id="inventory_number" name="inventory_number" class="form-control" value="{{ asset.inventory_number if asset and asset.inventory_number else '' }}" placeholder="Оставьте пустым для автогенерации">
@@ -80,7 +80,7 @@
                         </div>
                     </div>
                     <!-- Правая колонка -->
-                    <div class="col-md-6">
+                    <div class="col-12 col-md-6">
                         <div class="mb-3">
                             <label for="status_id" class="form-label">Статус <span class="text-danger">*</span></label>
                             <div class="input-group">
@@ -113,7 +113,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="tag-select" class="form-label">Теги</label>
-                            <select id="tag-select" name="tag_ids" multiple></select>
+                            <select id="tag-select" name="tag_ids" multiple aria-label="Теги"></select>
                         </div>
                         <div class="mb-3">
                             <label for="notes" class="form-label">Примечания</label>
@@ -124,9 +124,9 @@
             </div>
             <!-- Вкладка "Финансы и эксплуатация" -->
             <div class="tab-pane fade" id="financial-tab-pane" role="tabpanel" aria-labelledby="financial-tab" tabindex="0">
-                <div class="row mt-3">
+                <div class="row mt-3 align-items-start">
                     <!-- Левая колонка -->
-                    <div class="col-md-6">
+                    <div class="col-12 col-md-6">
                         <div class="mb-3">
                             <label for="supplier_id" class="form-label">Поставщик</label>
                             <div class="input-group">
@@ -156,7 +156,7 @@
                         </div>
                     </div>
                     <!-- Правая колонка -->
-                    <div class="col-md-6">
+                    <div class="col-12 col-md-6">
                         <div class="mb-3">
                             <label for="warranty_end_date" class="form-label">Окончание гарантии</label>
                             <input type="date" id="warranty_end_date" name="warranty_end_date" class="form-control">
@@ -172,19 +172,20 @@
                     </div>
                 </div>
             </div>
-        </div>
-            
             <!-- Вкладка "Импорт" -->
             <div class="tab-pane fade" id="import-pane" role="tabpanel" aria-labelledby="import-tab" tabindex="0">
                 <div class="text-center py-5">
                     <i class="bi bi-robot fs-1 text-primary mb-3"></i>
-                    <h4>Автоматическое создание</h4>
+                    <h3>Автоматическое создание</h3>
                     <p class="text-muted">Загрузите JSON-файл, сгенерированный агентом (ITBase_Agent.exe).<br>Система автоматически создаст модель, производителя и заполнит компоненты.</p>
                     
                     <div class="row justify-content-center mt-4">
-                        <div class="col-md-6">
-                            <input type="file" id="agent-file" class="form-control" accept=".json">
-                            <button id="btn-import" type="button" class="btn btn-primary mt-3 w-100">
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3 text-start">
+                                <label for="agent-file" class="form-label visually-hidden">Файл агента</label>
+                                <input type="file" id="agent-file" class="form-control" accept=".json">
+                            </div>
+                            <button id="btn-import" type="button" class="btn btn-primary w-100">
                                 <i class="bi bi-upload"></i> Загрузить и создать
                             </button>
                         </div>
@@ -193,8 +194,8 @@
             </div>
         </div>
 
-        <div class="mt-4">
-            <button type="submit" class="btn btn-primary">Сохранить</button>
+        <div class="d-grid gap-2 d-md-flex justify-content-md-start mt-3 mb-4">
+            <button type="submit" class="btn btn-primary px-4">Сохранить</button>
         </div>
     </form>
 </div>

@@ -6,61 +6,83 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 {% endblock %}
 
+{% macro render_audit_filters(id_suffix='') %}
+    <div class="col-md-4">
+        <label for="action_type{{ id_suffix }}" class="form-label">Тип действия</label>
+        <select class="form-select" id="action_type{{ id_suffix }}" name="action_type">
+            <option value="" {% if filters.action_type is none %}selected{% endif %}>Все типы</option>
+            {% for at in action_types %}
+            <option value="{{ at }}" {% if filters.action_type == at %}selected{% endif %}>{{ at }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label for="entity_type{{ id_suffix }}" class="form-label">Тип сущности</label>
+        <select class="form-select" id="entity_type{{ id_suffix }}" name="entity_type">
+            <option value="" {% if filters.entity_type is none %}selected{% endif %}>Все сущности</option>
+            {% for et in entity_types %}
+            <option value="{{ et }}" {% if filters.entity_type == et %}selected{% endif %}>{{ et }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label for="user_id{{ id_suffix }}" class="form-label">ID пользователя</label>
+        <input type="number" class="form-control" id="user_id{{ id_suffix }}" name="user_id" 
+               value="{{ filters.user_id if filters.user_id is not none else '' }}" 
+               placeholder="ID пользователя">
+    </div>
+    <div class="col-md-4">
+        <label for="entity_id{{ id_suffix }}" class="form-label">ID сущности</label>
+        <input type="number" class="form-control" id="entity_id{{ id_suffix }}" name="entity_id" 
+               value="{{ filters.entity_id if filters.entity_id is not none else '' }}" 
+               placeholder="ID сущности">
+    </div>
+    <div class="col-md-4">
+        <label for="start_date{{ id_suffix }}" class="form-label">Дата с</label>
+        <input type="date" class="form-control" id="start_date{{ id_suffix }}" name="start_date" 
+               value="{{ filters.start_date.strftime('%Y-%m-%d') if filters.start_date else '' }}">
+    </div>
+    <div class="col-md-4">
+        <label for="end_date{{ id_suffix }}" class="form-label">Дата по</label>
+        <input type="date" class="form-control" id="end_date{{ id_suffix }}" name="end_date" 
+               value="{{ filters.end_date.strftime('%Y-%m-%d') if filters.end_date else '' }}">
+    </div>
+    <div class="col-12">
+        <button type="submit" class="btn btn-primary">Применить фильтры</button>
+        <a href="{{ request.url_for('view_audit_logs_page') }}" class="btn btn-secondary">Сбросить</a>
+    </div>
+{% endmacro %}
+
 {% block content %}
 <div class="container mt-4">
-    <h1 class="mb-4">{{ title }}</h1>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+        <h1 class="mb-3 mb-md-0">{{ title }}</h1>
+        <button class="btn btn-primary d-md-none w-100" type="button" data-bs-toggle="offcanvas" data-bs-target="#auditFiltersOffcanvas" aria-controls="auditFiltersOffcanvas">
+            <i class="bi bi-funnel"></i> Фильтры
+        </button>
+    </div>
     
-    <!-- Фильтры -->
-    <div class="card mb-4">
+    <!-- Offcanvas Фильтры (Мобильный) -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="auditFiltersOffcanvas" aria-labelledby="auditFiltersOffcanvasLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="auditFiltersOffcanvasLabel">Фильтры логов</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <form method="get" class="row g-3 filter-form">
+                {{ render_audit_filters('_mobile') }}
+            </form>
+        </div>
+    </div>
+
+    <!-- Фильтры (Десктоп) -->
+    <div class="card mb-4 d-none d-md-block">
         <div class="card-header">
             <h5 class="mb-0">Фильтры</h5>
         </div>
         <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-4">
-                    <label for="action_type" class="form-label">Тип действия</label>
-                    <select class="form-select" id="action_type" name="action_type">
-                        <option value="" {% if filters.action_type is none %}selected{% endif %}>Все типы</option>
-                        {% for at in action_types %}
-                        <option value="{{ at }}" {% if filters.action_type == at %}selected{% endif %}>{{ at }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label for="entity_type" class="form-label">Тип сущности</label>
-                    <select class="form-select" id="entity_type" name="entity_type">
-                        <option value="" {% if filters.entity_type is none %}selected{% endif %}>Все сущности</option>
-                        {% for et in entity_types %}
-                        <option value="{{ et }}" {% if filters.entity_type == et %}selected{% endif %}>{{ et }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label for="user_id" class="form-label">ID пользователя</label>
-                    <input type="number" class="form-control" id="user_id" name="user_id" 
-                           value="{{ filters.user_id if filters.user_id is not none else '' }}" 
-                           placeholder="ID пользователя">
-                </div>
-                <div class="col-md-4">
-                    <label for="entity_id" class="form-label">ID сущности</label>
-                    <input type="number" class="form-control" id="entity_id" name="entity_id" 
-                           value="{{ filters.entity_id if filters.entity_id is not none else '' }}" 
-                           placeholder="ID сущности">
-                </div>
-                <div class="col-md-4">
-                    <label for="start_date" class="form-label">Дата с</label>
-                    <input type="date" class="form-control" id="start_date" name="start_date" 
-                           value="{{ filters.start_date.strftime('%Y-%m-%d') if filters.start_date else '' }}">
-                </div>
-                <div class="col-md-4">
-                    <label for="end_date" class="form-label">Дата по</label>
-                    <input type="date" class="form-control" id="end_date" name="end_date" 
-                           value="{{ filters.end_date.strftime('%Y-%m-%d') if filters.end_date else '' }}">
-                </div>
-                <div class="col-12">
-                    <button type="submit" class="btn btn-primary">Применить фильтры</button>
-                    <a href="{{ request.url_for('view_audit_logs_page') }}" class="btn btn-secondary">Сбросить</a>
-                </div>
+            <form method="get" class="row g-3 filter-form">
+                {{ render_audit_filters('') }}
             </form>
         </div>
     </div>
@@ -68,8 +90,8 @@
 <script>
     // Скрипт для удаления пустых полей из GET-запроса формы
     document.addEventListener('DOMContentLoaded', function() {
-        const filterForm = document.querySelector('form');
-        if (filterForm) {
+        const filterForms = document.querySelectorAll('.filter-form');
+        filterForms.forEach(filterForm => {
             filterForm.addEventListener('submit', function(e) {
                 const inputs = filterForm.querySelectorAll('input, select');
                 inputs.forEach(input => {
@@ -78,7 +100,7 @@
                     }
                 });
             });
-        }
+        });
     });
 </script>
 
@@ -88,7 +110,100 @@
             <h5 class="mb-0">Записи логов</h5>
             <span class="badge bg-secondary">Всего: {{ total_logs or logs|length }}</span>
         </div>
-        <div class="table-responsive">
+        <!-- Mobile View (Cards) -->
+        <div class="d-md-none">
+            {% for log in logs %}
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="badg text-muted">#{{ log.id }}</span>
+                    <div>
+                        {% if log.action_type == 'create' %}
+                            <span class="badge bg-success">Создание</span>
+                        {% elif log.action_type == 'update' %}
+                            <span class="badge bg-primary">Обновление</span>
+                        {% elif log.action_type == 'delete' %}
+                            <span class="badge bg-danger">Удаление</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ log.action_type }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <small class="text-muted d-block">Время:</small>
+                        {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted d-block">Пользователь:</small>
+                        {% if log.user %}
+                            {{ log.user.full_name or log.user.email }}
+                        {% else %}
+                            System
+                        {% endif %}
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted d-block">Сущность:</small>
+                        <strong>{{ log.entity_type or '-' }}</strong> (ID: {{ log.entity_id or '-' }})
+                    </div>
+                    
+                    <div class="mt-3 d-flex justify-content-between align-items-center">
+                        {% if log.details %}
+                            <button class="btn btn-sm btn-outline-info" type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#details-mobile-{{ log.id }}"
+                                    aria-expanded="false"
+                                    aria-controls="details-mobile-{{ log.id }}">
+                                Показать детали
+                            </button>
+                        {% else %}
+                            <span class="text-muted small">Нет деталей</span>
+                        {% endif %}
+
+                        {% if request.session.get('is_superuser') %}
+                            <button class="btn btn-sm btn-outline-danger delete-log"
+                                    type="button"
+                                    data-log-id="{{ log.id }}"
+                                    title="Удалить запись">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        {% endif %}
+                    </div>
+
+                    <!-- Collapsible Details -->
+                    {% if log.details %}
+                    <div class="collapse mt-2" id="details-mobile-{{ log.id }}">
+                        <div class="card card-body bg-light">
+                            {% if log.action_type == 'update' and log.details.get('diff') %}
+                                <ul class="list-unstyled mb-0 small">
+                                {% for field, values in log.details.get('diff').items() %}
+                                    <li>
+                                        <strong>{{ field }}:</strong><br>
+                                        <span class="text-danger text-decoration-line-through">{{ values.old or 'пусто' }}</span>
+                                        <i class="bi bi-arrow-right"></i>
+                                        <span class="text-success">{{ values.new or 'пусто' }}</span>
+                                    </li>
+                                {% endfor %}
+                                </ul>
+                            {% else %}
+                                <button class="btn btn-sm btn-outline-secondary view-json-btn w-100"
+                                        data-json='{{ log.details | tojson | forceescape }}'>
+                                    <i class="bi bi-file-code"></i> Просмотр JSON
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-secondary text-center">
+                Нет записей, соответствующих фильтрам
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Desktop View (Table) -->
+        <div class="table-responsive d-none d-md-block">
             <table class="table table-hover mb-0">
                 <thead>
                     <tr>

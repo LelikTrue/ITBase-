@@ -4,8 +4,8 @@ info:
   description: "API для управления ИТ-активами. Включает в себя как эндпоинты, возвращающие HTML для веб-интерфейса, так и эндпоинты для обработки данных форм."
   version: "1.0.0"
 servers:
-  - url: http://localhost:8000
-    description: Локальный сервер для разработки
+  - url: /
+    description: Текущий сервер
 
 tags:
   - name: Assets

@@ -89,18 +89,18 @@ function formatCurrency(value) {
 
 function renderRisksTable(risks) {
     const tbody = document.querySelector('#riskTable tbody');
-    if (!tbody) return;
+    const cardsContainer = document.getElementById('riskCards');
     
-    tbody.innerHTML = '';
+    if (tbody) tbody.innerHTML = '';
+    if (cardsContainer) cardsContainer.innerHTML = '';
     
     if (!risks || risks.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Нет данных</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Нет данных</td></tr>';
+        if (cardsContainer) cardsContainer.innerHTML = '<div class="text-center text-muted p-3">Нет данных</div>';
         return;
     }
     
     risks.forEach(risk => {
-        const tr = document.createElement('tr');
-        
         let badgeClass = 'bg-warning text-dark';
         let issueText = risk.issue;
         
@@ -113,20 +113,48 @@ function renderRisksTable(risks) {
         };
         issueText = issueMap[issueText] || issueText;
 
-        // XSS Protection via escapeHtml
-        tr.innerHTML = `
-            <td><a href="/edit/${risk.id}" class="text-decoration-none">${escapeHtml(risk.inventory_number)}</a></td>
-            <td>${escapeHtml(risk.name)}</td>
-            <td><span class="badge ${badgeClass}">${issueText}</span></td>
-            <td class="text-center">${risk.criticality === 'HIGH' ? '🔴' : '🟡'}</td>
-            <td>${risk.date_val ? new Date(risk.date_val).toLocaleDateString('ru-RU') : '-'}</td>
-            <td>
-                <a href="/edit/${risk.id}" class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-pencil"></i>
-                </a>
-            </td>
-        `;
-        tbody.appendChild(tr);
+        // --- Desktop Table Row ---
+        if (tbody) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><a href="/edit/${risk.id}" class="text-decoration-none text-primary-d">${escapeHtml(risk.inventory_number)}</a></td>
+                <td>${escapeHtml(risk.name)}</td>
+                <td><span class="badge ${badgeClass}">${issueText}</span></td>
+                <td class="text-center">${risk.criticality === 'HIGH' ? '🔴' : '🟡'}</td>
+                <td>${risk.date_val ? new Date(risk.date_val).toLocaleDateString('ru-RU') : '-'}</td>
+                <td>
+                    <a href="/edit/${risk.id}" class="btn btn-sm btn-outline-light">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        // --- Mobile Card ---
+        if (cardsContainer) {
+            const card = document.createElement('div');
+            card.className = 'card mb-3 shadow-sm';
+            card.innerHTML = `
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title fw-bold mb-0 text-primary-d">${escapeHtml(risk.name)}</h5>
+                        <span class="badge bg-secondary">#${escapeHtml(risk.inventory_number)}</span>
+                    </div>
+                    <div class="mb-2">
+                        <span class="badge ${badgeClass} mb-1">${issueText}</span>
+                        ${risk.criticality === 'HIGH' ? '<span class="badge bg-danger">CRITICAL</span>' : ''}
+                    </div>
+                    <div class="mb-2 text-muted small">
+                        <i class="bi bi-calendar-event"></i> ${risk.date_val ? new Date(risk.date_val).toLocaleDateString('ru-RU') : '-'}
+                    </div>
+                    <a href="/edit/${risk.id}" class="btn btn-sm btn-outline-primary w-100">
+                        <i class="bi bi-pencil"></i> Редактировать
+                    </a>
+                </div>
+            `;
+            cardsContainer.appendChild(card);
+        }
     });
 }
 
