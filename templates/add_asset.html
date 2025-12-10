@@ -29,6 +29,10 @@
                     <!-- Левая колонка -->
                     <div class="col-md-6">
                         <div class="mb-3">
+                            <label for="inventory_number" class="form-label">Инвентарный номер</label>
+                            <input type="text" id="inventory_number" name="inventory_number" class="form-control" value="{{ asset.inventory_number if asset and asset.inventory_number else '' }}" placeholder="Оставьте пустым для автогенерации">
+                        </div>
+                        <div class="mb-3">
                             <label for="name" class="form-label">Название актива <span class="text-danger">*</span></label>
                             <input type="text" id="name" name="name" class="form-control" value="{{ asset.name if asset else '' }}" required>
                         </div>
@@ -203,7 +207,7 @@
     <script>
         // Валидация формы перед отправкой
         document.addEventListener('DOMContentLoaded', function() {
-            const form = document.querySelector('form[action="{{ url_for('create_asset') }}"]');
+            const form = document.getElementById('addAssetForm');
             
             if (form) {
                 form.addEventListener('submit', function(event) {

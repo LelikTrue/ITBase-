@@ -51,6 +51,8 @@ DICTIONARY_CONFIG = {
         'template': 'admin/asset_types.html',
         'has_slug': True,
         'has_prefix': True,
+        'create_schema': AssetTypeCreate,
+        'update_schema': AssetTypeUpdate,
     },
     'device-models': {
         'service': device_model_service,
@@ -61,6 +63,8 @@ DICTIONARY_CONFIG = {
         'template': 'admin/device_models.html',
         'has_slug': False,
         'has_prefix': False,
+        'create_schema': DeviceModelCreate,
+        'update_schema': DeviceModelUpdate,
     },
     'device-statuses': {
         'service': device_status_service,
@@ -71,6 +75,8 @@ DICTIONARY_CONFIG = {
         'template': 'admin/device_statuses.html',
         'has_slug': True,
         'has_prefix': False,
+        'create_schema': DeviceStatusCreate,
+        'update_schema': DeviceStatusUpdate,
     },
     'manufacturers': {
         'service': manufacturer_service,
@@ -81,6 +87,8 @@ DICTIONARY_CONFIG = {
         'template': 'admin/manufacturers.html',
         'has_slug': False,
         'has_prefix': False,
+        'create_schema': DictionarySimpleCreate,
+        'update_schema': DictionarySimpleUpdate,
     },
     'suppliers': {
         'service': supplier_service,
@@ -91,6 +99,8 @@ DICTIONARY_CONFIG = {
         'template': 'admin/suppliers.html',
         'has_slug': False,
         'has_prefix': False,
+        'create_schema': DictionarySimpleCreate,
+        'update_schema': DictionarySimpleUpdate,
     },
     'departments': {
         'service': department_service,
@@ -101,6 +111,8 @@ DICTIONARY_CONFIG = {
         'template': 'admin/departments.html',
         'has_slug': True,
         'has_prefix': False,
+        'create_schema': DepartmentCreate,
+        'update_schema': DepartmentUpdate,
     },
     'locations': {
         'service': location_service,
@@ -111,6 +123,8 @@ DICTIONARY_CONFIG = {
         'template': 'admin/locations.html',
         'has_slug': True,
         'has_prefix': False,
+        'create_schema': LocationCreate,
+        'update_schema': LocationUpdate,
     },
     'employees': {
         'service': employee_service,
@@ -121,6 +135,8 @@ DICTIONARY_CONFIG = {
         'template': 'admin/employees.html',
         'has_slug': False,
         'has_prefix': False,
+        'create_schema': EmployeeCreate,
+        'update_schema': EmployeeUpdate,
     },
     'tags': {
         'service': tag_service,
@@ -131,6 +147,8 @@ DICTIONARY_CONFIG = {
         'template': 'admin/tags.html',
         'has_slug': False,
         'has_prefix': False,
+        'create_schema': DictionarySimpleCreate,
+        'update_schema': DictionarySimpleUpdate,
     },
 }
 
@@ -253,16 +271,8 @@ async def quick_add_dictionary_item(
     next_url = form_data.get('next')
 
     try:
-        if dictionary_type == 'asset-types':
-            schema = AssetTypeCreate.model_validate(form_data)
-        elif dictionary_type == 'departments':
-            schema = DepartmentCreate.model_validate(form_data)
-        elif dictionary_type == 'locations':
-            schema = LocationCreate.model_validate(form_data)
-        elif dictionary_type == 'device-statuses':
-            schema = DeviceStatusCreate.model_validate(form_data)
-        else:
-            schema = DictionarySimpleCreate.model_validate(form_data)
+        create_schema_class = config['create_schema']
+        schema = create_schema_class.model_validate(form_data)
 
         await service.create(db, obj_in=schema, user_id=user_id)
         flash(request, "Запись успешно создана!", 'success')
@@ -317,20 +327,8 @@ async def create_dictionary_item(
     next_url = form_data.get('next')
 
     try:
-        if dictionary_type == 'asset-types':
-            schema = AssetTypeCreate.model_validate(form_data)
-        elif dictionary_type == 'device-models':
-            schema = DeviceModelCreate.model_validate(form_data)
-        elif dictionary_type == 'employees':
-            schema = EmployeeCreate.model_validate(form_data)
-        elif dictionary_type == 'departments':
-            schema = DepartmentCreate.model_validate(form_data)
-        elif dictionary_type == 'locations':
-            schema = LocationCreate.model_validate(form_data)
-        elif dictionary_type == 'device-statuses':
-            schema = DeviceStatusCreate.model_validate(form_data)
-        else:
-            schema = DictionarySimpleCreate.model_validate(form_data)
+        create_schema_class = config['create_schema']
+        schema = create_schema_class.model_validate(form_data)
 
         await service.create(db, obj_in=schema, user_id=user_id)
         flash(
@@ -381,20 +379,8 @@ async def edit_dictionary_item(
     user_id = current_user.id
 
     try:
-        if dictionary_type == 'asset-types':
-            schema = AssetTypeUpdate.model_validate(form_data)
-        elif dictionary_type == 'device-models':
-            schema = DeviceModelUpdate.model_validate(form_data)
-        elif dictionary_type == 'employees':
-            schema = EmployeeUpdate.model_validate(form_data)
-        elif dictionary_type == 'departments':
-            schema = DepartmentUpdate.model_validate(form_data)
-        elif dictionary_type == 'locations':
-            schema = LocationUpdate.model_validate(form_data)
-        elif dictionary_type == 'device-statuses':
-            schema = DeviceStatusUpdate.model_validate(form_data)
-        else:
-            schema = DictionarySimpleUpdate.model_validate(form_data)
+        update_schema_class = config['update_schema']
+        schema = update_schema_class.model_validate(form_data)
 
         await service.update(db, obj_id=item_id, obj_in=schema, user_id=user_id)
         flash(

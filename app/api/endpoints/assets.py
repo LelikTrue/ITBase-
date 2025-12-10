@@ -248,6 +248,7 @@ async def add_asset_form(
         'all_tags': all_tags,
         'asset': asset,
         'errors': validation_errors,
+        'messages': flashed_messages,
     }
     return templates.TemplateResponse('add_asset.html', context)
 

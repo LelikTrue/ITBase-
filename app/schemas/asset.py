@@ -46,8 +46,8 @@ class AssetBase(BaseModel):
     mac_address: str | None = Field(None, max_length=255)
     ip_address: str | None = Field(None, max_length=255)
     notes: str | None = None
-    source: str | None = Field(None, max_length=50)  #!# ИЗМЕНЕНО: Сделано опциональным
-    purchase_date: date | None = None #!# ИЗМЕНЕНО: Сделано опциональным
+    source: str | None = Field(None, max_length=50)  # !# ИЗМЕНЕНО: Сделано опциональным
+    purchase_date: date | None = None  # !# ИЗМЕНЕНО: Сделано опциональным
     warranty_end_date: date | None = None
     price: float | None = Field(None, ge=0)
     supplier_id: int | None = None
@@ -75,10 +75,15 @@ class AssetBase(BaseModel):
 # --- Схема для создания Актива ---
 class AssetCreate(
     BaseFormModel, AssetBase
-):  #!# Порядок наследования для корректной работы валидатора
+):  # !# Порядок наследования для корректной работы валидатора
     """Схема для создания нового актива. Наследует все поля из AssetBase."""
 
     # Все поля уже определены в AssetBase
+    inventory_number: str | None = Field(
+        None,
+        max_length=255,
+        description='Инвентарный номер (если не указан, генерируется автоматически)',
+    )
 
 
 # --- Схема для обновления Актива ---

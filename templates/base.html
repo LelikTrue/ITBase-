@@ -137,7 +137,8 @@
 
     <main class="{% block main_container_class %}container{% endblock %} py-4">
         {# --- НАЧАЛО НОВОГО БЛОКА ДЛЯ FLASH-СООБЩЕНИЙ --- #}
-        {% with messages = get_flashed_messages(request) %}
+        {# Используем переданные messages или получаем их из request #}
+        {% with messages = messages if messages is defined else get_flashed_messages(request) %}
             {% if messages %}
                 {% for message in messages %}
                     {# Проверяем, является ли сообщение словарем (для ошибок валидации) #}

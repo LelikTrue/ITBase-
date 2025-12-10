@@ -176,6 +176,89 @@ async def get_dictionary_entries(
     return [{'id': item.id, 'name': item.name} for item in items]
 
 
+@router.put('/{dict_name}/{item_id}')
+async def update_dictionary_entry(
+    request: Request,
+    dict_name: str,
+    item_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_superuser_from_session),
+):
+    if dict_name not in DICTIONARY_CONFIG:
+        raise HTTPException(
+            status_code=404, detail=f'Справочник "{dict_name}" не найден.'
+        )
+
+    data_dict = await _parse_update_data(request)
+    service = _get_service_for_dict(dict_name)
+    config = DICTIONARY_CONFIG[dict_name]
+
+    try:
+        # Use CreateSchema as UpdateSchema for simplicity as fields are usually the same
+        schema_instance = config['schema'](**data_dict)
+        updated_item = await service.update(
+            db, obj_id=item_id, obj_in=schema_instance, user_id=current_user.id
+        )
+        if not updated_item:
+            raise HTTPException(status_code=404, detail="Item not found")
+        return updated_item
+
+    except DuplicateError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except Exception as e:
+        logger.error(f"Update error: {e}", exc_info=True)
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+async def _parse_update_data(request: Request) -> dict:
+    try:
+        data = await request.json()
+    except Exception:
+        form = await request.form()
+        data = dict(form)
+
+    data_dict = {}
+    for key, value in data.items():
+        if value is not None and value != '':
+            if key.endswith('_id'):
+                try:
+                    data_dict[key] = int(value)
+                except (ValueError, TypeError):
+                    data_dict[key] = value
+            else:
+                data_dict[key] = value
+    return data_dict
+
+
+def _get_service_for_dict(dict_name: str):
+    from app.services.asset_type_service import asset_type_service
+    from app.services.department_service import department_service
+    from app.services.device_model_service import device_model_service
+    from app.services.device_status_service import device_status_service
+    from app.services.employee_service import employee_service
+    from app.services.location_service import location_service
+    from app.services.manufacturer_service import manufacturer_service
+    from app.services.supplier_service import supplier_service
+    from app.services.tag_service import tag_service
+
+    service_map = {
+        'asset-types': asset_type_service,
+        'device-models': device_model_service,
+        'device-statuses': device_status_service,
+        'manufacturers': manufacturer_service,
+        'suppliers': supplier_service,
+        'departments': department_service,
+        'locations': location_service,
+        'employees': employee_service,
+        'tags': tag_service,
+    }
+
+    service = service_map.get(dict_name)
+    if not service:
+        raise HTTPException(status_code=500, detail="Service not found")
+    return service
+
+
 @router.delete('/{dict_name}/{item_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_dictionary_entry(
     dict_name: str,

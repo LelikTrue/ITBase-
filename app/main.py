@@ -75,17 +75,11 @@ def format_validation_errors_to_dict(errors: list) -> dict:
     return error_dict
 
 
-def create_app() -> FastAPI:
-    app = FastAPI(
-        title='ITBase',
-        description='Сервис для учета и управления ИТ-активами.',
-        version='1.0.0',
-        docs_url=None,
-        redoc_url=None,
-    )
-
+def _configure_static_files(app: FastAPI):
     app.mount('/static', StaticFiles(directory=str(BASE_DIR / 'static')), name='static')
 
+
+def _configure_middleware(app: FastAPI):
     app.add_middleware(
         CORSMiddleware,
         allow_origins=['*'],
@@ -93,11 +87,22 @@ def create_app() -> FastAPI:
         allow_methods=['*'],
         allow_headers=['*'],
     )
+    # SessionMiddleware is added last in create_app effectively, but here we can add it.
+    # Note: Middleware is applied in reverse order of addition.
+    # In original code, SessionMiddleware was added LAST (so it runs FIRST on request).
+    # Then Auth middleware was added via decorator @app.middleware, which adds it too.
+    # Ideally SessionMiddleware should be added last (executed first).
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=os.getenv('SECRET_KEY', secrets.token_hex(32)),
+        session_cookie='session',
+        max_age=3600,
+    )
 
-    # --- ПОДКЛЮЧЕНИЕ РОУТЕРОВ ---
+
+def _configure_routers(app: FastAPI):
     app.include_router(assets.router)
     app.include_router(audit_logs.router)
-    # --- ИЗМЕНЕНИЕ ЗДЕСЬ: Добавляем префикс для API справочников ---
     app.include_router(
         dictionaries.router, prefix='/api/dictionaries', tags=['Dictionaries']
     )
@@ -108,14 +113,13 @@ def create_app() -> FastAPI:
         analytics.router, prefix='/api/analytics', tags=['analytics']
     )
 
-    # --- AUTH & USERS ---
     from app.api.endpoints import auth, users, web_auth
-
     app.include_router(auth.router, tags=['login'])
     app.include_router(users.router, prefix='/users', tags=['users'])
-    app.include_router(web_auth.router)  # Web login/logout
+    app.include_router(web_auth.router)
 
-    # --- Обработчики ошибок ---
+
+def _configure_exception_handlers(app: FastAPI):
     @app.exception_handler(StarletteHTTPException)
     async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         return JSONResponse(status_code=exc.status_code, content={'detail': exc.detail})
@@ -145,7 +149,8 @@ def create_app() -> FastAPI:
             return RedirectResponse(referer, status_code=303)
         return RedirectResponse(request.url_for('dashboard'), status_code=303)
 
-    # --- Swagger для активов ---
+
+def _configure_swagger_ui(app: FastAPI):
     @app.get('/docs/assets', include_in_schema=False)
     async def custom_swagger_ui_assets(request: Request):
         return get_swagger_ui_html(
@@ -156,48 +161,71 @@ def create_app() -> FastAPI:
     async def get_assets_openapi():
         return openapi_assets_spec
 
-    # --- AUTH MIDDLEWARE (добавляется в конце, чтобы выполнялся после SessionMiddleware) ---
+
+def _configure_auth_middleware(app: FastAPI):
     @app.middleware('http')
     async def auth_redirect_middleware(request: Request, call_next):
         """Redirect unauthenticated users to login page"""
-        # Skip authentication for test mode
-        if request.headers.get('X-Test-Mode') == 'true':
-            response = await call_next(request)
-            return response
+        if request.headers.get('x-test-mode') == 'true' or request.headers.get('X-Test-Mode') == 'true':
+            return await call_next(request)
 
-        # Public paths that don't require authentication
         public_paths = [
-            '/login',
-            '/register',
-            '/logout',
-            '/health',
-            '/ready',
-            '/static',
-            '/api',
-            '/docs',
-            '/openapi',
-            '/users',
+            '/login', '/register', '/logout', '/health', '/ready',
+            '/static', '/api', '/docs', '/openapi', '/users',
         ]
 
         # Check if path is public
         is_public = any(request.url.path.startswith(path) for path in public_paths)
 
         if not is_public:
-            # Check if user is authenticated (session is available here)
             user_id = (
                 request.session.get('user_id') if 'session' in request.scope else None
             )
             if not user_id:
                 return RedirectResponse(url='/login', status_code=303)
 
-        response = await call_next(request)
-        return response
+        return await call_next(request)
 
+
+def create_app() -> FastAPI:
+    app = FastAPI(
+        title='ITBase',
+        description='Сервис для учета и управления ИТ-активами.',
+        version='1.0.0',
+        docs_url=None,
+        redoc_url=None,
+    )
+
+    _configure_static_files(app)
+
+    # Configure Routers and Exception Handlers
+    _configure_routers(app)
+    _configure_exception_handlers(app)
+    _configure_swagger_ui(app)
+
+    # Middleware Configuration
+    # Note: Middleware is added LIFO (Last Added, First Executed for request).
+    # We want execution order: CORS -> Session -> Auth.
+    # So we must add them in reverse order: Auth, then Session, then CORS.
+
+    # 1. Auth Middleware (Innermost of these three)
+    _configure_auth_middleware(app)
+
+    # 2. Session Middleware (Wraps Auth)
     app.add_middleware(
         SessionMiddleware,
         secret_key=os.getenv('SECRET_KEY', secrets.token_hex(32)),
         session_cookie='session',
         max_age=3600,
+    )
+
+    # 3. CORS Middleware (Wraps Session)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=['*'],
+        allow_credentials=True,
+        allow_methods=['*'],
+        allow_headers=['*'],
     )
 
     @app.get('/', status_code=302, include_in_schema=False)
@@ -213,5 +241,4 @@ def create_app() -> FastAPI:
     return app
 
 
-# Глобальный экземпляр
 app = create_app()

@@ -55,106 +55,24 @@ class DeviceService:
         Автоматически создает/находит производителя и модель по материнской плате.
         """
         # 1. Парсинг и валидация JSON
-        content = await file.read()
-        try:
-            raw_data = json.loads(content)
-            # В агенте может быть плоский список или объект.
-            # Если это список компонентов, нам нужен hostname.
-            # Предположим структуру {hostname: "...", components: [...]}
-            # или если агент шлет просто список, то hostname придется генерить или брать из имени файла?
-            # User request implied JSON structure matching ComponentUploadRequest (hostname + components)
-
-            # Если пришел список (старый формат?), заворачиваем (но по ТЗ агент шлет структуру)
-            if isinstance(raw_data, list):
-                # Fallback: try to find hostname in components or use default
-                dto = ComponentUploadRequest(hostname="Imported-Host", components=raw_data)
-            else:
-                dto = ComponentUploadRequest(**raw_data)
-
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Invalid JSON: {e!s}")
-
-        # 2. Извлечение ключевых данных
+        dto = await self._parse_agent_data(file)
         hostname = dto.hostname
 
-        # Ищем материнскую плату для определения модели
-        mb_info = next((c for c in dto.components if c.type == "motherboard"), None)
-
-        mb_manufacturer = mb_info.manufacturer if mb_info and mb_info.manufacturer else "Unknown"
-        mb_product = mb_info.name if mb_info and mb_info.name else "Generic PC"
+        # 2. Извлечение ключевых данных
+        mb_info, mb_manufacturer, mb_product = self._extract_mb_info(dto.components)
 
         # 3. Работа со справочниками (Get or Create)
-
-        # 3.1 Производитель
-        stmt = select(Manufacturer).where(Manufacturer.name == mb_manufacturer)
-        m_result = await session.execute(stmt)
-        manufacturer = m_result.scalars().first()
-        if not manufacturer:
-            manufacturer = Manufacturer(name=mb_manufacturer)
-            session.add(manufacturer)
-            await session.flush()
-
-        # 3.2 Тип актива (По умолчанию "Системный блок" или создаем)
-        DEFAULT_TYPE = "Системный блок"
-        DEFAULT_PREFIX = "PC"
-
-        # Пытаемся найти по имени ИЛИ по префиксу, чтобы избежать дублирования префикса
-        stmt = select(AssetType).where(or_(AssetType.name == DEFAULT_TYPE, AssetType.prefix == DEFAULT_PREFIX))
-        t_result = await session.execute(stmt)
-        candidates = t_result.scalars().all()
-
-        # Приоритет 1: Сопадение по имени
-        asset_type = next((x for x in candidates if x.name == DEFAULT_TYPE), None)
-
-        # Приоритет 2: Сопадение по префиксу (если имени нет, но префикс занят - берем тот тип)
-        if not asset_type:
-            asset_type = next((x for x in candidates if x.prefix == DEFAULT_PREFIX), None)
-
-        if not asset_type:
-            asset_type = AssetType(name=DEFAULT_TYPE, prefix=DEFAULT_PREFIX)
-            session.add(asset_type)
-            await session.flush()
-
-        # 3.3 Модель устройства
-        stmt = select(DeviceModel).where(DeviceModel.name == mb_product, DeviceModel.manufacturer_id == manufacturer.id)
-        dm_result = await session.execute(stmt)
-        device_model = dm_result.scalars().first()
-        if not device_model:
-            device_model = DeviceModel(name=mb_product, manufacturer_id=manufacturer.id, asset_type_id=asset_type.id)
-            session.add(device_model)
-            await session.flush()
-
-        # 3.4 Статус (По умолчанию "На складе" или первый попавшийся)
-        # Try finding 'На складе' first
-        stmt = select(DeviceStatus).where(DeviceStatus.name == "На складе")
-        s_result = await session.execute(stmt)
-        status = s_result.scalars().first()
-
-        if not status:
-            # Fallback to any status
-            stmt = select(DeviceStatus).limit(1)
-            s_result = await session.execute(stmt)
-            status = s_result.scalars().first()
-
-        if not status:
-            raise HTTPException(
-                status_code=500, detail="No Device Statuses found in DB. Please create at least one status."
-            )
+        manufacturer = await self._get_or_create_manufacturer(session, mb_manufacturer)
+        asset_type = await self._get_or_create_asset_type(session)
+        device_model = await self._get_or_create_device_model(
+            session, mb_product, manufacturer.id, asset_type.id
+        )
+        status = await self._get_default_status(session)
 
         # 4. Создание Устройства
-        # Генерация инвентарного номера
-        prefix = asset_type.prefix or "DEV"
-        date_str = datetime.utcnow().strftime("%Y%m%d")
-        search_prefix = f"{prefix}-{date_str}-"
-        last_device_stmt = (
-            select(Device.inventory_number)
-            .where(Device.inventory_number.like(f"{search_prefix}%"))
-            .order_by(Device.inventory_number.desc())
-            .limit(1)
+        inventory_number = await self._generate_inventory_number(
+            session, asset_type.prefix or "DEV"
         )
-        last_inv_number = (await session.execute(last_device_stmt)).scalar_one_or_none()
-        new_seq = int(last_inv_number.split("-")[-1]) + 1 if last_inv_number else 1
-        inventory_number = f"{search_prefix}{new_seq:03d}"
 
         new_device = Device(
             name=hostname,
@@ -167,25 +85,7 @@ class DeviceService:
             notes="Автоматически импортировано из агента",
         )
 
-        try:
-            session.add(new_device)
-            await session.flush()
-        except IntegrityError as e:
-            await session.rollback()
-            error_info = str(e.orig) if hasattr(e, 'orig') else str(e)
-            # Парсим понятное сообщение
-            if 'serial_number' in error_info:
-                raise HTTPException(
-                    status_code=409,
-                    detail=f"Актив с серийным номером '{new_device.serial_number}' уже существует."
-                )
-            elif 'inventory_number' in error_info:
-                raise HTTPException(
-                    status_code=409,
-                    detail=f"Актив с инвентарным номером '{new_device.inventory_number}' уже существует."
-                )
-            else:
-                raise HTTPException(status_code=409, detail="Актив с такими данными уже существует.")
+        await self._save_new_device(session, new_device)
 
         # Логируем создание
         await log_action(
@@ -205,6 +105,117 @@ class DeviceService:
         await ComponentService.sync_components(session, new_device.id, dto.components)
 
         return new_device
+
+    async def _parse_agent_data(self, file: UploadFile) -> ComponentUploadRequest:
+        content = await file.read()
+        try:
+            raw_data = json.loads(content)
+            if isinstance(raw_data, list):
+                # Fallback: try to find hostname in components or use default
+                return ComponentUploadRequest(hostname="Imported-Host", components=raw_data)
+            return ComponentUploadRequest(**raw_data)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid JSON: {e!s}")
+
+    def _extract_mb_info(self, components):
+        mb_info = next((c for c in components if c.type == "motherboard"), None)
+        mb_manufacturer = mb_info.manufacturer if mb_info and mb_info.manufacturer else "Unknown"
+        mb_product = mb_info.name if mb_info and mb_info.name else "Generic PC"
+        return mb_info, mb_manufacturer, mb_product
+
+    async def _get_or_create_manufacturer(self, session: AsyncSession, name: str) -> Manufacturer:
+        stmt = select(Manufacturer).where(Manufacturer.name == name)
+        m_result = await session.execute(stmt)
+        manufacturer = m_result.scalars().first()
+        if not manufacturer:
+            manufacturer = Manufacturer(name=name)
+            session.add(manufacturer)
+            await session.flush()
+        return manufacturer
+
+    async def _get_or_create_asset_type(
+        self, session: AsyncSession, name: str = "Системный блок", prefix: str = "PC"
+    ) -> AssetType:
+        stmt = select(AssetType).where(or_(AssetType.name == name, AssetType.prefix == prefix))
+        t_result = await session.execute(stmt)
+        candidates = t_result.scalars().all()
+
+        # Приоритет 1: Сопадение по имени
+        asset_type = next((x for x in candidates if x.name == name), None)
+        # Приоритет 2: Сопадение по префиксу
+        if not asset_type:
+            asset_type = next((x for x in candidates if x.prefix == prefix), None)
+
+        if not asset_type:
+            asset_type = AssetType(name=name, prefix=prefix)
+            session.add(asset_type)
+            await session.flush()
+        return asset_type
+
+    async def _get_or_create_device_model(
+        self, session: AsyncSession, name: str, manufacturer_id: int, asset_type_id: int
+    ) -> DeviceModel:
+        stmt = select(DeviceModel).where(
+            DeviceModel.name == name, DeviceModel.manufacturer_id == manufacturer_id
+        )
+        dm_result = await session.execute(stmt)
+        device_model = dm_result.scalars().first()
+        if not device_model:
+            device_model = DeviceModel(
+                name=name, manufacturer_id=manufacturer_id, asset_type_id=asset_type_id
+            )
+            session.add(device_model)
+            await session.flush()
+        return device_model
+
+    async def _get_default_status(self, session: AsyncSession) -> DeviceStatus:
+        stmt = select(DeviceStatus).where(DeviceStatus.name == "На складе")
+        s_result = await session.execute(stmt)
+        status = s_result.scalars().first()
+
+        if not status:
+            stmt = select(DeviceStatus).limit(1)
+            s_result = await session.execute(stmt)
+            status = s_result.scalars().first()
+
+        if not status:
+            raise HTTPException(
+                status_code=500, detail="No Device Statuses found in DB. Please create at least one status."
+            )
+        return status
+
+    async def _generate_inventory_number(self, session: AsyncSession, prefix: str) -> str:
+        date_str = datetime.utcnow().strftime("%Y%m%d")
+        search_prefix = f"{prefix}-{date_str}-"
+        last_device_stmt = (
+            select(Device.inventory_number)
+            .where(Device.inventory_number.like(f"{search_prefix}%"))
+            .order_by(Device.inventory_number.desc())
+            .limit(1)
+        )
+        last_inv_number = (await session.execute(last_device_stmt)).scalar_one_or_none()
+        new_seq = int(last_inv_number.split("-")[-1]) + 1 if last_inv_number else 1
+        return f"{search_prefix}{new_seq:03d}"
+
+    async def _save_new_device(self, session: AsyncSession, new_device: Device):
+        try:
+            session.add(new_device)
+            await session.flush()
+        except IntegrityError as e:
+            await session.rollback()
+            error_info = str(e.orig) if hasattr(e, 'orig') else str(e)
+            if 'serial_number' in error_info:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Актив с серийным номером '{new_device.serial_number}' уже существует."
+                )
+            elif 'inventory_number' in error_info:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Актив с инвентарным номером '{new_device.inventory_number}' уже существует."
+                )
+            else:
+                raise HTTPException(status_code=409, detail="Актив с такими данными уже существует.")
 
     async def get_device_with_relations(self, db: AsyncSession, device_id: int) -> Device | None:
         # Создаем полиморфную сущность для загрузки всех типов компонентов
@@ -516,22 +527,16 @@ class DeviceService:
             await db.commit()
         except IntegrityError as e:
             await db.rollback()
-            error_info = str(e.orig) if hasattr(e, 'orig') else str(e)
-            # Парсим понятное сообщение
+            error_info = str(e.orig).lower() if e.orig else str(e).lower()
             if 'serial_number' in error_info:
-                raise DuplicateDeviceError(
-                    f"Актив с серийным номером '{asset_data.serial_number}' уже существует."
-                )
+                raise DuplicateDeviceError("Актив с таким серийным номером уже существует.")
             elif 'mac_address' in error_info:
-                raise DuplicateDeviceError(
-                    f"Актив с MAC-адресом '{asset_data.mac_address}' уже существует."
-                )
+                raise DuplicateDeviceError("Актив с таким MAC-адресом уже существует.")
             elif 'inventory_number' in error_info:
-                raise DuplicateDeviceError(
-                    f"Актив с инвентарным номером '{inventory_number}' уже существует."
-                )
+                raise DuplicateDeviceError(f"Актив с инвентарным номером {device.inventory_number} уже существует.")
             else:
-                raise DuplicateDeviceError("Актив с такими данными уже существует.")
+                # Включаем детали ошибки для отладки
+                raise DuplicateDeviceError(f"Актив с такими данными уже существует. Детали: {error_info}")
         except SQLAlchemyError as e:
             await db.rollback()
             logger.error(f"Ошибка при создании устройства: {e}", exc_info=True)
