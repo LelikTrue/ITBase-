@@ -138,7 +138,7 @@ function renderRisksTable(risks) {
             card.innerHTML = `
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h5 class="card-title fw-bold mb-0 text-primary-d">${escapeHtml(risk.name)}</h5>
+                        <h3 class="card-title h5 fw-bold mb-0 text-primary-d">${escapeHtml(risk.name)}</h3>
                         <span class="badge bg-secondary">#${escapeHtml(risk.inventory_number)}</span>
                     </div>
                     <div class="mb-2">
@@ -148,7 +148,7 @@ function renderRisksTable(risks) {
                     <div class="mb-2 text-muted small">
                         <i class="bi bi-calendar-event"></i> ${risk.date_val ? new Date(risk.date_val).toLocaleDateString('ru-RU') : '-'}
                     </div>
-                    <a href="/edit/${risk.id}" class="btn btn-sm btn-outline-primary w-100">
+                    <a href="/edit/${risk.id}" class="btn btn-sm btn-primary w-100">
                         <i class="bi bi-pencil"></i> Редактировать
                     </a>
                 </div>
