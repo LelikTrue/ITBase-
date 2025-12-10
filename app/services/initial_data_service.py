@@ -1,7 +1,7 @@
 import yaml
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from app.models.asset_type import AssetType
 from app.models.device_status import DeviceStatus
 from app.models.department import Department
@@ -51,30 +51,40 @@ class InitialDataService:
         Ищет по slug. Если находит - обновляет name. Если нет - создает.
         """
         for item in items:
-            # 1. Поиск по неизменяемому ключу (slug)
-            stmt = select(model_class).where(model_class.slug == item.slug)
+            # 1. Поиск: ищем по slug (основной ключ) или по name (чтобы избежать дублей)
+            stmt = select(model_class).where(
+                or_(model_class.slug == item.slug, model_class.name == item.name)
+            )
             result = await self.db.execute(stmt)
-            obj = result.scalar_one_or_none()
+            obj = result.scalars().first()
 
             if obj:
-                # 2. UPDATE: Обновляем имя, если оно изменилось в конфиге
-                # Это позволяет переименовывать отделы в YAML, и они обновятся в БД
-                if obj.name != item.name:
-                    logger.info(
-                        f"Updating {model_class.__tablename__}: "
-                        f"{obj.slug} -> {item.name}"
-                    )
-                    obj.name = item.name
+                # 2. UPDATE: Обновляем запись, если нашли совпадение по slug или name
+                updates = []
+                
+                # Если нашли по имени, но slug пустой или другой - обновляем slug
+                if obj.slug != item.slug:
+                    logger.info(f"Updating slug for {model_class.__tablename__}: {obj.name} -> {item.slug}")
+                    obj.slug = item.slug
+                    updates.append("slug")
 
-                # Обновляем описание, если оно есть
+                if obj.name != item.name:
+                    logger.info(f"Updating name for {model_class.__tablename__}: {obj.slug} -> {item.name}")
+                    obj.name = item.name
+                    updates.append("name")
+
                 if hasattr(obj, 'description') and item.description:
                     if obj.description != item.description:
                         obj.description = item.description
+                        updates.append("description")
 
-                # Обновляем prefix, если он есть (для AssetType)
                 if hasattr(obj, 'prefix') and item.prefix:
                     if obj.prefix != item.prefix:
                         obj.prefix = item.prefix
+                        updates.append("prefix")
+                
+                if updates:
+                    logger.info(f"Updated fields for {item.slug}: {updates}")
             else:
                 # 3. INSERT: Создаем новую запись
                 logger.info(f"Creating {model_class.__tablename__}: {item.slug}")
