@@ -202,48 +202,99 @@
                                 <hr class="my-4">
                                 <h5>Текущая конфигурация</h5>
                                 {% if device.components %}
-                                <table class="table table-striped table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Тип</th>
-                                            <th>Модель</th>
-                                            <th>Серийный номер</th>
-                                            <th>Характеристики</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for comp in device.components %}
-                                        <tr>
-                                            <td>
-                                                {% if comp.component_type == 'cpu' %}
-                                                    <i class="bi bi-cpu"></i> CPU
-                                                {% elif comp.component_type == 'ram' %}
-                                                    <i class="bi bi-memory"></i> RAM
-                                                {% elif comp.component_type == 'storage' %}
-                                                    <i class="bi bi-device-hdd"></i> Storage
-                                                {% elif comp.component_type == 'gpu' %}
-                                                    <i class="bi bi-gpu-card"></i> GPU
-                                                {% elif comp.component_type == 'motherboard' %}
-                                                    <i class="bi bi-motherboard"></i> Motherboard
-                                                {% endif %}
-                                            </td>
-                                            <td>{{ comp.name }}</td>
-                                            <td>{{ comp.serial_number or '-' }}</td>
-                                            <td>
-                                                {% if comp.component_type == 'cpu' %}
-                                                    Cores: {{ comp.cores }}, Threads: {{ comp.threads }}{% if comp.base_clock_mhz %}, {{ comp.base_clock_mhz }} MHz{% endif %}
-                                                {% elif comp.component_type == 'ram' %}
-                                                    Size: {{ comp.size_mb }} MB{% if comp.speed_mhz %}, {{ comp.speed_mhz }} MHz{% endif %}{% if comp.form_factor %}, {{ comp.form_factor }}{% endif %}
-                                                {% elif comp.component_type == 'storage' %}
-                                                    Type: {{ comp.type_label }}, {{ comp.capacity_gb }} GB{% if comp.interface %}, {{ comp.interface }}{% endif %}
-                                                {% elif comp.component_type == 'gpu' %}
-                                                    {% if comp.memory_mb %}Memory: {{ comp.memory_mb }} MB{% endif %}
-                                                {% endif %}
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+                                <div class="table-responsive d-none d-md-block">
+                                    <table class="table table-striped table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Тип</th>
+                                                <th>Модель</th>
+                                                <th>Серийный номер</th>
+                                                <th>Характеристики</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for comp in device.components %}
+                                            <tr>
+                                                <td>
+                                                    {% if comp.component_type == 'cpu' %}
+                                                        <i class="bi bi-cpu"></i> CPU
+                                                    {% elif comp.component_type == 'ram' %}
+                                                        <i class="bi bi-memory"></i> RAM
+                                                    {% elif comp.component_type == 'storage' %}
+                                                        <i class="bi bi-device-hdd"></i> Storage
+                                                    {% elif comp.component_type == 'gpu' %}
+                                                        <i class="bi bi-gpu-card"></i> GPU
+                                                    {% elif comp.component_type == 'motherboard' %}
+                                                        <i class="bi bi-motherboard"></i> Motherboard
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ comp.name }}</td>
+                                                <td>{{ comp.serial_number or '-' }}</td>
+                                                <td>
+                                                    {% if comp.component_type == 'cpu' %}
+                                                        Cores: {{ comp.cores }}, Threads: {{ comp.threads }}{% if comp.base_clock_mhz %}, {{ comp.base_clock_mhz }} MHz{% endif %}
+                                                    {% elif comp.component_type == 'ram' %}
+                                                        Size: {{ comp.size_mb }} MB{% if comp.speed_mhz %}, {{ comp.speed_mhz }} MHz{% endif %}{% if comp.form_factor %}, {{ comp.form_factor }}{% endif %}
+                                                    {% elif comp.component_type == 'storage' %}
+                                                        Type: {{ comp.type_label }}, {{ comp.capacity_gb }} GB{% if comp.interface %}, {{ comp.interface }}{% endif %}
+                                                    {% elif comp.component_type == 'gpu' %}
+                                                        {% if comp.memory_mb %}Memory: {{ comp.memory_mb }} MB{% endif %}
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Mobile View (Cards) -->
+                                <div class="d-md-none">
+                                    {% for comp in device.components %}
+                                    <div class="card mb-3 shadow-sm">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="me-2 text-primary">
+                                                    {% if comp.component_type == 'cpu' %}
+                                                        <i class="bi bi-cpu fs-4"></i>
+                                                    {% elif comp.component_type == 'ram' %}
+                                                        <i class="bi bi-memory fs-4"></i>
+                                                    {% elif comp.component_type == 'storage' %}
+                                                        <i class="bi bi-device-hdd fs-4"></i>
+                                                    {% elif comp.component_type == 'gpu' %}
+                                                        <i class="bi bi-gpu-card fs-4"></i>
+                                                    {% elif comp.component_type == 'motherboard' %}
+                                                        <i class="bi bi-motherboard fs-4"></i>
+                                                    {% endif %}
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0 fw-bold">{{ comp.name }}</h6>
+                                                    <small class="text-muted">{{ comp.component_type|upper }}</small>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-2">
+                                                <small class="text-muted d-block">Серийный номер:</small>
+                                                <span>{{ comp.serial_number or '-' }}</span>
+                                            </div>
+
+                                            <div>
+                                                <small class="text-muted d-block">Характеристики:</small>
+                                                <small>
+                                                    {% if comp.component_type == 'cpu' %}
+                                                        Cores: {{ comp.cores }}, Threads: {{ comp.threads }}{% if comp.base_clock_mhz %}, {{ comp.base_clock_mhz }} MHz{% endif %}
+                                                    {% elif comp.component_type == 'ram' %}
+                                                        Size: {{ comp.size_mb }} MB{% if comp.speed_mhz %}, {{ comp.speed_mhz }} MHz{% endif %}{% if comp.form_factor %}, {{ comp.form_factor }}{% endif %}
+                                                    {% elif comp.component_type == 'storage' %}
+                                                        Type: {{ comp.type_label }}, {{ comp.capacity_gb }} GB{% if comp.interface %}, {{ comp.interface }}{% endif %}
+                                                    {% elif comp.component_type == 'gpu' %}
+                                                        {% if comp.memory_mb %}Memory: {{ comp.memory_mb }} MB{% endif %}
+                                                    {% endif %}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
                                 {% else %}
                                 <p class="text-muted">Компоненты не загружены</p>
                                 {% endif %}
